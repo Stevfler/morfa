@@ -2,17 +2,18 @@
 import { computed } from 'vue'
 import { ContextMenuItem } from 'reka-ui'
 import Icon from '../Icon.vue'
-import { COLORS, editing, tagsOf, toggleTag } from '../../lib/tags'
+import { t } from '../../lib/i18n'
+import { COLORS, editing, tagLabel, tagsOf, toggleTag } from '../../lib/tags'
 
 const props = defineProps<{ paths: string[] }>()
 const has = (tag: string) => props.paths.length > 0 && props.paths.every((p) => tagsOf(p).includes(tag))
-const label = computed(() => (props.paths.length > 1 ? `Tags for ${props.paths.length} items…` : 'Tags…'))
+const label = computed(() => (props.paths.length > 1 ? t('tags.menuMany', { count: props.paths.length }) : t('tags.menu')))
 </script>
 
 <template>
   <div class="flex items-center gap-1.5 px-2.5 py-1.5">
     <ContextMenuItem
-      v-for="c in COLORS" :key="c.name" :title="c.name" :aria-label="c.name"
+      v-for="c in COLORS" :key="c.name" :title="tagLabel(c.name)" :aria-label="tagLabel(c.name)"
       class="grid size-4.5 cursor-default place-items-center rounded-full outline-none ring-offset-1 ring-offset-panel data-highlighted:ring-2 data-highlighted:ring-fg/40"
       :style="{ background: c.css }" @select="toggleTag(paths, c.name)"
     >

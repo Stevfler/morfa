@@ -1,3 +1,6 @@
+import { fmtDateFull } from '../../lib/util/format'
+import { locale, t } from '../../lib/i18n'
+
 export interface Props {
   path: string
   isDir: boolean
@@ -19,9 +22,8 @@ export interface Props {
   height: number | null
 }
 
-const dtf = new Intl.DateTimeFormat(undefined, { dateStyle: 'full', timeStyle: 'medium' })
-export const fullDate = (ms: number) => (ms ? dtf.format(ms) : '—')
-export const bytes = (n: number) => `${n.toLocaleString()} bytes`
+export const fullDate = (ms: number) => fmtDateFull(ms) || '—'
+export const bytes = (n: number) => t('props.bytes', { count: n }).replace(String(n), n.toLocaleString(locale.value))
 
 /** 0o755 → "rwxr-xr-x" (with setuid/setgid/sticky letters). */
 export function rwx(mode: number) {

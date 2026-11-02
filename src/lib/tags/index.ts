@@ -1,5 +1,6 @@
 import { reactive, ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { t } from '../i18n'
 import type { Pane } from '../store'
 import { fail, startSearch } from '../store'
 
@@ -13,6 +14,8 @@ export const COLORS = [
   { name: 'Purple', css: '#a855f7' },
   { name: 'Gray', css: '#9ca3af' },
 ] as const
+/** Display name: colour labels are stored in English but shown translated. */
+export const tagLabel = (tag: string) => (colorOf(tag) ? t(`tags.color.${tag}` as 'tags.color.Red') : tag)
 export const colorOf = (tag: string) => COLORS.find((c) => c.name === tag)?.css
 
 /** path → tags, filled lazily as rows render. */

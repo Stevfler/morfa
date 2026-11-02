@@ -5,6 +5,7 @@ import Icon from '../Icon.vue'
 import PropRow from './PropRow.vue'
 import * as S from '../../lib/store'
 import { fmtSize, kindOf, KIND_ICON, KIND_COLOR, KIND_LABEL, type Kind } from '../../lib/util'
+import { t } from '../../lib/i18n'
 import { bytes } from './types'
 
 const props = defineProps<{ paths: string[] }>()
@@ -37,7 +38,7 @@ const kinds = computed(() => {
 })
 const where = computed(() => {
   const dirs = new Set(props.paths.map((p) => p.replace(/[\\/][^\\/]*$/, '') || '/'))
-  return dirs.size === 1 ? [...dirs][0] : `${dirs.size} folders`
+  return dirs.size === 1 ? [...dirs][0] : t('props.folders', { count: dirs.size })
 })
 </script>
 
@@ -45,17 +46,17 @@ const where = computed(() => {
   <div class="flex items-center gap-4 px-5 pt-5 pb-4">
     <div class="grid size-14 shrink-0 place-items-center rounded-xl bg-raised text-accent"><Icon name="copy" class="size-8" /></div>
     <div class="min-w-0">
-      <p class="text-[15px] font-medium">{{ paths.length }} items</p>
-      <p class="truncate text-[12px] text-faint">in {{ where }}</p>
+      <p class="text-[15px] font-medium">{{ t('props.items', { count: paths.length }) }}</p>
+      <p class="truncate text-[12px] text-faint">{{ t('props.in', { path: where }) }}</p>
     </div>
   </div>
 
   <div class="mx-5 mb-3 rounded-lg bg-raised/60 py-1">
-    <PropRow label="Total size">
+    <PropRow :label="t('props.totalSize')">
       {{ fmtSize(total) }} <span class="text-faint">({{ bytes(total) }})</span>
       <Icon v-if="pending" name="loader" class="ml-1 inline size-3.5 animate-spin text-faint" />
     </PropRow>
-    <PropRow label="Location" :copy="paths.join('\n')">{{ where }}</PropRow>
+    <PropRow :label="t('props.location')" :copy="paths.join('\n')">{{ where }}</PropRow>
   </div>
 
   <div class="mx-5 mb-5 rounded-lg bg-raised/60 py-1.5">

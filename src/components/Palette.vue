@@ -7,7 +7,7 @@ import * as S from '../lib/store'
 import { commands, prettyKeys } from '../lib/commands'
 import { basename, fuzzy, keyLabel } from '../lib/util'
 import { t } from '../lib/i18n'
-import { allTags, refreshAllTags, showTag } from '../lib/tags'
+import { allTags, refreshAllTags, showTag, tagLabel } from '../lib/tags'
 
 type Item = { key: string; title: string; sub?: string; icon: IconName; keys?: string; group: string; run: () => unknown }
 
@@ -40,8 +40,8 @@ function folderItems(): Item[] {
 
 // "#" filters by tag: lists every file carrying it in the active pane.
 const tagItems = (): Item[] =>
-  Object.entries(allTags.value).map(([t, n]) => ({
-    key: 't:' + t, title: `#${t}`, sub: `${n} item${n === 1 ? '' : 's'}`, icon: 'tag', group: 'Tags', run: () => showTag(S.pane(), t),
+  Object.entries(allTags.value).map(([tag, n]) => ({
+    key: 't:' + tag, title: `#${tagLabel(tag)}`, sub: t('props.items', { count: n }), icon: 'tag', group: t('tags.section'), run: () => showTag(S.pane(), tag),
   }))
 
 const items = computed<Item[]>(() => {

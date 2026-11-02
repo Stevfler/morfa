@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import Icon from '../Icon.vue'
 import PropRow from './PropRow.vue'
 import { basename, fmtSize, kindOf, KIND_ICON, KIND_COLOR, KIND_LABEL } from '../../lib/util'
+import { t } from '../../lib/i18n'
 import { bytes, fullDate, octal, rwx, type Props } from './types'
 
 const props = defineProps<{ path: string }>()
@@ -47,36 +48,36 @@ const kind = computed(() => kindOf({ isDir: !!info.value?.isDir, ext: ext.value,
       </div>
       <div class="min-w-0">
         <p class="truncate text-[15px] font-medium select-text">{{ name }}</p>
-        <p class="text-[12px] text-faint">{{ info.isSymlink ? 'Link to ' : '' }}{{ KIND_LABEL[kind] }}{{ ext ? ` · .${ext}` : '' }}</p>
+        <p class="text-[12px] text-faint">{{ info.isSymlink ? t('props.linkTo', { kind: KIND_LABEL[kind] }) : KIND_LABEL[kind] }}{{ ext ? ` · .${ext}` : '' }}</p>
       </div>
     </div>
 
     <div class="mx-5 mb-3 rounded-lg bg-raised/60 py-1">
-      <PropRow label="Location" :copy="info.path">{{ info.path }}</PropRow>
-      <PropRow v-if="info.linkTarget" label="Points to" :copy="info.linkTarget">{{ info.linkTarget }}</PropRow>
-      <PropRow label="Size">
+      <PropRow :label="t('props.location')" :copy="info.path">{{ info.path }}</PropRow>
+      <PropRow v-if="info.linkTarget" :label="t('props.pointsTo')" :copy="info.linkTarget">{{ info.linkTarget }}</PropRow>
+      <PropRow :label="t('props.size')">
         <template v-if="!info.isDir">{{ fmtSize(info.size) }} <span class="text-faint">({{ bytes(info.size) }})</span></template>
-        <span v-else-if="walk === 'pending'" class="inline-flex items-center gap-1.5 text-faint"><Icon name="loader" class="size-3.5 animate-spin" />Calculating…</span>
+        <span v-else-if="walk === 'pending'" class="inline-flex items-center gap-1.5 text-faint"><Icon name="loader" class="size-3.5 animate-spin" />{{ t('props.calculating') }}</span>
         <template v-else-if="walk">{{ fmtSize(walk.bytes) }} <span class="text-faint">({{ bytes(walk.bytes) }})</span></template>
-        <span v-else class="text-faint">Unknown</span>
+        <span v-else class="text-faint">{{ t('props.unknown') }}</span>
       </PropRow>
-      <PropRow v-if="info.isDir" label="Contains">
-        {{ info.children?.toLocaleString() }} items here<template v-if="walk && walk !== 'pending'"> · {{ walk.files.toLocaleString() }} files in total</template>
+      <PropRow v-if="info.isDir" :label="t('props.contains')">
+        {{ t('props.itemsHere', { count: info.children ?? 0 }) }}<template v-if="walk && walk !== 'pending'"> · {{ t('props.filesTotal', { count: walk.files }) }}</template>
       </PropRow>
-      <PropRow v-if="info.width && info.height" label="Dimensions">{{ info.width }} × {{ info.height }} px</PropRow>
+      <PropRow v-if="info.width && info.height" :label="t('props.dimensions')">{{ info.width }} × {{ info.height }} {{ t('props.px') }}</PropRow>
     </div>
 
     <div class="mx-5 mb-3 rounded-lg bg-raised/60 py-1">
-      <PropRow label="Created">{{ fullDate(info.created) }}</PropRow>
-      <PropRow label="Modified">{{ fullDate(info.modified) }}</PropRow>
-      <PropRow label="Accessed">{{ fullDate(info.accessed) }}</PropRow>
+      <PropRow :label="t('props.created')">{{ fullDate(info.created) }}</PropRow>
+      <PropRow :label="t('props.modified')">{{ fullDate(info.modified) }}</PropRow>
+      <PropRow :label="t('props.accessed')">{{ fullDate(info.accessed) }}</PropRow>
     </div>
 
     <div class="mx-5 mb-5 rounded-lg bg-raised/60 py-1">
-      <PropRow v-if="info.mode != null" label="Permissions" mono>{{ rwx(info.mode) }} <span class="text-faint">({{ octal(info.mode) }})</span></PropRow>
-      <PropRow v-else label="Access">{{ info.readonly ? 'Read-only' : 'Read & write' }}</PropRow>
-      <PropRow v-if="info.owner" label="Owner">{{ info.owner }}<span class="text-faint"> : {{ info.group }}</span></PropRow>
-      <PropRow v-if="info.mount" label="Drive" :copy="info.mount">
+      <PropRow v-if="info.mode != null" :label="t('props.permissions')" mono>{{ rwx(info.mode) }} <span class="text-faint">({{ octal(info.mode) }})</span></PropRow>
+      <PropRow v-else :label="t('props.access')">{{ info.readonly ? t('props.readonly') : t('props.readwrite') }}</PropRow>
+      <PropRow v-if="info.owner" :label="t('props.owner')">{{ info.owner }}<span class="text-faint"> : {{ info.group }}</span></PropRow>
+      <PropRow v-if="info.mount" :label="t('props.drive')" :copy="info.mount">
         {{ info.mount }} <span class="text-faint">· {{ info.fsType }} · {{ info.device }}</span>
       </PropRow>
     </div>
