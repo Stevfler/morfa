@@ -3,6 +3,7 @@ import { RadioGroupRoot, RadioGroupItem, RadioGroupIndicator } from 'reka-ui'
 import { settings, type IconPack } from '../../lib/settings'
 import type { IconName } from '../../lib/icons'
 import Icon from '../Icon.vue'
+import IconColorPicker from './IconColorPicker.vue'
 
 const packs: { id: IconPack; name: string; note: string }[] = [
   { id: 'lucide', name: 'Lucide', note: 'Clean outline' },
@@ -29,4 +30,5 @@ const sample: IconName[] = ['folder', 'image', 'trash', 'search', 'settings', 's
       </span>
     </RadioGroupItem>
   </RadioGroupRoot>
+  <IconColorPicker />
 </template>

@@ -12,6 +12,9 @@ export type Cmd = {
   keys?: string
   /** Extra binding that also triggers the command (not displayed). */
   alt?: string
+  /** Commander-style function key. Active in `fkeyMode` ('always' by default) and shown instead of `keys` while split. */
+  fkey?: string
+  fkeyMode?: 'always' | 'split' | 'single'
   run: () => unknown
 }
 
@@ -26,47 +29,29 @@ export const commands: Cmd[] = [
   { id: 'back', title: 'Go back', group: 'Navigate', icon: 'chevron-left', keys: 'Alt+←', run: () => S.back() },
   { id: 'forward', title: 'Go forward', group: 'Navigate', icon: 'chevron-right', keys: 'Alt+→', run: () => S.forward() },
   { id: 'home', title: 'Go home', group: 'Navigate', icon: 'folder-open', keys: 'Alt+Home', run: () => S.go(S.pane(), S.state.home) },
-  { id: 'refresh', title: 'Refresh', group: 'Navigate', icon: 'refresh', keys: 'F5', run: () => S.refreshAll() },
+  { id: 'refresh', title: 'Refresh', group: 'Navigate', icon: 'refresh', keys: 'Ctrl+R', fkey: 'F5', fkeyMode: 'single', run: () => S.refreshAll() },
 
-  { id: 'newdir', title: 'New folder', group: 'Create', icon: 'folder-plus', keys: 'Ctrl+Shift+N', run: () => S.create('dir') },
+  { id: 'newdir', title: 'New folder', group: 'Create', icon: 'folder-plus', keys: 'Ctrl+Shift+N', fkey: 'F7', run: () => S.create('dir') },
   { id: 'newfile', title: 'New empty file', group: 'Create', icon: 'file-plus', keys: 'Ctrl+Alt+N', run: () => S.create('file') },
 
   { id: 'copy', title: 'Copy', group: 'Edit', icon: 'copy', keys: 'Ctrl+C', run: () => S.copyToClipboard('copy') },
   { id: 'cut', title: 'Cut', group: 'Edit', icon: 'scissors', keys: 'Ctrl+X', run: () => S.copyToClipboard('move') },
   { id: 'paste', title: 'Paste here', group: 'Edit', icon: 'paste', keys: 'Ctrl+V', run: () => S.paste() },
   { id: 'rename', title: 'Rename (several selected → batch rename)', group: 'Edit', icon: 'pencil', keys: 'F2', run: () => S.startRename() },
-  { id: 'trash', title: 'Move to Trash', group: 'Edit', icon: 'trash', keys: isMac ? 'Ctrl+Backspace' : 'Del', alt: 'Del', run: () => S.trash() },
-  { id: 'delete', title: 'Delete forever', group: 'Edit', icon: 'x', keys: isMac ? 'Ctrl+Shift+Backspace' : 'Shift+Del', alt: 'Shift+Del', run: () => S.deleteForever() },
+  { id: 'trash', title: 'Move to Trash', group: 'Edit', icon: 'trash', keys: isMac ? 'Ctrl+Backspace' : 'Del', alt: 'Del', fkey: 'F8', run: () => S.trash() },
+  { id: 'delete', title: 'Delete forever', group: 'Edit', icon: 'x', keys: isMac ? 'Ctrl+Shift+Backspace' : 'Shift+Del', alt: 'Shift+Del', fkey: 'Shift+F8', run: () => S.deleteForever() },
   { id: 'undo', title: 'Undo', group: 'Edit', icon: 'undo', keys: 'Ctrl+Z', run: () => S.undo() },
   { id: 'redo', title: 'Redo', group: 'Edit', icon: 'redo', keys: 'Ctrl+Shift+Z', run: () => S.redo() },
   { id: 'selectall', title: 'Select all', group: 'Edit', icon: 'check-all', keys: 'Ctrl+A', run: () => S.selectAll() },
   { id: 'copypath', title: 'Copy path', group: 'Edit', icon: 'link', keys: 'Ctrl+Shift+C', run: () => S.copyPath() },
 
-  {
-    id: 'copyother',
-    title: 'Copy to the other pane',
-    group: 'Dual pane',
-    icon: 'copy',
-    keys: 'F7',
-    run: () => {
-      const o = S.otherPane()
-      o ? S.transfer(S.targets().map((e) => e.path), o.path, 'copy') : S.toggleSplit()
-    },
-  },
-  {
-    id: 'moveother',
-    title: 'Move to the other pane',
-    group: 'Dual pane',
-    icon: 'arrow-swap',
-    keys: 'F8',
-    run: () => {
-      const o = S.otherPane()
-      o ? S.transfer(S.targets().map((e) => e.path), o.path, 'move') : S.toggleSplit()
-    },
-  },
+  { id: 'copyother', title: 'Copy to the other pane', group: 'Dual pane', icon: 'copy', fkey: 'F5', fkeyMode: 'split', run: () => S.toOther('copy') },
+  { id: 'moveother', title: 'Move to the other pane', group: 'Dual pane', icon: 'arrow-swap', fkey: 'F6', fkeyMode: 'split', run: () => S.toOther('move') },
+  { id: 'openapp', title: 'Open with default app', group: 'Dual pane', icon: 'external-link', fkey: 'F4', fkeyMode: 'split', run: () => S.openDefault() },
+  { id: 'otherpane', title: 'Switch to the other pane (Tab)', group: 'Dual pane', icon: 'columns', run: () => S.focusPane(1 - S.tab().active) },
   { id: 'split', title: 'Toggle dual pane', group: 'View', icon: 'columns', keys: 'Ctrl+\\', run: () => S.toggleSplit() },
   // Space is handled as hold-to-preview in keys.ts; from the palette it stays open until Esc/Space.
-  { id: 'quicklook', title: 'Quick Look (hold Space)', group: 'View', icon: 'quicklook', keys: 'Space', run: () => (S.state.quickLook = canQuickLook(S.visible(S.pane())[S.pane().cursor])) },
+  { id: 'quicklook', title: 'Quick Look (hold Space)', group: 'View', icon: 'quicklook', keys: 'Space', fkey: 'F3', fkeyMode: 'split', run: () => (S.state.quickLook = canQuickLook(S.visible(S.pane())[S.pane().cursor])) },
   { id: 'settings', title: 'Settings', group: 'View', icon: 'settings', keys: 'Ctrl+,', run: () => openSettings() },
   { id: 'preview', title: 'Toggle info panel', group: 'View', icon: 'panel-right', keys: 'Ctrl+I', run: () => (S.state.preview = !S.state.preview) },
   { id: 'hidden', title: 'Show / hide hidden files', group: 'View', icon: 'eye', keys: 'Ctrl+H', run: () => (S.state.showHidden = !S.state.showHidden) },
@@ -76,6 +61,22 @@ export const commands: Cmd[] = [
   { id: 'bookmark', title: 'Add / remove folder from Favorites', group: 'Folder', icon: 'star', keys: 'Ctrl+D', run: () => S.toggleBookmark() },
   { id: 'terminal', title: 'Open terminal here', group: 'Folder', icon: 'terminal', keys: 'Ctrl+`', run: () => S.openTerminal() },
 ]
+
+const isSplit = () => (S.state.tabs[S.state.activeTab]?.panes.length ?? 0) > 1
+/** Is the command's function key live in the current mode? */
+export const fkeyOn = (c: Cmd) => !!c.fkey && (c.fkeyMode === 'split' ? isSplit() : c.fkeyMode === 'single' ? !isSplit() : true)
+
+// Mode-aware display: palette, tooltips and hints read `keys`, so it shows the F-key whenever that is the live binding.
+// The non-F-key binding keeps working while hidden (e.g. Ctrl+Shift+N in split mode).
+const baseKeys = new Map<Cmd, string | undefined>()
+for (const c of commands) {
+  if (!c.fkey) continue
+  baseKeys.set(c, c.keys)
+  Object.defineProperty(c, 'keys', {
+    get: () => (fkeyOn(c) && (c.fkeyMode !== undefined || isSplit()) ? c.fkey : baseKeys.get(c)),
+    enumerable: true,
+  })
+}
 
 export const cmd = (id: string) => commands.find((c) => c.id === id)!
 
@@ -99,4 +100,8 @@ export function matches(e: KeyboardEvent, keys: string) {
 }
 
 /** Matches the command's main or alternate binding. */
-export const matchesCmd = (e: KeyboardEvent, c: Cmd) => (!!c.keys && matches(e, c.keys)) || (!!c.alt && matches(e, c.alt))
+export const matchesCmd = (e: KeyboardEvent, c: Cmd) =>
+  (() => {
+    const k = baseKeys.has(c) ? baseKeys.get(c) : c.keys
+    return !!k && matches(e, k)
+  })() || (!!c.alt && matches(e, c.alt)) || (fkeyOn(c) && matches(e, c.fkey!))

@@ -39,17 +39,9 @@ export const KIND_ICON: Record<Kind, IconName> = {
   file: 'file',
 }
 
-export const KIND_COLOR: Record<Kind, string> = {
-  folder: '#8b6cff',
-  image: '#3ecf8e',
-  video: '#ff7ab6',
-  audio: '#f5a524',
-  archive: '#c08457',
-  code: '#4fb3ff',
-  text: '#a5a9bd',
-  pdf: '#ff5c6c',
-  file: '#7d8196',
-}
+/** Resolved via CSS vars (defaults in style.css, overridden by the iconColor setting). */
+export const KINDS: Kind[] = ['folder', 'image', 'video', 'audio', 'archive', 'code', 'text', 'pdf', 'file']
+export const KIND_COLOR = Object.fromEntries(KINDS.map((k) => [k, `var(--kind-${k})`])) as Record<Kind, string>
 
 export const KIND_LABEL: Record<Kind, string> = {
   folder: 'Folder',

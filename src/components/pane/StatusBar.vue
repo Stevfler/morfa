@@ -16,7 +16,7 @@ const selectedBytes = computed(() =>
 const hint = computed(() => {
   if (state.clipboard) return [['Ctrl+V', `paste ${state.clipboard.paths.length} here`], ['Esc', 'forget clipboard']]
   if (p.search) return [['Enter', 'open'], ['Ctrl+Enter', 'show in folder'], ['Esc', 'exit search']]
-  if (p.selected.size > 1) return [['F2', 'batch rename'], ['Ctrl+C', 'copy'], [cmd('trash').keys!, 'trash'], ...(props.split ? [['F7', 'copy → other pane']] : [])]
+  if (p.selected.size > 1) return [['F2', 'batch rename'], ['Ctrl+C', 'copy'], [cmd('trash').keys!, 'trash'], ...(props.split ? [[cmd('copyother').keys!, 'copy → other pane']] : [])]
   if (p.filter) return [['↑↓', 'pick'], ['Enter', 'open'], ['Esc', 'clear filter']]
   return [['type', 'to filter'], ['Ctrl+F', 'deep search'], ['Space', 'preview'], ['Ctrl+K', 'all actions']]
 })

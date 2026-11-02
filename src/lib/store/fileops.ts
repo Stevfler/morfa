@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
+import { openPath } from '@tauri-apps/plugin-opener'
 import { basename, join, keyLabel, parent } from '../util'
-import { nextId, pane, state } from './state'
+import { nextId, otherPane, pane, state } from './state'
 import { targets } from './view'
 import { fail, toast } from './toast'
 import { pushUndo } from './history'
@@ -160,4 +161,25 @@ export async function create(kind: 'dir' | 'file', p: Pane = pane()) {
   } catch (e) {
     fail(e)
   }
+}
+
+/** Why copy/move to the other pane can't run right now (null = it can). */
+export function toOtherBlocked(p: Pane = pane()): string | null {
+  const o = otherPane()
+  if (!o) return 'Turn on dual pane first'
+  if (o.path === p.path) return 'Both panes show the same folder'
+  return targets(p).length ? null : 'Nothing selected'
+}
+
+/** Commander-style F5/F6: copy or move the selection into the other pane's folder (toast + undo, no dialog). */
+export function toOther(mode: 'copy' | 'move') {
+  const why = toOtherBlocked()
+  if (why) return toast({ title: why, tone: 'info' })
+  transfer(targets().map((e) => e.path), otherPane()!.path, mode)
+}
+
+/** F4: open the item under the cursor with the system's default app (folders too). */
+export function openDefault(p: Pane = pane()) {
+  const e = targets(p)[0]
+  if (e) openPath(e.path).catch(fail)
 }

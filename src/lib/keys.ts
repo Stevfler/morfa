@@ -3,6 +3,7 @@ import { settingsOpen } from './settings'
 import { commands, matches, matchesCmd } from './commands'
 import { canQuickLook, primaryMod } from './util'
 import * as S from './store'
+import { drives } from '../components/sidebar/drives'
 
 const ROW_PAGE = 15
 
@@ -61,7 +62,9 @@ export const qlHold = reactive({ held: false })
 
 /** Any dialog that owns the keyboard: global shortcuts stay off while one is open. */
 export const anyModalOpen = () =>
-  !!(S.state.palette || S.state.batchRename || S.state.confirm || S.state.quickLook || settingsOpen.value)
+  !!(S.state.palette || S.state.batchRename || S.state.confirm || S.state.quickLook || settingsOpen.value || drives.unlock) ||
+  // Any open reka dialog (covers future ones automatically).
+  !!document.querySelector('[role=dialog][data-state=open]')
 
 // Space on these activates them; don't turn it into Quick Look.
 const SPACE_TARGETS = 'button,[role=button],[role=switch],[role=radio],[role=tab],[role=checkbox],select,a,[contenteditable]'
@@ -104,7 +107,10 @@ export function onGlobalKey(e: KeyboardEvent) {
   if (field) return
 
   if (navKey(p, e)) return
-  if (e.key === 'Tab' && S.tab().panes.length > 1) {
+  // Only steal Tab from the file list / nothing focused, so Tab still walks sidebar/toolbar/function bar.
+  const a = document.activeElement
+  const inList = !a || a === document.body || !!a.closest('[data-pane]')
+  if (e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.metaKey && inList && S.tab().panes.length > 1) {
     e.preventDefault()
     S.focusPane(1 - S.tab().active)
     return

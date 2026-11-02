@@ -26,6 +26,8 @@ const rows = [
   ['download',         'download',          'download-simple',     'download-minimalistic',     'arrow-download',             'download'],
   ['hard-drive',       'hard-drive',        'hard-drives',         'server',                    'hard-drive',                 'server'],
   ['usb',              'usb',               'usb',                 'usb',                       'usb-stick',                  'usb'],
+  ['lock',             'lock',              'lock',                'lock-keyhole',              'lock-closed',                'lock'],
+  ['eject',            'eject',             'eject',               'upload-minimalistic',       'arrow-upload',               'player-eject'],
   ['star',             'star',              'star',                'star',                      'star',                       'star'],
   ['clock',            'clock',             'clock',               'clock-circle',              'clock',                      'clock'],
   ['search',           'search',            'magnifying-glass',    'magnifer',                  'search',                     'search'],

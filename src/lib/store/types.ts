@@ -33,6 +33,9 @@ export type Tab = { id: number; panes: Pane[]; active: number }
 
 export type Place = { name: string; path: string; kind: string; total: number; free: number }
 
+/** A volume that is not mounted yet (from `list_drives`). */
+export type Drive = { name: string; device: string; fstype: string; size: number; encrypted: boolean; removable: boolean }
+
 export type UndoItem = { label: string; undo: () => Promise<unknown>; redo: () => Promise<unknown> }
 
 export type Toast = {

@@ -14,6 +14,7 @@ import Toasts from './components/Toasts.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import QuickLook from './components/quicklook/QuickLook.vue'
 import IconButton from './components/IconButton.vue'
+import FunctionBar from './components/FunctionBar.vue'
 import SettingsDialog from './components/settings/SettingsDialog.vue'
 import { openSettings } from './lib/settings'
 
@@ -92,6 +93,14 @@ const tabTitle = (i: number) => {
         </div>
         <Preview v-if="state.preview" />
       </div>
+      <Transition
+        enter-active-class="transition-[margin,opacity] duration-150 ease-out"
+        leave-active-class="transition-[margin,opacity] duration-100 ease-in"
+        enter-from-class="-mb-9 opacity-0"
+        leave-to-class="-mb-9 opacity-0"
+      >
+        <FunctionBar v-if="state.tabs[state.activeTab].panes.length > 1" />
+      </Transition>
     </div>
 
     <template v-if="ready">

@@ -30,6 +30,16 @@
 /* ---- settings-driven tokens (see src/lib/settings) ---- */
 :root {
   --motion-scale: 1;
+  /* file-kind icon colours ('type' mode); other iconColor modes override inline */
+  --kind-folder: #8b6cff;
+  --kind-image: #3ecf8e;
+  --kind-video: #ff7ab6;
+  --kind-audio: #f5a524;
+  --kind-archive: #c08457;
+  --kind-code: #4fb3ff;
+  --kind-text: #a5a9bd;
+  --kind-pdf: #ff5c6c;
+  --kind-file: #7d8196;
 }
 :root[data-radius='sharp'] { --radius-xs: 0px; --radius-sm: 1px; --radius-md: 2px; --radius-lg: 3px; --radius-xl: 4px; --radius-2xl: 6px; }
 :root[data-radius='round'] { --radius-xs: 4px; --radius-sm: 7px; --radius-md: 10px; --radius-lg: 14px; --radius-xl: 18px; --radius-2xl: 24px; }
@@ -49,6 +59,16 @@
   --shadow-lg: 0 6px 16px -4px #1a1c231f;
   --shadow-xl: 0 10px 24px -6px #1a1c2324;
   --shadow-2xl: 0 18px 40px -10px #1a1c232e;
+  /* deeper kind palette so icons hold ≥3:1 on white */
+  --kind-folder: #6a4ae0;
+  --kind-image: #17935a;
+  --kind-video: #d63d84;
+  --kind-audio: #b8720a;
+  --kind-archive: #96603a;
+  --kind-code: #1f7fd1;
+  --kind-text: #6b7083;
+  --kind-pdf: #d93445;
+  --kind-file: #6b7083;
 }
 
 html,

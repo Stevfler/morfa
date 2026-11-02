@@ -1,0 +1,306 @@
+{
+ "blockdevices": [
+  {
+   "name": "sda",
+   "path": "/dev/sda",
+   "label": null,
+   "size": 120034123776,
+   "fstype": null,
+   "mountpoints": [],
+   "type": "disk",
+   "hotplug": false,
+   "rm": false,
+   "pkname": null,
+   "uuid": null,
+   "children": [
+    {
+     "name": "sda1",
+     "path": "/dev/sda1",
+     "label": null,
+     "size": 2147483648,
+     "fstype": "vfat",
+     "mountpoints": [
+      "/boot"
+     ],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "sda",
+     "uuid": "FD7B8107F281A72C"
+    },
+    {
+     "name": "sda2",
+     "path": "/dev/sda2",
+     "label": null,
+     "size": 117884059648,
+     "fstype": "crypto_LUKS",
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "sda",
+     "uuid": "56AC44BC98DB9437",
+     "children": [
+      {
+       "name": "root",
+       "path": "/dev/mapper/root",
+       "label": null,
+       "size": 117867282432,
+       "fstype": "btrfs",
+       "mountpoints": [
+        "/var/log",
+        "/home",
+        "/var/cache/pacman/pkg",
+        "/"
+       ],
+       "type": "crypt",
+       "hotplug": false,
+       "rm": false,
+       "pkname": "sda2",
+       "uuid": "502BAA3B7B9F286D"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "sdb",
+   "path": "/dev/sdb",
+   "label": null,
+   "size": 1000204886016,
+   "fstype": null,
+   "mountpoints": [],
+   "type": "disk",
+   "hotplug": false,
+   "rm": false,
+   "pkname": null,
+   "uuid": null,
+   "children": [
+    {
+     "name": "sdb1",
+     "path": "/dev/sdb1",
+     "label": "Storage",
+     "size": 1000097957376,
+     "fstype": "ntfs",
+     "mountpoints": [
+      "/run/media/user/Storage"
+     ],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "sdb",
+     "uuid": "68FFBE9DFAAEE11B"
+    }
+   ]
+  },
+  {
+   "name": "sdc",
+   "path": "/dev/sdc",
+   "label": null,
+   "size": 1000204886016,
+   "fstype": null,
+   "mountpoints": [],
+   "type": "disk",
+   "hotplug": false,
+   "rm": false,
+   "pkname": null,
+   "uuid": null,
+   "children": [
+    {
+     "name": "sdc1",
+     "path": "/dev/sdc1",
+     "label": null,
+     "size": 16759808,
+     "fstype": null,
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "sdc",
+     "uuid": null
+    },
+    {
+     "name": "sdc2",
+     "path": "/dev/sdc2",
+     "label": "Storage2",
+     "size": 1000186314752,
+     "fstype": "ntfs",
+     "mountpoints": [
+      "/run/media/user/Storage2"
+     ],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "sdc",
+     "uuid": "D6B8A040C2EBB330"
+    }
+   ]
+  },
+  {
+   "name": "zram0",
+   "path": "/dev/zram0",
+   "label": "zram0",
+   "size": 33226227712,
+   "fstype": "swap",
+   "mountpoints": [
+    "[SWAP]"
+   ],
+   "type": "disk",
+   "hotplug": false,
+   "rm": false,
+   "pkname": null,
+   "uuid": "F28B4F946DC31952"
+  },
+  {
+   "name": "nvme1n1",
+   "path": "/dev/nvme1n1",
+   "label": null,
+   "size": 256060514304,
+   "fstype": null,
+   "mountpoints": [],
+   "type": "disk",
+   "hotplug": false,
+   "rm": false,
+   "pkname": null,
+   "uuid": null,
+   "children": [
+    {
+     "name": "nvme1n1p1",
+     "path": "/dev/nvme1n1p1",
+     "label": null,
+     "size": 104857600,
+     "fstype": "vfat",
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "nvme1n1",
+     "uuid": "ECB5707857478E29"
+    },
+    {
+     "name": "nvme1n1p2",
+     "path": "/dev/nvme1n1p2",
+     "label": null,
+     "size": 16777216,
+     "fstype": null,
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "nvme1n1",
+     "uuid": null
+    },
+    {
+     "name": "nvme1n1p3",
+     "path": "/dev/nvme1n1p3",
+     "label": null,
+     "size": 255003197440,
+     "fstype": "ntfs",
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "nvme1n1",
+     "uuid": "6034684592457055"
+    },
+    {
+     "name": "nvme1n1p4",
+     "path": "/dev/nvme1n1p4",
+     "label": null,
+     "size": 933232640,
+     "fstype": "ntfs",
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "nvme1n1",
+     "uuid": "2D7D33D74E6D79C3"
+    }
+   ]
+  },
+  {
+   "name": "nvme0n1",
+   "path": "/dev/nvme0n1",
+   "label": null,
+   "size": 1000204886016,
+   "fstype": null,
+   "mountpoints": [],
+   "type": "disk",
+   "hotplug": false,
+   "rm": false,
+   "pkname": null,
+   "uuid": null,
+   "children": [
+    {
+     "name": "nvme0n1p1",
+     "path": "/dev/nvme0n1p1",
+     "label": null,
+     "size": 16759808,
+     "fstype": null,
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "nvme0n1",
+     "uuid": null
+    },
+    {
+     "name": "nvme0n1p2",
+     "path": "/dev/nvme0n1p2",
+     "label": "Data M2",
+     "size": 1000186314752,
+     "fstype": "ntfs",
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "nvme0n1",
+     "uuid": "1AC0FB4067621B53"
+    }
+   ]
+  },
+  {
+   "name": "nvme2n1",
+   "path": "/dev/nvme2n1",
+   "label": null,
+   "size": 256060514304,
+   "fstype": null,
+   "mountpoints": [],
+   "type": "disk",
+   "hotplug": false,
+   "rm": false,
+   "pkname": null,
+   "uuid": null,
+   "children": [
+    {
+     "name": "nvme2n1p1",
+     "path": "/dev/nvme2n1p1",
+     "label": null,
+     "size": 16759808,
+     "fstype": null,
+     "mountpoints": [],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "nvme2n1",
+     "uuid": null
+    },
+    {
+     "name": "nvme2n1p2",
+     "path": "/dev/nvme2n1p2",
+     "label": "Projects",
+     "size": 256042336256,
+     "fstype": "ntfs",
+     "mountpoints": [
+      "/run/media/user/Projects"
+     ],
+     "type": "part",
+     "hotplug": false,
+     "rm": false,
+     "pkname": "nvme2n1",
+     "uuid": "FDBB4FA2745D1888"
+    }
+   ]
+  }
+ ]
+}

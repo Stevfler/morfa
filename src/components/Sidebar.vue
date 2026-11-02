@@ -2,17 +2,17 @@
 import { computed } from 'vue'
 import type { IconName } from '../lib/icons'
 import Icon from './Icon.vue'
+import DrivesSection from './sidebar/DrivesSection.vue'
 import { state, pane, go, frecencyScore, transfer } from '../lib/store'
-import { basename, copyMod, fmtSize, keyLabel } from '../lib/util'
+import { basename, copyMod, keyLabel } from '../lib/util'
 import { DIRS_MIME } from '../composables/useDragDrop'
 
 const ICONS: Record<string, IconName> = {
   home: 'home', desktop: 'monitor', downloads: 'download', documents: 'file-text',
-  pictures: 'image', music: 'music', videos: 'video', disk: 'hard-drive', removable: 'usb',
+  pictures: 'image', music: 'music', videos: 'video',
 }
 
 const folders = computed(() => state.places.filter((p) => !['disk', 'removable'].includes(p.kind)))
-const disks = computed(() => state.places.filter((p) => ['disk', 'removable'].includes(p.kind)))
 const recent = computed(() =>
   Object.keys(state.frecency)
     .filter((p) => !state.bookmarks.includes(p) && !state.places.some((pl) => pl.path === p))
@@ -70,24 +70,7 @@ function onDropFav(e: DragEvent) {
       </button>
     </section>
 
-    <section>
-      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Drives</h3>
-      <button
-        v-for="d in disks" :key="d.path"
-        class="item !h-auto flex-col !items-stretch !gap-1 py-1.5" :class="current === d.path && 'on'" :title="d.path"
-        @click="go(pane(), d.path)" @dragover.prevent @drop.prevent="drop($event, d.path)"
-      >
-        <span class="flex items-center gap-2.5">
-          <Icon :name="ICONS[d.kind]" class="size-4 shrink-0" /><span class="truncate">{{ d.name }}</span>
-        </span>
-        <span v-if="d.total" class="h-1 overflow-hidden rounded-full bg-line">
-          <span class="block h-full rounded-full"
-            :class="d.free / d.total < 0.1 ? 'bg-danger' : 'bg-accent'"
-            :style="{ width: `${100 - (d.free / d.total) * 100}%` }" />
-        </span>
-        <span v-if="d.total" class="text-[11px] text-faint">{{ fmtSize(d.free) }} free of {{ fmtSize(d.total) }}</span>
-      </button>
-    </section>
+    <DrivesSection />
   </aside>
 </template>
 

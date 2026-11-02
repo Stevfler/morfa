@@ -1,6 +1,7 @@
 mod entry;
 mod fsinfo;
 mod fsops;
+mod mount;
 mod places;
 mod search;
 mod system;
@@ -26,6 +27,9 @@ pub fn run() {
             list_dir,
             stat,
             places,
+            mount::list_drives,
+            mount::mount_drive,
+            mount::unmount_drive,
             search,
             cancel_search,
             dir_size,
