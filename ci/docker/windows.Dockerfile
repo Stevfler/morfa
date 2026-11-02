@@ -2,7 +2,7 @@
 # trixie: NSIS 3.11 — шаблону tauri-cli >= 2.12 нужен Include/Win/RestartManager.nsh (нет в 3.08 из bookworm).
 FROM rust:1-trixie
 
-ARG BUN_VERSION=1.2.21
+ARG BUN_VERSION=1.4.4
 ARG CARGO_XWIN_VERSION=0.19.2
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

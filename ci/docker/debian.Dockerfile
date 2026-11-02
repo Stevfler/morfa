@@ -2,7 +2,7 @@
 ARG BASE=ubuntu:22.04
 FROM ${BASE}
 
-ARG BUN_VERSION=1.2.21
+ARG BUN_VERSION=1.4.4
 ENV DEBIAN_FRONTEND=noninteractive \
     RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \

@@ -1,0 +1,8 @@
+{
+  "build": {
+    "beforeBuildCommand": "bun scripts/fetch-vips-win.ts && bun run build"
+  },
+  "bundle": {
+    "resources": { "vendor/vips-win/*": "bin/" }
+  }
+}

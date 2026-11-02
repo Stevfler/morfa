@@ -1,7 +1,7 @@
 # Сборочный образ для Arch Linux: бинарь собирает tauri, пакет — makepkg (ci/arch/PKGBUILD).
 FROM archlinux:base-devel
 
-ARG BUN_VERSION=1.2.21
+ARG BUN_VERSION=1.4.4
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH

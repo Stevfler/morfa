@@ -2,7 +2,7 @@
 ARG BASE=fedora:42
 FROM ${BASE}
 
-ARG BUN_VERSION=1.2.21
+ARG BUN_VERSION=1.4.4
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
