@@ -3,6 +3,8 @@ import type { Component } from 'vue'
 import { TooltipRoot, TooltipTrigger, TooltipPortal, TooltipContent } from 'reka-ui'
 import { prettyKeys } from '../lib/commands'
 
+// TooltipRoot renders no element, so listeners like @click must go to the <button> explicitly.
+defineOptions({ inheritAttrs: false })
 defineProps<{ icon: Component; label: string; keys?: string; active?: boolean; disabled?: boolean }>()
 </script>
 
@@ -10,6 +12,7 @@ defineProps<{ icon: Component; label: string; keys?: string; active?: boolean; d
   <TooltipRoot>
     <TooltipTrigger as-child>
       <button
+        v-bind="$attrs"
         class="grid size-7 shrink-0 place-items-center rounded-md transition disabled:pointer-events-none disabled:opacity-30"
         :class="active ? 'bg-accent-soft text-accent' : 'text-dim hover:bg-raised hover:text-fg'"
         :disabled="disabled"
