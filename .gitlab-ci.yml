@@ -7,8 +7,8 @@ variables:
   IMAGE_PREFIX: $CI_REGISTRY_IMAGE/builder
 
 # ---------------------------------------------------------------------------
-# Сборочные образы. Пересобираются при изменении ci/docker/** на основной ветке
-# или вручную (Run pipeline в вебе → play на нужном job'е).
+# Сборочные образы. Пересобираются только при изменении ci/docker/** на основной ветке
+# или вручную (Run pipeline в вебе → play на нужном job'е). Обычный пуш в main их не трогает.
 # ---------------------------------------------------------------------------
 build-image:
   stage: image
@@ -43,7 +43,6 @@ build-image:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
         - ci/docker/**
-        - .gitlab-ci.yml
     - if: $CI_PIPELINE_SOURCE == "web"
       when: manual
       allow_failure: true
@@ -54,7 +53,9 @@ build-image:
     - |
       BUILD_ARGS=""
       [ -n "$BASE" ] && BUILD_ARGS="--build-arg BASE=$BASE"
-      docker build --pull --cache-from "$IMAGE" $BUILD_ARGS -f "ci/docker/$DOCKERFILE" -t "$IMAGE" ci/docker
+      # BUILDKIT_INLINE_CACHE кладёт кэш слоёв в сам образ, иначе --cache-from ничего не даёт
+      # и каждый раз всё собирается с нуля.
+      docker build --cache-from "$IMAGE" --build-arg BUILDKIT_INLINE_CACHE=1 $BUILD_ARGS -f "ci/docker/$DOCKERFILE" -t "$IMAGE" ci/docker
     - docker push "$IMAGE"
 
 # ---------------------------------------------------------------------------
