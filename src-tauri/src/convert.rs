@@ -2,6 +2,7 @@
 mod engine;
 mod job;
 mod naming;
+pub mod preview;
 #[cfg(test)]
 mod tests;
 

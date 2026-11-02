@@ -61,6 +61,7 @@ pub fn run() {
             convert::convert_images,
             convert::convert_cancel,
             convert::convert_estimate,
+            convert::preview::convert_preview,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Orbit");
