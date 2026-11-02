@@ -42,8 +42,8 @@ function sizeCell(e: Entry) {
     :style="{ top: `${i * row}px`, height: `${row - 2}px`, gridTemplateColumns: 'minmax(0,1fr) 90px 150px 80px' }"
     :class="[
       p.selected.has(e.path) ? 'bg-accent/25' : i === p.cursor && active ? 'bg-raised' : 'hover:bg-raised/50',
-      i === p.cursor && active && 'ring-1 ring-accent/70',
-      dropTarget === e.path && 'bg-accent-soft ring-1 ring-accent',
+      i === p.cursor && active && 'ring-1 ring-inset ring-accent/70',
+      dropTarget === e.path && 'bg-accent-soft ring-1 ring-inset ring-accent',
       (e.hidden || cut(e.path)) && 'opacity-50',
     ]"
     draggable="true"

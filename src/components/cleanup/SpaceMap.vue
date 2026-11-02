@@ -26,7 +26,7 @@ const icon = (n: SpaceNode) => (n.kind === 'dir' ? 'folder' : n.kind === 'file' 
     <ul class="min-h-0 flex-1 overflow-y-auto p-2">
       <li v-for="n in cleanup.children" :key="n.kind + n.path">
         <button
-          class="group relative flex h-8 w-full items-center gap-2 overflow-hidden rounded-md px-2 text-left text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+          class="group relative flex h-8 w-full items-center gap-2 overflow-hidden rounded-md px-2 text-left text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/60"
           :class="n.kind === 'dir' ? 'hover:bg-raised' : 'cursor-default'"
           :aria-disabled="n.kind !== 'dir'"
           :title="n.path"

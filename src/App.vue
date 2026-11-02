@@ -2,7 +2,7 @@
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import { TooltipProvider } from 'reka-ui'
 import Icon from './components/Icon.vue'
-import { state, init, newPane, nextId, newTab, closeTab, toggleSplit, focusPane } from './lib/store'
+import { state, init, newPane, nextId, newTab, closeTab, toggleSplit, focusPane, pane } from './lib/store'
 import { onGlobalKey, isReloadOrPrint } from './lib/keys'
 import { basename, keyLabel } from './lib/util'
 import Sidebar from './components/Sidebar.vue'
@@ -17,6 +17,7 @@ import CleanupWarning from './components/cleanup/CleanupWarning.vue'
 import QuickLook from './components/quicklook/QuickLook.vue'
 import IconButton from './components/IconButton.vue'
 import FunctionBar from './components/FunctionBar.vue'
+import HintList from './components/pane/HintList.vue'
 import SettingsDialog from './components/settings/SettingsDialog.vue'
 import { openSettings } from './lib/settings'
 
@@ -98,10 +99,16 @@ const tabTitle = (i: number) => {
       <Transition
         enter-active-class="transition-[margin,opacity] duration-150 ease-out"
         leave-active-class="transition-[margin,opacity] duration-100 ease-in"
-        enter-from-class="-mb-9 opacity-0"
-        leave-to-class="-mb-9 opacity-0"
+        enter-from-class="-mb-16 opacity-0"
+        leave-to-class="-mb-16 opacity-0"
       >
-        <FunctionBar v-if="state.tabs[state.activeTab].panes.length > 1" />
+        <div v-if="state.tabs[state.activeTab].panes.length > 1">
+          <!-- One hints strip for both panes; it follows the active one. -->
+          <div class="flex h-7 items-center border-t border-line px-3 text-[11.5px] text-faint">
+            <HintList :pane="pane()" :split="true" class="ml-auto" />
+          </div>
+          <FunctionBar />
+        </div>
       </Transition>
     </div>
 
