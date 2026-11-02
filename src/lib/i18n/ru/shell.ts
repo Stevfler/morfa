@@ -10,7 +10,7 @@ export const shell = {
   'shell.newFolder': 'Новая папка',
   'shell.folderSizes': 'Показать размеры папок',
   'shell.open': 'Открыть',
-  'shell.openDefault': 'Открыть в приложении по умолчанию',
+  'shell.openDefault': 'Открыть в приложении',
   'shell.items': { one: '{count} объект', few: '{count} объекта', many: '{count} объектов', other: '{count} объекта' },
   'shell.quoted': '«{name}»',
   'fbar.nothingSelected': 'Ничего не выбрано',

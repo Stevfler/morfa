@@ -24,6 +24,10 @@ fn dirs() -> Vec<PathBuf> {
     if let Some(r) = RESOURCE_DIR.get() {
         v.push(r.join("bin"));
     }
+    // Apps launched from Finder don't get Homebrew's PATH.
+    if cfg!(target_os = "macos") {
+        v.extend(["/opt/homebrew/bin", "/usr/local/bin"].map(PathBuf::from));
+    }
     v
 }
 
@@ -31,4 +35,13 @@ fn dirs() -> Vec<PathBuf> {
 pub fn tool(name: &str) -> OsString {
     let file = if cfg!(windows) { format!("{name}.exe") } else { name.to_string() };
     dirs().into_iter().map(|d| d.join(&file)).find(|p| p.is_file()).map(OsString::from).unwrap_or_else(|| name.into())
+}
+
+/// `Command` for a bundled tool; on Windows it runs without flashing a console window.
+pub fn command(name: &str) -> std::process::Command {
+    #[allow(unused_mut)]
+    let mut c = std::process::Command::new(tool(name));
+    #[cfg(windows)]
+    std::os::windows::process::CommandExt::creation_flags(&mut c, 0x0800_0000); // CREATE_NO_WINDOW
+    c
 }

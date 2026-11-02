@@ -47,7 +47,7 @@ export const core = {
   'selection.selected': { one: 'Выбран {count} элемент', few: 'Выбрано {count} элемента', many: 'Выбрано {count} элементов', other: 'Выбрано {count} элемента' },
   'selection.matching': 'по шаблону «{pattern}»',
   'convert.noEngine': 'Конвертер изображений не найден',
-  'convert.noEngineDesc': 'Установите libvips (например, sudo pacman -S libvips) или ImageMagick и попробуйте снова.',
+  'convert.noEngineDesc': 'Установите libvips или ImageMagick и попробуйте снова.',
   'convert.failed': 'Не удалось конвертировать',
   'convert.converting': 'Конвертация: {what} → {fmt}',
   'convert.failedN': { one: 'Не удалось конвертировать {count} файл', few: 'Не удалось конвертировать {count} файла', many: 'Не удалось конвертировать {count} файлов', other: 'Не удалось конвертировать {count} файла' },

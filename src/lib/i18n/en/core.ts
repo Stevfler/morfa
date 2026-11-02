@@ -47,7 +47,7 @@ export const core = {
   'selection.selected': { one: 'Selected {count} item', other: 'Selected {count} items' },
   'selection.matching': 'matching “{pattern}”',
   'convert.noEngine': 'No image converter found',
-  'convert.noEngineDesc': 'Install libvips (e.g. sudo pacman -S libvips) or ImageMagick, then try again.',
+  'convert.noEngineDesc': 'Install libvips or ImageMagick, then try again.',
   'convert.failed': 'Conversion failed',
   'convert.converting': 'Converting {what} → {fmt}',
   'convert.failedN': { one: '{count} file couldn’t be converted', other: '{count} files couldn’t be converted' },

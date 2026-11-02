@@ -12,11 +12,20 @@ onMounted(() => props.engine === 'office' && refreshOffice())
 // Windows/macOS: offer the private Office module instead of a package-manager hint.
 const module = computed(() => props.engine === 'office' && (canDownload() || installing.value != null))
 const pct = computed(() => (progress.value?.total ? Math.round((progress.value.done / progress.value.total) * 100) : 0))
+// Install hint per OS; Windows has no one-liner, so no command is shown there.
+const ua = navigator.userAgent
+const os = /Mac/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : 'linux'
+const cmds: Record<Engine, Record<typeof os, string>> = {
+  image: { linux: 'sudo pacman -S libvips', mac: 'brew install vips', win: '' },
+  office: { linux: 'sudo pacman -S libreoffice-fresh', mac: 'brew install --cask libreoffice', win: '' },
+  pandoc: { linux: 'sudo pacman -S pandoc-cli', mac: 'brew install pandoc', win: 'winget install pandoc' },
+}
 const msg = computed(() => ({
-  image: { title: t('convert.noEngine'), desc: t('convert.noEngineDesc'), cmd: 'sudo pacman -S libvips' },
-  office: { title: t('convert.noOffice'), desc: t('convert.noOfficeDesc'), cmd: 'sudo pacman -S libreoffice-fresh' },
-  pandoc: { title: t('convert.noPandoc'), desc: t('convert.noPandocDesc'), cmd: 'sudo pacman -S pandoc-cli' },
+  image: { title: t('convert.noEngine'), desc: t('convert.noEngineDesc') },
+  office: { title: t('convert.noOffice'), desc: t('convert.noOfficeDesc') },
+  pandoc: { title: t('convert.noPandoc'), desc: t('convert.noPandocDesc') },
 })[props.engine])
+const cmd = computed(() => cmds[props.engine][os])
 </script>
 
 <template>
@@ -45,7 +54,7 @@ const msg = computed(() => ({
     <div class="space-y-1.5">
       <p class="font-medium text-fg">{{ msg.title }}</p>
       <p class="text-dim">{{ msg.desc }}</p>
-      <code class="inline-block rounded-md bg-bg px-2 py-1 text-[12px] text-fg select-all">{{ msg.cmd }}</code>
+      <code v-if="cmd" class="inline-block rounded-md bg-bg px-2 py-1 text-[12px] text-fg select-all">{{ cmd }}</code>
     </div>
   </div>
 </template>

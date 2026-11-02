@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import {
   AlertDialogRoot, AlertDialogPortal, AlertDialogOverlay, AlertDialogContent, AlertDialogTitle,
   AlertDialogDescription, AlertDialogCancel, AlertDialogAction,
@@ -8,9 +8,14 @@ import { state } from '../lib/store'
 import { t } from '../lib/i18n'
 
 const open = computed({ get: () => !!state.confirm, set: (v) => !v && (state.confirm = null) })
+// AlertDialogAction closes the dialog (clearing state.confirm) before our click handler runs,
+// so keep the request being shown and run that one.
+const shown = shallowRef(state.confirm)
+watch(() => state.confirm, (c) => c && (shown.value = c))
 function ok() {
-  const c = state.confirm
+  const c = shown.value
   state.confirm = null
+  shown.value = null
   c?.run()
 }
 </script>

@@ -5,3 +5,4 @@ src-tauri/gen/schemas/
 .DS_Store
 *.log
 src/lib/icons/generated/
+src-tauri/vendor/

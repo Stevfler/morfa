@@ -138,7 +138,8 @@ windows:
       paths: [.bun-cache]
   script:
     - bun install --frozen-lockfile
-    - bunx tauri build --runner cargo-xwin --target "$WIN_TARGET" --bundles nsis
+    - sh ci/fetch-vips-win.sh
+    - bunx tauri build --runner cargo-xwin --target "$WIN_TARGET" --bundles nsis --config ci/tauri.vips-win.json
     - mkdir -p release
     - cp src-tauri/target/$WIN_TARGET/release/bundle/nsis/*-setup.exe release/
 

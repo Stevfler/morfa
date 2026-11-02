@@ -110,8 +110,9 @@ const size = computed(() => {
         </ul>
 
         <div class="flex gap-2 pt-1">
-          <button class="btn" @click="S.open(S.pane(), entry)">
-            <Icon :name="entry.isDir ? 'folder-open' : 'external-link'" class="size-3.5" />{{ entry.isDir ? t('shell.open') : t('shell.openDefault') }}
+          <button class="btn min-w-0 max-w-full" :title="entry.isDir ? t('shell.open') : t('shell.openDefault')" @click="S.open(S.pane(), entry)">
+            <Icon :name="entry.isDir ? 'folder-open' : 'external-link'" class="size-3.5 shrink-0" />
+            <span class="truncate">{{ entry.isDir ? t('shell.open') : t('shell.openDefault') }}</span>
           </button>
         </div>
         <Icon name="loader" v-if="loading" class="size-4 animate-spin text-faint" />

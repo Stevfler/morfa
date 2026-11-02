@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, watch } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent } from 'reka-ui'
 import * as S from '../../lib/store'
 import type { Entry } from '../../lib/store'
@@ -61,15 +61,26 @@ function openEntry() {
   S.open(p, entry.value)
 }
 
+// Space closes from anywhere, whatever holds focus inside the dialog (a header button, the viewer...).
+// Captured on window so a single press always works; auto-repeat of the opening press is ignored.
+function onSpace(e: KeyboardEvent) {
+  if (!open.value || e.key !== ' ' || e.ctrlKey || e.metaKey || e.altKey) return
+  const t = e.target as HTMLElement
+  if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return
+  e.preventDefault()
+  e.stopPropagation()
+  if (!e.repeat) close()
+}
+onMounted(() => window.addEventListener('keydown', onSpace, true))
+onBeforeUnmount(() => window.removeEventListener('keydown', onSpace, true))
+
 function onKey(e: KeyboardEvent) {
   const t = e.target as HTMLElement
   if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return
   if (e.ctrlKey || e.metaKey || e.altKey) return
   const k = e.key
-  if (k === ' ' && t.closest('button')) return
-  // Space toggles: a second press closes (auto-repeat is ignored).
-  if (k === ' ') !e.repeat && close()
-  else if (k === 'ArrowLeft' || k === 'ArrowUp') step(-1)
+  if (k === ' ') return
+  if (k === 'ArrowLeft' || k === 'ArrowUp') step(-1)
   else if (k === 'ArrowRight' || k === 'ArrowDown') step(1)
   else if (k === 'Enter') openEntry()
   else return
