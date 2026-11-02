@@ -1,0 +1,100 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { House, Monitor, Download, FileText, Image, Music, Video, HardDrive, Usb, Star, Clock, X } from 'lucide-vue-next'
+import { state, pane, go, frecencyScore, transfer } from '../lib/store'
+import { basename, fmtSize } from '../lib/util'
+
+const ICONS: Record<string, unknown> = {
+  home: House, desktop: Monitor, downloads: Download, documents: FileText,
+  pictures: Image, music: Music, videos: Video, disk: HardDrive, removable: Usb,
+}
+
+const folders = computed(() => state.places.filter((p) => !['disk', 'removable'].includes(p.kind)))
+const disks = computed(() => state.places.filter((p) => ['disk', 'removable'].includes(p.kind)))
+const recent = computed(() =>
+  Object.keys(state.frecency)
+    .filter((p) => !state.bookmarks.includes(p) && !state.places.some((pl) => pl.path === p))
+    .sort((a, b) => frecencyScore(b) - frecencyScore(a))
+    .slice(0, 6),
+)
+const current = computed(() => pane().path)
+
+function drop(e: DragEvent, dest: string) {
+  const data = e.dataTransfer?.getData('application/x-orbit-paths')
+  if (!data) return
+  transfer(JSON.parse(data), dest, e.ctrlKey ? 'copy' : 'move')
+}
+
+function onDropFav(e: DragEvent) {
+  const data = e.dataTransfer?.getData('application/x-orbit-paths')
+  if (!data) return
+  for (const p of JSON.parse(data) as string[]) if (!state.bookmarks.includes(p)) state.bookmarks.push(p)
+}
+</script>
+
+<template>
+  <aside class="flex w-56 shrink-0 flex-col gap-4 overflow-y-auto border-r border-line bg-panel px-2 py-3">
+    <section>
+      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Places</h3>
+      <button
+        v-for="p in folders" :key="p.path"
+        class="item" :class="current === p.path && 'on'"
+        @click="go(pane(), p.path)" @dragover.prevent @drop.prevent="drop($event, p.path)"
+      >
+        <component :is="ICONS[p.kind]" class="size-4 shrink-0" />{{ p.name }}
+      </button>
+    </section>
+
+    <section @dragover.prevent @drop.prevent="onDropFav">
+      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Favorites</h3>
+      <p v-if="!state.bookmarks.length" class="mx-2 rounded-md border border-dashed border-line px-2 py-2 text-[11.5px] leading-snug text-faint">
+        Drag folders here or press <kbd>Ctrl D</kbd>
+      </p>
+      <button
+        v-for="b in state.bookmarks" :key="b"
+        class="item group" :class="current === b && 'on'" :title="b"
+        @click="go(pane(), b)" @dragover.prevent @drop.prevent.stop="drop($event, b)"
+      >
+        <Star class="size-4 shrink-0 text-warn" /><span class="truncate">{{ basename(b) || b }}</span>
+        <X class="ml-auto size-3.5 shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100"
+           @click.stop="state.bookmarks.splice(state.bookmarks.indexOf(b), 1)" />
+      </button>
+    </section>
+
+    <section v-if="recent.length">
+      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Frequent</h3>
+      <button v-for="r in recent" :key="r" class="item" :class="current === r && 'on'" :title="r" @click="go(pane(), r)">
+        <Clock class="size-4 shrink-0" /><span class="truncate">{{ basename(r) || r }}</span>
+      </button>
+    </section>
+
+    <section>
+      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Drives</h3>
+      <button
+        v-for="d in disks" :key="d.path"
+        class="item !h-auto flex-col !items-stretch !gap-1 py-1.5" :class="current === d.path && 'on'" :title="d.path"
+        @click="go(pane(), d.path)" @dragover.prevent @drop.prevent="drop($event, d.path)"
+      >
+        <span class="flex items-center gap-2.5">
+          <component :is="ICONS[d.kind]" class="size-4 shrink-0" /><span class="truncate">{{ d.name }}</span>
+        </span>
+        <span v-if="d.total" class="h-1 overflow-hidden rounded-full bg-line">
+          <span class="block h-full rounded-full"
+            :class="d.free / d.total < 0.1 ? 'bg-danger' : 'bg-accent'"
+            :style="{ width: `${100 - (d.free / d.total) * 100}%` }" />
+        </span>
+        <span v-if="d.total" class="text-[11px] text-faint">{{ fmtSize(d.free) }} free of {{ fmtSize(d.total) }}</span>
+      </button>
+    </section>
+  </aside>
+</template>
+
+<style scoped>
+@reference '../style.css';
+.item {
+  @apply flex h-7 w-full items-center gap-2.5 rounded-md px-2 text-left text-[12.5px] text-dim transition hover:bg-raised hover:text-fg;
+}
+.item.on {
+  @apply bg-accent-soft text-fg;
+}
+</style>

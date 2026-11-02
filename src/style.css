@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #0e0f13;
+  --color-panel: #15161c;
+  --color-raised: #1c1d25;
+  --color-line: #262833;
+  --color-fg: #e7e8ee;
+  --color-dim: #8b8ea0;
+  --color-faint: #5a5d6e;
+  --color-accent: #8b6cff;
+  --color-accent-soft: #8b6cff26;
+  --color-ok: #3ecf8e;
+  --color-warn: #f5a524;
+  --color-danger: #ff5c6c;
+  --font-sans: 'Inter', 'SF Pro Text', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c2e3a;
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #3a3d4d;
+}
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--color-raised);
+  border: 1px solid var(--color-line);
+  color: var(--color-dim);
+}
+
+/* shared context/dropdown menu styles */
+.menu {
+  @apply z-50 min-w-56 rounded-lg border border-line bg-raised p-1 text-[12.5px] text-fg shadow-2xl;
+}
+.mi {
+  @apply flex h-7 cursor-default items-center gap-2.5 rounded-md px-2 outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-accent-soft;
+}
+.mi svg {
+  @apply size-4 text-dim;
+}
+.mi span {
+  @apply ml-auto pl-4 font-mono text-[10.5px] text-faint;
+}
+.mi.danger {
+  @apply text-danger;
+}
+.mi.danger svg {
+  @apply text-danger;
+}
+.sep {
+  @apply mx-1 my-1 h-px bg-line;
+}
