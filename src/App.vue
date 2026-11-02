@@ -2,7 +2,7 @@
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import { TooltipProvider } from 'reka-ui'
 import Icon from './components/Icon.vue'
-import { state, init, newPane, nextId, newTab, closeTab, toggleSplit, focusPane, pane } from './lib/store'
+import { state, init, newPane, nextId, newTab, closeTab, toggleSplit, focusPane, pane, back, forward } from './lib/store'
 import { onGlobalKey, isReloadOrPrint } from './lib/keys'
 import { basename, keyLabel } from './lib/util'
 import Sidebar from './components/Sidebar.vue'
@@ -31,8 +31,17 @@ const blockReloadPrint = (e: KeyboardEvent) => {
   if (isReloadOrPrint(e)) e.preventDefault()
 }
 
+// Mouse side buttons (3 = back, 4 = forward) navigate the active pane, like a browser.
+const onSideButton = (e: MouseEvent) => {
+  if (e.button !== 3 && e.button !== 4) return
+  e.preventDefault()
+  if (e.type === 'mouseup') e.button === 3 ? back() : forward()
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', blockReloadPrint, true)
+  window.addEventListener('mousedown', onSideButton, true)
+  window.addEventListener('mouseup', onSideButton, true)
   // A failing boot step (e.g. places on an unusual OS setup) must not leave the window blank.
   await init().catch((e) => console.error('init failed', e))
   if (!state.tabs.length) state.tabs = [{ id: nextId(), panes: [newPane(state.home)], active: 0 }]
@@ -42,6 +51,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKey)
   window.removeEventListener('keydown', blockReloadPrint, true)
+  window.removeEventListener('mousedown', onSideButton, true)
+  window.removeEventListener('mouseup', onSideButton, true)
 })
 
 const tabTitle = (i: number) => {

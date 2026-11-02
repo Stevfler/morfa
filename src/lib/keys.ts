@@ -1,4 +1,4 @@
-import { nextTick, reactive } from 'vue'
+import { nextTick } from 'vue'
 import { settingsOpen } from './settings'
 import { commands, matches, matchesCmd } from './commands'
 import { canQuickLook, kindOf, primaryMod } from './util'
@@ -59,9 +59,6 @@ export const isReloadOrPrint = (e: KeyboardEvent) => {
   return e.code === 'KeyR' || e.code === 'KeyP' || k === 'r' || k === 'p'
 }
 
-/** Quick Look is shown while Space is held; QuickLook.vue closes it on keyup/blur. */
-export const qlHold = reactive({ held: false })
-
 /** Any dialog that owns the keyboard: global shortcuts stay off while one is open. */
 export const anyModalOpen = () =>
   !!(S.state.palette || S.state.batchRename || S.state.properties || S.state.confirm || S.state.quickLook || settingsOpen.value || drives.unlock) ||
@@ -79,9 +76,8 @@ function holdSpace(e: KeyboardEvent): boolean {
   const p = S.pane()
   const e2 = S.visible(p)[p.cursor]
   if (canQuickLook(e2)) {
-    qlHold.held = true
     // Open once the image is decoded (or after a short cap) so it appears whole instead of popping in.
-    const show = () => qlHold.held && (S.state.quickLook = true)
+    const show = () => (S.state.quickLook = true)
     if (kindOf(e2) === 'image') Promise.race([imageUrl(e2.path), new Promise((r) => setTimeout(r, 300))]).then(show)
     else show()
   }
