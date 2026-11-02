@@ -2,9 +2,10 @@ import { invoke } from '@tauri-apps/api/core'
 import { save } from '../util'
 import { newPane, nextId, pane, state, tab } from './state'
 import { load_ } from './navigation'
+import { isSpecial } from './types'
 
 export function syncWatch() {
-  const paths = [...new Set(state.tabs.flatMap((t) => t.panes.map((p) => p.path)))]
+  const paths = [...new Set(state.tabs.flatMap((t) => t.panes.map((p) => p.path)))].filter((p) => !isSpecial(p))
   // The backend watches what it can and returns folders it couldn't (usually
   // deleted/unmounted, which the pane notices on its own) — keep that quiet.
   // Anything else (watcher couldn't start at all) is logged, never toasted.

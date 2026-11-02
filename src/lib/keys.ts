@@ -64,7 +64,7 @@ export const qlHold = reactive({ held: false })
 export const anyModalOpen = () =>
   !!(S.state.palette || S.state.batchRename || S.state.confirm || S.state.quickLook || settingsOpen.value || drives.unlock) ||
   // Any open reka dialog (covers future ones automatically).
-  !!document.querySelector('[role=dialog][data-state=open]')
+  !!document.querySelector('[role=dialog][data-state=open],[role=alertdialog][data-state=open]')
 
 // Space on these activates them; don't turn it into Quick Look.
 const SPACE_TARGETS = 'button,[role=button],[role=switch],[role=radio],[role=tab],[role=checkbox],select,a,[contenteditable]'

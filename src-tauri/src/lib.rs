@@ -1,3 +1,4 @@
+mod cleanup;
 mod entry;
 mod fsinfo;
 mod fsops;
@@ -23,6 +24,7 @@ pub fn run() {
         .manage(SearchState::default())
         .manage(WatchState::default())
         .manage(transfer::OpsState::default())
+        .manage(cleanup::CleanupState::default())
         .invoke_handler(tauri::generate_handler![
             list_dir,
             stat,
@@ -48,6 +50,11 @@ pub fn run() {
             fsops::trashcan::restore_trashed,
             fsops::trashcan::reveal_trash,
             fsops::delete_items,
+            cleanup::cleanup_scan,
+            cleanup::cleanup_cancel,
+            cleanup::cleanup_children,
+            cleanup::cleanup_delete,
+            cleanup::cleanup_empty_trash,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Orbit");

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
+import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal, ContextMenuContent, ContextMenuItem } from 'reka-ui'
 import type { IconName } from '../../lib/icons'
 import Icon from '../Icon.vue'
 import UnlockDialog from './UnlockDialog.vue'
 import { state, pane, go, transfer } from '../../lib/store'
 import { copyMod, fmtSize } from '../../lib/util'
 import { drives, ejectable, clickDrive, unmountPlace, refreshDrives } from './drives'
+import { openCleanup } from '../cleanup/cleanup'
+import { DRIVES } from '../../lib/store'
 
 const disks = computed(() => state.places.filter((p) => ['disk', 'removable'].includes(p.kind)))
 const current = computed(() => pane().path)
@@ -26,8 +29,13 @@ onUnmounted(() => window.removeEventListener('focus', refreshDrives))
 
 <template>
   <section>
-    <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Drives</h3>
-    <div v-for="d in disks" :key="d.path" class="group relative">
+    <button
+      class="flex w-full items-center rounded px-2 pb-1 text-left text-[11px] font-medium uppercase tracking-wider transition hover:text-fg"
+      :class="current === DRIVES ? 'text-fg' : 'text-faint'" title="Show all drives" @click="go(pane(), DRIVES)"
+    >Drives</button>
+    <ContextMenuRoot v-for="d in disks" :key="d.path">
+    <ContextMenuTrigger as-child>
+    <div class="group relative">
       <button
         class="item !h-auto flex-col !items-stretch !gap-1 py-1.5" :class="current === d.path && 'on'" :title="d.path"
         @click="go(pane(), d.path)" @dragover.prevent @drop.prevent="drop($event, d.path)"
@@ -50,6 +58,15 @@ onUnmounted(() => window.removeEventListener('focus', refreshDrives))
         <Icon :name="drives.busy.has(d.path) ? 'loader' : 'eject'" class="size-3.5" :class="drives.busy.has(d.path) && 'animate-spin'" />
       </button>
     </div>
+    </ContextMenuTrigger>
+    <ContextMenuPortal>
+      <ContextMenuContent class="menu">
+        <ContextMenuItem class="mi" @select="go(pane(), d.path)"><Icon name="folder-open" />Open</ContextMenuItem>
+        <ContextMenuItem class="mi" @select="openCleanup(d.path)"><Icon name="zap" />Clean up…</ContextMenuItem>
+        <ContextMenuItem v-if="ejectable(d)" class="mi" @select="unmountPlace(d)"><Icon name="eject" />{{ d.kind === 'removable' ? 'Eject' : 'Unmount' }}</ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenuPortal>
+    </ContextMenuRoot>
     <button
       v-for="d in drives.list" :key="d.device" class="item opacity-60 hover:opacity-100"
       :title="`${d.device} · ${d.fstype} — click to ${d.encrypted ? 'unlock' : 'mount'}`" @click="clickDrive(d)"

@@ -12,6 +12,8 @@ import Palette from './components/Palette.vue'
 import BatchRename from './components/BatchRename.vue'
 import Toasts from './components/Toasts.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import CleanupDialog from './components/cleanup/CleanupDialog.vue'
+import CleanupWarning from './components/cleanup/CleanupWarning.vue'
 import QuickLook from './components/quicklook/QuickLook.vue'
 import IconButton from './components/IconButton.vue'
 import FunctionBar from './components/FunctionBar.vue'
@@ -106,6 +108,8 @@ const tabTitle = (i: number) => {
     <template v-if="ready">
       <Palette />
       <BatchRename />
+      <CleanupDialog />
+      <CleanupWarning />
       <ConfirmDialog />
       <QuickLook />
       <SettingsDialog />

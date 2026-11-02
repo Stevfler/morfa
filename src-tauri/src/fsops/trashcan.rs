@@ -2,19 +2,20 @@ use crate::CmdResult;
 
 #[tauri::command]
 pub async fn trash_items(paths: Vec<String>) -> CmdResult<()> {
-    tauri::async_runtime::spawn_blocking(move || {
-        #[allow(unused_mut)]
-        let mut ctx = trash::TrashContext::default();
-        // Finder (the default) triggers an Automation permission prompt and is slow.
-        #[cfg(target_os = "macos")]
-        {
-            use trash::macos::{DeleteMethod, TrashContextExtMacos};
-            ctx.set_delete_method(DeleteMethod::NsFileManager);
-        }
-        ctx.delete_all(&paths).map_err(|e| e.to_string())
-    })
-    .await
-    .map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || trash_blocking(&paths)).await.map_err(|e| e.to_string())?
+}
+
+/// Move `paths` to the system Trash on the current thread.
+pub(crate) fn trash_blocking(paths: &[String]) -> CmdResult<()> {
+    #[allow(unused_mut)]
+    let mut ctx = trash::TrashContext::default();
+    // Finder (the default) triggers an Automation permission prompt and is slow.
+    #[cfg(target_os = "macos")]
+    {
+        use trash::macos::{DeleteMethod, TrashContextExtMacos};
+        ctx.set_delete_method(DeleteMethod::NsFileManager);
+    }
+    ctx.delete_all(paths).map_err(|e| e.to_string())
 }
 
 /// Put trashed items back where they came from (Linux & Windows).

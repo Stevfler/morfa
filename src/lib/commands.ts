@@ -1,4 +1,5 @@
 import type { IconName } from './icons'
+import { openCleanup } from '../components/cleanup/cleanup'
 import { openSettings } from './settings'
 import * as S from './store'
 import { canQuickLook, isMac, otherMod, primaryMod, prettyKeys } from './util'
@@ -52,6 +53,7 @@ export const commands: Cmd[] = [
   { id: 'split', title: 'Toggle dual pane', group: 'View', icon: 'columns', keys: 'Ctrl+\\', run: () => S.toggleSplit() },
   // Space is handled as hold-to-preview in keys.ts; from the palette it stays open until Esc/Space.
   { id: 'quicklook', title: 'Quick Look (hold Space)', group: 'View', icon: 'quicklook', keys: 'Space', fkey: 'F3', fkeyMode: 'split', run: () => (S.state.quickLook = canQuickLook(S.visible(S.pane())[S.pane().cursor])) },
+  { id: 'cleanup', title: 'Clean up this drive…', group: 'View', icon: 'broom', run: () => openCleanup(mountRoot(S.pane().path)) },
   { id: 'settings', title: 'Settings', group: 'View', icon: 'settings', keys: 'Ctrl+,', run: () => openSettings() },
   { id: 'preview', title: 'Toggle info panel', group: 'View', icon: 'panel-right', keys: 'Ctrl+I', run: () => (S.state.preview = !S.state.preview) },
   { id: 'hidden', title: 'Show / hide hidden files', group: 'View', icon: 'eye', keys: 'Ctrl+H', run: () => (S.state.showHidden = !S.state.showHidden) },
@@ -61,6 +63,14 @@ export const commands: Cmd[] = [
   { id: 'bookmark', title: 'Add / remove folder from Favorites', group: 'Folder', icon: 'star', keys: 'Ctrl+D', run: () => S.toggleBookmark() },
   { id: 'terminal', title: 'Open terminal here', group: 'Folder', icon: 'terminal', keys: 'Ctrl+`', run: () => S.openTerminal() },
 ]
+
+// These act on the folder shown in the pane, so they do nothing on pseudo-locations like the Drives view.
+const NEEDS_FOLDER = new Set(['cleanup', 'search', 'refresh', 'newdir', 'newfile', 'paste', 'selectall', 'sizes', 'bookmark', 'terminal'])
+for (const c of commands) {
+  if (!NEEDS_FOLDER.has(c.id)) continue
+  const run = c.run
+  c.run = () => (S.isSpecial(S.pane().path) ? undefined : run())
+}
 
 const isSplit = () => (S.state.tabs[S.state.activeTab]?.panes.length ?? 0) > 1
 /** Is the command's function key live in the current mode? */
@@ -105,3 +115,12 @@ export const matchesCmd = (e: KeyboardEvent, c: Cmd) =>
     const k = baseKeys.has(c) ? baseKeys.get(c) : c.keys
     return !!k && matches(e, k)
   })() || (!!c.alt && matches(e, c.alt)) || (fkeyOn(c) && matches(e, c.fkey!))
+
+/** The mounted drive that contains `path` (longest mount-point prefix), or the path itself. */
+function mountRoot(path: string) {
+  const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase()
+  const target = norm(path)
+  const under = (root: string) => target === root || target.startsWith(root.endsWith('/') ? root : `${root}/`)
+  const drives = S.state.places.filter((p) => p.total > 0 && under(norm(p.path)))
+  return drives.sort((a, b) => b.path.length - a.path.length)[0]?.path ?? path
+}

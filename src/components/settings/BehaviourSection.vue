@@ -13,5 +13,8 @@ import Toggle from './Toggle.vue'
     <Row title="Respect .gitignore in search" desc="Skip ignored files when searching">
       <Toggle v-model="settings.respectGitignore" label="Respect .gitignore in search" />
     </Row>
+    <Row title="Warn before Clean up" desc="Show the experienced-users warning when opening the Clean up tool">
+      <Toggle :model-value="!settings.cleanupWarned" label="Warn before Clean up" @update:model-value="settings.cleanupWarned = !$event" />
+    </Row>
   </section>
 </template>

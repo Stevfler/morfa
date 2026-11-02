@@ -1,4 +1,5 @@
 export type { Entry, SortKey, Pane, Tab, Place, Toast, Op } from './types'
+export { DRIVES, isSpecial } from './types'
 export { state, tab, pane, otherPane, newPane, nextId } from './state'
 export { visible, targets } from './view'
 export { toast, dismiss, fail } from './toast'

@@ -13,6 +13,9 @@ pub struct Place {
     kind: String,
     total: u64,
     free: u64,
+    /// Filesystem type ("ext4", "ntfs", ...); empty for folders.
+    fs: String,
+    removable: bool,
 }
 
 #[tauri::command]
@@ -20,7 +23,7 @@ pub async fn places() -> CmdResult<Vec<Place>> {
     let mut out = vec![];
     let mut push = |name: &str, p: Option<PathBuf>, kind: &str| {
         if let Some(p) = p.filter(|p| p.exists()) {
-            out.push(Place { name: name.into(), path: p.to_string_lossy().into(), kind: kind.into(), total: 0, free: 0 });
+            out.push(Place { name: name.into(), path: p.to_string_lossy().into(), kind: kind.into(), total: 0, free: 0, fs: String::new(), removable: false });
         }
     };
     push("Home", dirs::home_dir(), "home");
@@ -51,6 +54,8 @@ pub async fn places() -> CmdResult<Vec<Place>> {
             path: d.mount,
             total: d.total,
             free: d.free,
+            fs: d.fs,
+            removable: d.removable,
         });
     }
     Ok(out)

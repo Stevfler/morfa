@@ -18,7 +18,7 @@ const completions = ref<string[]>([])
 const editing = computed(() => state.editPath && props.active)
 watch(editing, async (v) => {
   if (!v) return
-  pathText.value = p.path
+  pathText.value = S.isSpecial(p.path) ? '' : p.path
   await nextTick()
   pathInput.value?.select()
 })
@@ -67,6 +67,10 @@ function pathKey(ev: KeyboardEvent) {
         </button>
       </div>
     </template>
+    <div v-else-if="S.isSpecial(p.path)" class="flex h-7 cursor-text items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium hover:bg-panel"
+      @click="state.editPath = true; S.focusPane(S.tab().panes.indexOf(p))">
+      <Icon name="hard-drive" class="size-3.5 text-dim" />Drives
+    </div>
     <div
       v-else
       class="flex h-7 cursor-text items-center overflow-hidden rounded-md px-1 hover:bg-panel"

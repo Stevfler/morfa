@@ -6,7 +6,7 @@ import { targets } from './view'
 import { fail, toast } from './toast'
 import { pushUndo } from './history'
 import { load_, refreshAll } from './navigation'
-import type { Pane } from './types'
+import { isSpecial, type Pane } from './types'
 
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
 const describe = (paths: string[]) => (paths.length === 1 ? `“${basename(paths[0])}”` : plural(paths.length, 'item'))
@@ -29,7 +29,8 @@ export async function paste(p: Pane = pane()) {
 }
 
 export async function transfer(sources: string[], dest: string, mode: 'copy' | 'move') {
-  if (!sources.length) return
+  // Pseudo-locations (e.g. the Drives view) are not folders: never send them to the backend.
+  if (!sources.length || isSpecial(dest) || sources.some(isSpecial)) return
   const id = nextId()
   const verb = mode === 'copy' ? 'Copying' : 'Moving'
   state.ops.push({ id, label: `${verb} ${describe(sources)} → ${basename(dest)}`, done: 0, total: 0, current: '' })
@@ -167,6 +168,7 @@ export async function create(kind: 'dir' | 'file', p: Pane = pane()) {
 export function toOtherBlocked(p: Pane = pane()): string | null {
   const o = otherPane()
   if (!o) return 'Turn on dual pane first'
+  if (isSpecial(o.path) || isSpecial(p.path)) return 'Both panes must show a folder'
   if (o.path === p.path) return 'Both panes show the same folder'
   return targets(p).length ? null : 'Nothing selected'
 }

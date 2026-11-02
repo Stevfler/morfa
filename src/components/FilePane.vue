@@ -12,6 +12,7 @@ import ColumnHeader from './pane/ColumnHeader.vue'
 import FileList from './pane/FileList.vue'
 import PaneMenu from './pane/PaneMenu.vue'
 import StatusBar from './pane/StatusBar.vue'
+import DrivesView from './drives/DrivesView.vue'
 
 const props = defineProps<{ pane: Pane; active: boolean; split: boolean }>()
 const p = props.pane
@@ -25,19 +26,22 @@ const menuOnItem = ref(false)
     <div class="flex h-11 shrink-0 items-center gap-1 border-b border-line px-2" :class="split && active && 'shadow-[inset_0_2px_0_var(--color-accent)]'">
       <IconButton icon="chevron-left" label="Back" keys="Alt+←" :disabled="!p.back.length" @click="S.back(p)" />
       <IconButton icon="chevron-right" label="Forward" keys="Alt+→" :disabled="!p.fwd.length" @click="S.forward(p)" />
-      <IconButton icon="arrow-up" label="Parent folder" keys="Backspace" :disabled="!parent(p.path)" @click="S.up(p)" />
+      <IconButton icon="arrow-up" label="Parent folder" keys="Backspace" :disabled="S.isSpecial(p.path) || !parent(p.path)" @click="S.up(p)" />
       <PathBar :pane="p" :active="active" :dnd="dnd" />
       <FilterBox :pane="p" />
       <IconButton icon="folder-plus" label="New folder" keys="Ctrl+Shift+N" @click="S.create('dir', p)" />
       <IconButton icon="gauge" label="Show folder sizes" keys="Ctrl+Shift+S" @click="S.calcFolderSizes(p)" />
     </div>
 
-    <ColumnHeader :pane="p" />
+    <DrivesView v-if="p.path === S.DRIVES" :pane="p" />
+    <template v-else>
+      <ColumnHeader :pane="p" />
 
-    <PaneMenu v-model:on-item="menuOnItem" :pane="p">
-      <FileList :pane="p" :active="active" :dnd="dnd" @item-menu="menuOnItem = true" />
-    </PaneMenu>
+      <PaneMenu v-model:on-item="menuOnItem" :pane="p">
+        <FileList :pane="p" :active="active" :dnd="dnd" @item-menu="menuOnItem = true" />
+      </PaneMenu>
 
-    <StatusBar :pane="p" :split="split" />
+      <StatusBar :pane="p" :split="split" />
+    </template>
   </section>
 </template>

@@ -6,7 +6,7 @@ import { visible } from './view'
 import { fail } from './toast'
 import { stopSearch } from './search'
 import { persist, syncWatch } from './tabs'
-import type { Entry, Pane, Place } from './types'
+import { isSpecial, type Entry, type Pane, type Place } from './types'
 
 // Per-pane load token: only the latest load_ for a pane may apply its result.
 const loadSeq = new WeakMap<Pane, number>()
@@ -15,6 +15,11 @@ export async function load_(p: Pane) {
   const seq = (loadSeq.get(p) ?? 0) + 1
   loadSeq.set(p, seq)
   const stale = () => loadSeq.get(p) !== seq
+  if (isSpecial(p.path)) {
+    // Special views (Drives overview) render their own content; nothing to list.
+    Object.assign(p, { entries: [], error: null, loading: false })
+    return
+  }
   p.loading = true
   try {
     const entries = await invoke<Entry[]>('list_dir', { path: p.path })
@@ -50,14 +55,14 @@ export async function go(p: Pane, path: string, opts: { history?: boolean; focus
   p.selected.clear()
   p.cursor = 0
   p.focusAfterLoad = opts.focus
-  bump(path)
+  if (!isSpecial(path)) bump(path)
   await load_(p)
   syncWatch()
   persist()
 }
 
 export function up(p: Pane = pane()) {
-  const par = parent(p.path)
+  const par = isSpecial(p.path) ? null : parent(p.path)
   if (par) go(p, par, { focus: p.path })
 }
 export function back(p: Pane = pane()) {
