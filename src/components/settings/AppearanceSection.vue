@@ -3,6 +3,7 @@ import { settings } from '../../lib/settings'
 import ThemePicker from './ThemePicker.vue'
 import Segmented from './Segmented.vue'
 import Row from './Row.vue'
+import LanguageRow from './LanguageRow.vue'
 
 const radii = [
   { value: 'sharp', label: 'Sharp' }, { value: 'default', label: 'Default' },
@@ -14,6 +15,7 @@ const densities = [{ value: 'comfortable', label: 'Comfortable' }, { value: 'com
 
 <template>
   <section class="space-y-5">
+    <LanguageRow />
     <div>
       <h3 class="mb-2 text-[11px] font-medium uppercase tracking-wide text-faint">Theme & accent</h3>
       <ThemePicker />

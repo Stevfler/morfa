@@ -19,6 +19,8 @@ export interface Settings {
   respectGitignore: boolean
   /** The clean-up tool's expert warning was dismissed with "Don't show again". */
   cleanupWarned: boolean
+  /** 'system' follows the OS language. */
+  language: string
 }
 
 const KEY = 'orbit.settings'
@@ -34,6 +36,7 @@ const defaults: Settings = {
   iconCustom: '#4c8dff',
   respectGitignore: false,
   cleanupWarned: false,
+  language: 'system',
 }
 
 export const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
@@ -53,6 +56,7 @@ export function sanitize(raw: unknown): Settings {
     iconCustom: typeof r.iconCustom === 'string' && HEX.test(r.iconCustom) ? r.iconCustom.toLowerCase() : defaults.iconCustom,
     respectGitignore: typeof r.respectGitignore === 'boolean' ? r.respectGitignore : defaults.respectGitignore,
     cleanupWarned: typeof r.cleanupWarned === 'boolean' ? r.cleanupWarned : defaults.cleanupWarned,
+    language: typeof r.language === 'string' && /^(system|[a-z]{2})$/.test(r.language) ? r.language : defaults.language,
   }
 }
 
