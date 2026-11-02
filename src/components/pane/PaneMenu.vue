@@ -2,12 +2,14 @@
 import { computed } from 'vue'
 import {
   ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
+  ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent,
 } from 'reka-ui'
 import Icon from '../Icon.vue'
 import * as S from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { keyLabel, parent } from '../../lib/util'
 import { cmd } from '../../lib/commands'
+import { FORMATS, QUICK_FORMATS, caps, isImage, loadCaps, openConvert, quickConvert } from '../../lib/convert'
 
 const props = defineProps<{ pane: Pane }>()
 const onItem = defineModel<boolean>('onItem', { required: true })
@@ -17,6 +19,18 @@ const cursorEntry = computed(() => S.visible(p)[p.cursor])
 const paths = () => S.targets(p).map((e) => e.path)
 // Right-click focuses this pane so keyboard shortcuts after the menu act on it too.
 const focusThis = () => S.focusPane(S.tab().panes.indexOf(p))
+const images = computed(() => {
+  const t = S.targets(p)
+  return t.length && t.every((e) => !e.isDir && isImage(e.path)) ? t.map((e) => e.path) : null
+})
+// Caps load lazily on first open; until then offer every quick format.
+const quick = computed(() => QUICK_FORMATS.filter((f) => !caps.value || caps.value.formats.includes(f)))
+const label = (ext: string) => FORMATS.find((f) => f.ext === ext)?.label ?? ext.toUpperCase()
+function onOpen(o: boolean) {
+  if (!o) return (onItem.value = false)
+  focusThis()
+  loadCaps().catch(() => {})
+}
 
 function openIn(where: 'tab' | 'other') {
   const e = cursorEntry.value
@@ -31,7 +45,7 @@ function openIn(where: 'tab' | 'other') {
 </script>
 
 <template>
-  <ContextMenuRoot @update:open="(o: boolean) => (o ? focusThis() : (onItem = false))">
+  <ContextMenuRoot @update:open="onOpen">
     <ContextMenuTrigger as-child @contextmenu.capture="focusThis"><slot /></ContextMenuTrigger>
     <ContextMenuPortal>
       <ContextMenuContent class="menu">
@@ -44,6 +58,16 @@ function openIn(where: 'tab' | 'other') {
           <ContextMenuItem class="mi" @select="S.copyToClipboard('copy', p)"><Icon name="copy" />Copy<span>{{ keyLabel('Ctrl+C') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.copyToClipboard('move', p)"><Icon name="scissors" />Cut<span>{{ keyLabel('Ctrl+X') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.startRename(p)"><Icon name="pencil" />{{ S.targets(p).length > 1 ? `Rename ${S.targets(p).length} items…` : 'Rename' }}<span>F2</span></ContextMenuItem>
+          <ContextMenuSub v-if="images">
+            <ContextMenuSubTrigger class="mi"><Icon name="image" />Convert {{ images.length > 1 ? `${images.length} images ` : '' }}to<Icon name="chevron-right" class="ml-auto" /></ContextMenuSubTrigger>
+            <ContextMenuPortal>
+              <ContextMenuSubContent class="menu min-w-40" :side-offset="4">
+                <ContextMenuItem v-for="f in quick" :key="f" class="mi" @select="quickConvert(images, f)">{{ label(f) }}</ContextMenuItem>
+                <ContextMenuSeparator class="sep" />
+                <ContextMenuItem class="mi" @select="openConvert(images)">More options…</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuPortal>
+          </ContextMenuSub>
           <ContextMenuItem class="mi" @select="S.copyPath(p)"><Icon name="link" />Copy path<span>{{ keyLabel('Ctrl+Shift+C') }}</span></ContextMenuItem>
           <template v-if="cursorEntry.isDir">
             <ContextMenuItem class="mi" @select="S.toggleBookmark(cursorEntry.path)"><Icon name="star" />{{ state.bookmarks.includes(cursorEntry.path) ? 'Remove from Favorites' : 'Add to Favorites' }}</ContextMenuItem>

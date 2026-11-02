@@ -20,7 +20,8 @@ const ICON = { ok: 'check-circle', error: 'alert-circle', info: 'info' } as cons
           <div class="h-full rounded-full bg-accent transition-[width]" :style="{ width: op.total ? `${(op.done / op.total) * 100}%` : '8%' }" />
         </div>
         <p class="mt-1.5 truncate text-[11px] text-faint">
-          <template v-if="op.total">{{ fmtSize(op.done) }} of {{ fmtSize(op.total) }} · </template>{{ op.current ? basename(op.current) : 'Preparing…' }}
+          <template v-if="op.total && op.unit === 'files'">{{ op.done }} of {{ op.total }} files · </template>
+          <template v-else-if="op.total">{{ fmtSize(op.done) }} of {{ fmtSize(op.total) }} · </template>{{ op.current ? basename(op.current) : 'Preparing…' }}
         </p>
       </div>
     </div>

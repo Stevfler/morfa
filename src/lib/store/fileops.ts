@@ -67,7 +67,8 @@ function recordTransfer(pairs: [string, string][], dest: string, mode: 'copy' | 
   )
 }
 
-export const cancelOp = (id: number) => invoke('cancel_op', { id })
+export const cancelOp = (id: number) =>
+  invoke(state.ops.find((o) => o.id === id)?.kind === 'convert' ? 'convert_cancel' : 'cancel_op', { id })
 
 export async function trash(paths = targets().map((e) => e.path)) {
   if (!paths.length) return

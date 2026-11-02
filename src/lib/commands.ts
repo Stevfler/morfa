@@ -2,6 +2,7 @@ import type { IconName } from './icons'
 import { openCleanup } from '../components/cleanup/cleanup'
 import { openSettings } from './settings'
 import * as S from './store'
+import { isImage, openConvert } from './convert'
 import { canQuickLook, isMac, otherMod, primaryMod, prettyKeys } from './util'
 
 export type Cmd = {
@@ -44,6 +45,7 @@ export const commands: Cmd[] = [
   { id: 'undo', title: 'Undo', group: 'Edit', icon: 'undo', keys: 'Ctrl+Z', run: () => S.undo() },
   { id: 'redo', title: 'Redo', group: 'Edit', icon: 'redo', keys: 'Ctrl+Shift+Z', run: () => S.redo() },
   { id: 'selectall', title: 'Select all', group: 'Edit', icon: 'check-all', keys: 'Ctrl+A', run: () => S.selectAll() },
+  { id: 'convert', title: 'Convert images…', group: 'Edit', icon: 'image', run: () => convertTargets() },
   { id: 'copypath', title: 'Copy path', group: 'Edit', icon: 'link', keys: 'Ctrl+Shift+C', run: () => S.copyPath() },
 
   { id: 'copyother', title: 'Copy to the other pane', group: 'Dual pane', icon: 'copy', fkey: 'F5', fkeyMode: 'split', run: () => S.toOther('copy') },
@@ -123,4 +125,11 @@ function mountRoot(path: string) {
   const under = (root: string) => target === root || target.startsWith(root.endsWith('/') ? root : `${root}/`)
   const drives = S.state.places.filter((p) => p.total > 0 && under(norm(p.path)))
   return drives.sort((a, b) => b.path.length - a.path.length)[0]?.path ?? path
+}
+
+/** Opens the convert dialog for the selected images (non-images are skipped). */
+function convertTargets() {
+  const paths = S.targets().filter((e) => !e.isDir && isImage(e.path)).map((e) => e.path)
+  if (paths.length) openConvert(paths)
+  else S.toast({ title: 'Select one or more images to convert', tone: 'info' }, 2500)
 }

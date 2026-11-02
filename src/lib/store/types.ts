@@ -50,4 +50,13 @@ export type Toast = {
   action?: { label: string; run: () => void }
 }
 
-export type Op = { id: number; label: string; done: number; total: number; current: string }
+export type Op = {
+  id: number
+  label: string
+  done: number
+  total: number
+  current: string
+  /** What done/total count (default 'bytes'). */
+  unit?: 'bytes' | 'files'
+  kind?: 'transfer' | 'convert'
+}

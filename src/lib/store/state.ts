@@ -42,6 +42,7 @@ export const state = reactive({
   renaming: null as string | null,
   palette: null as null | 'all' | 'folders',
   batchRename: null as null | string[],
+  convert: null as null | { paths: string[]; format?: string },
   confirm: null as null | { title: string; desc: string; danger?: boolean; ok: string; run: () => void },
   editPath: false,
 })

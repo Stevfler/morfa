@@ -1,4 +1,5 @@
 mod cleanup;
+mod convert;
 mod entry;
 mod fsinfo;
 mod fsops;
@@ -25,6 +26,7 @@ pub fn run() {
         .manage(WatchState::default())
         .manage(transfer::OpsState::default())
         .manage(cleanup::CleanupState::default())
+        .manage(convert::ConvertState::default())
         .invoke_handler(tauri::generate_handler![
             list_dir,
             stat,
@@ -55,6 +57,10 @@ pub fn run() {
             cleanup::cleanup_children,
             cleanup::cleanup_delete,
             cleanup::cleanup_empty_trash,
+            convert::convert_caps,
+            convert::convert_images,
+            convert::convert_cancel,
+            convert::convert_estimate,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Orbit");

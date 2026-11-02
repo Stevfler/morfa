@@ -10,6 +10,7 @@ import FilePane from './components/FilePane.vue'
 import Preview from './components/Preview.vue'
 import Palette from './components/Palette.vue'
 import BatchRename from './components/BatchRename.vue'
+import ConvertDialog from './components/convert/ConvertDialog.vue'
 import Toasts from './components/Toasts.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import CleanupDialog from './components/cleanup/CleanupDialog.vue'
@@ -115,6 +116,7 @@ const tabTitle = (i: number) => {
     <template v-if="ready">
       <Palette />
       <BatchRename />
+      <ConvertDialog />
       <CleanupDialog />
       <CleanupWarning />
       <ConfirmDialog />
