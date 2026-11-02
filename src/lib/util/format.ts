@@ -10,20 +10,11 @@ export function fmtSize(n: number | undefined) {
   return `${n < 10 ? n.toFixed(1) : Math.round(n)} ${u[i]}`
 }
 
-const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 const dtf = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' })
+const short = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 
-/** "5 min ago" for recent things, an absolute date for older ones. */
-export function fmtDate(ms: number) {
-  if (!ms) return ''
-  const diff = (ms - Date.now()) / 1000
-  const a = Math.abs(diff)
-  if (a < 60) return 'just now'
-  if (a < 3600) return rtf.format(Math.round(diff / 60), 'minute')
-  if (a < 86400) return rtf.format(Math.round(diff / 3600), 'hour')
-  if (a < 86400 * 7) return rtf.format(Math.round(diff / 86400), 'day')
-  return dtf.format(ms)
-}
+/** Compact date for list columns ("12 Oct 2025"); full date and time live in the info panel. */
+export const fmtDate = (ms: number) => (ms ? short.format(ms) : '')
 export const fmtDateFull = (ms: number) => (ms ? dtf.format(ms) : '')
 
 export const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import Icon from '../Icon.vue'
+import TagDots from '../tags/TagDots.vue'
 import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
 import { fmtDate, fmtDateFull, fmtSize, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL, parent } from '../../lib/util'
@@ -56,6 +57,7 @@ function sizeCell(e: Entry) {
         spellcheck="false" @keydown="renameKey" @blur="S.renameTo(e.path, ($event.target as HTMLInputElement).value, pane)" @mousedown.stop
       />
       <span v-else class="truncate">{{ e.name }}</span>
+      <TagDots :path="e.path" />
       <Icon name="link" v-if="e.isSymlink" class="size-3 shrink-0 text-faint" />
       <span v-if="p.search" class="truncate text-[11.5px] text-faint">{{ rel(e) }}</span>
     </div>

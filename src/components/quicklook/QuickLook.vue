@@ -8,8 +8,9 @@ import { qlHold, scrollCursorIntoView } from '../../lib/keys'
 import { settings } from '../../lib/settings'
 import QuickLookHeader from './QuickLookHeader.vue'
 import Icon from '../Icon.vue'
+import { imageUrl } from '../../composables/useImageUrl'
 
-const Image = defineAsyncComponent(() => import('./viewers/ImageViewer.vue'))
+import Image from './viewers/ImageViewer.vue'
 const Text = defineAsyncComponent(() => import('./viewers/TextViewer.vue'))
 const VIEWERS: Partial<Record<Kind, unknown>> = { image: Image, text: Text, code: Text }
 
@@ -51,6 +52,21 @@ const pos = computed(() => `${S.pane().cursor + 1} / ${S.visible(S.pane()).lengt
 
 // Folder emptied or navigated away under us: close rather than show nothing.
 watch([entry, () => qlHold.held], ([e, held]) => (!e || (!held && !canQuickLook(e))) && close())
+
+// Warm the image cache for the cursor (so Space is instant) and, while open, its neighbours.
+let warm: ReturnType<typeof setTimeout> | undefined
+watch(entry, () => {
+  clearTimeout(warm)
+  warm = setTimeout(() => {
+    const p = S.pane()
+    const list = S.visible(p)
+    const around = S.state.quickLook ? [0, 1, -1, 2] : [0]
+    for (const d of around) {
+      const e = list[p.cursor + d]
+      if (e && kindOf(e) === 'image') imageUrl(e.path)
+    }
+  }, S.state.quickLook ? 0 : 120)
+}, { immediate: true })
 
 function step(d: number) {
   const p = S.pane()

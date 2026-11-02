@@ -47,6 +47,7 @@ export const commands: Cmd[] = [
   { id: 'selectall', title: 'Select all', group: 'Edit', icon: 'check-all', keys: 'Ctrl+A', run: () => S.selectAll() },
   { id: 'convert', title: 'Convert images…', group: 'Edit', icon: 'image', run: () => convertTargets() },
   { id: 'copypath', title: 'Copy path', group: 'Edit', icon: 'link', keys: 'Ctrl+Shift+C', run: () => S.copyPath() },
+  { id: 'properties', title: 'Properties', group: 'Edit', icon: 'info', keys: 'Alt+Enter', run: () => openProperties() },
 
   { id: 'copyother', title: 'Copy to the other pane', group: 'Dual pane', icon: 'copy', fkey: 'F5', fkeyMode: 'split', run: () => S.toOther('copy') },
   { id: 'moveother', title: 'Move to the other pane', group: 'Dual pane', icon: 'arrow-swap', fkey: 'F6', fkeyMode: 'split', run: () => S.toOther('move') },
@@ -132,4 +133,10 @@ function convertTargets() {
   const paths = S.targets().filter((e) => !e.isDir && isImage(e.path)).map((e) => e.path)
   if (paths.length) openConvert(paths)
   else S.toast({ title: 'Select one or more images to convert', tone: 'info' }, 2500)
+}
+
+/** Properties of the selection, or of the current folder when nothing is selected. */
+export function openProperties(p = S.pane()) {
+  const t = S.targets(p)
+  S.state.properties = t.length ? t.map((e) => e.path) : [p.path]
 }

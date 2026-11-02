@@ -5,10 +5,11 @@ import {
   ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent,
 } from 'reka-ui'
 import Icon from '../Icon.vue'
+import TagsMenuItems from '../tags/TagsMenuItems.vue'
 import * as S from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { keyLabel, parent } from '../../lib/util'
-import { cmd } from '../../lib/commands'
+import { cmd, openProperties } from '../../lib/commands'
 import { FORMATS, QUICK_FORMATS, caps, isImage, loadCaps, openConvert, quickConvert } from '../../lib/convert'
 
 const props = defineProps<{ pane: Pane }>()
@@ -69,12 +70,15 @@ function openIn(where: 'tab' | 'other') {
             </ContextMenuPortal>
           </ContextMenuSub>
           <ContextMenuItem class="mi" @select="S.copyPath(p)"><Icon name="link" />Copy path<span>{{ keyLabel('Ctrl+Shift+C') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="openProperties(p)"><Icon name="info" />Properties<span>{{ keyLabel('Alt+Enter') }}</span></ContextMenuItem>
           <template v-if="cursorEntry.isDir">
             <ContextMenuItem class="mi" @select="S.toggleBookmark(cursorEntry.path)"><Icon name="star" />{{ state.bookmarks.includes(cursorEntry.path) ? 'Remove from Favorites' : 'Add to Favorites' }}</ContextMenuItem>
             <ContextMenuItem class="mi" @select="S.computeSizes(S.targets(p).filter((x) => x.isDir).map((x) => x.path))"><Icon name="gauge" />Calculate size</ContextMenuItem>
             <ContextMenuItem class="mi" @select="S.openTerminal(cursorEntry.path)"><Icon name="terminal" />Open terminal here</ContextMenuItem>
           </template>
           <ContextMenuItem v-else class="mi" @select="S.reveal(cursorEntry.path)"><Icon name="eye" />Show in system file manager</ContextMenuItem>
+          <ContextMenuSeparator class="sep" />
+          <TagsMenuItems :paths="paths()" />
           <ContextMenuSeparator class="sep" />
           <ContextMenuItem class="mi" @select="S.trash(paths())"><Icon name="trash" />Move to Trash<span>{{ keyLabel(cmd('trash').keys!) }}</span></ContextMenuItem>
           <ContextMenuItem class="mi danger" @select="S.deleteForever(paths())"><Icon name="x" />Delete forever…<span>{{ keyLabel(cmd('delete').keys!) }}</span></ContextMenuItem>
@@ -89,6 +93,7 @@ function openIn(where: 'tab' | 'other') {
           <ContextMenuItem class="mi" @select="S.calcFolderSizes(p)"><Icon name="gauge" />Show folder sizes<span>{{ keyLabel('Ctrl+Shift+S') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.toggleBookmark(p.path)"><Icon name="star" />{{ state.bookmarks.includes(p.path) ? 'Remove from Favorites' : 'Add to Favorites' }}<span>{{ keyLabel('Ctrl+D') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.openTerminal(p.path)"><Icon name="terminal" />Open terminal here<span>{{ keyLabel('Ctrl+`') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="state.properties = [p.path]"><Icon name="info" />Properties<span>{{ keyLabel('Alt+Enter') }}</span></ContextMenuItem>
         </template>
       </ContextMenuContent>
     </ContextMenuPortal>

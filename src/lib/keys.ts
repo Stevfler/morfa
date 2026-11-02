@@ -1,7 +1,8 @@
 import { nextTick, reactive } from 'vue'
 import { settingsOpen } from './settings'
 import { commands, matches, matchesCmd } from './commands'
-import { canQuickLook, primaryMod } from './util'
+import { canQuickLook, kindOf, primaryMod } from './util'
+import { imageUrl } from '../composables/useImageUrl'
 import * as S from './store'
 import { drives } from '../components/sidebar/drives'
 
@@ -25,6 +26,7 @@ export function navKey(p: S.Pane, e: KeyboardEvent): boolean {
       S.setCursor(p, p.cursor - ROW_PAGE, mode)
       break
     case 'Enter':
+      if (e.altKey) return false // Alt+Enter = Properties
       S.open(p, S.visible(p)[p.cursor], { reveal: primaryMod(e) })
       break
     default:
@@ -62,7 +64,7 @@ export const qlHold = reactive({ held: false })
 
 /** Any dialog that owns the keyboard: global shortcuts stay off while one is open. */
 export const anyModalOpen = () =>
-  !!(S.state.palette || S.state.batchRename || S.state.confirm || S.state.quickLook || settingsOpen.value || drives.unlock) ||
+  !!(S.state.palette || S.state.batchRename || S.state.properties || S.state.confirm || S.state.quickLook || settingsOpen.value || drives.unlock) ||
   // Any open reka dialog (covers future ones automatically).
   !!document.querySelector('[role=dialog][data-state=open],[role=alertdialog][data-state=open]')
 
@@ -75,9 +77,13 @@ function holdSpace(e: KeyboardEvent): boolean {
   e.preventDefault()
   if (e.repeat) return true
   const p = S.pane()
-  if (canQuickLook(S.visible(p)[p.cursor])) {
-    S.state.quickLook = true
+  const e2 = S.visible(p)[p.cursor]
+  if (canQuickLook(e2)) {
     qlHold.held = true
+    // Open once the image is decoded (or after a short cap) so it appears whole instead of popping in.
+    const show = () => qlHold.held && (S.state.quickLook = true)
+    if (kindOf(e2) === 'image') Promise.race([imageUrl(e2.path), new Promise((r) => setTimeout(r, 300))]).then(show)
+    else show()
   }
   return true
 }

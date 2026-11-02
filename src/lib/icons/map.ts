@@ -59,6 +59,8 @@ const rows = [
   ['alert-circle',     'circle-alert',      'warning-circle',      'danger-circle',             'error-circle',               'alert-circle'],
   ['info',             'info',              'info',                'info-circle',               'info',                       'info-circle'],
   ['warning',          'triangle-alert',    'warning',             'danger-triangle',           'warning',                    'alert-triangle'],
+  ['check',            'check',             'check',               'check-read',                'checkmark',                  'check'],
+  ['tag',              'tag',               'tag',                 'tag',                       'tag',                        'tag'],
   ['check-all',        'check-check',       'checks',              'checklist-minimalistic',    'checkmark-starburst',        'checks'],
   ['copy',             'copy',              'copy',                'copy',                      'copy',                       'copy'],
   ['scissors',         'scissors',          'scissors',            'scissors',                  'cut',                        'scissors'],

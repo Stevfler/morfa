@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { pane, state } from './state'
-import type { Pane } from './types'
+import type { Entry, Pane } from './types'
 import { settings } from '../settings'
 
 let seq = Date.now()
@@ -20,6 +20,12 @@ export async function startSearch(p: Pane, query: string) {
   else p.search = { query, id, results: [], done: false, scanned: 0 }
   p.cursor = 0
   p.selected.clear()
+  // "#tag" lists every file carrying that tag instead of walking the folder.
+  if (query.startsWith('#') && query.length > 1) {
+    const results = await invoke<Entry[]>('tags_find', { tag: query.slice(1).trim() })
+    if (p.search?.id === id) Object.assign(p.search, { results, done: true, scanned: results.length })
+    return
+  }
   return invoke('search', { root: p.path, query, hidden: state.showHidden, gitignore: settings.respectGitignore, id })
 }
 
