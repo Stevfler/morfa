@@ -62,6 +62,8 @@ pub fn run() {
             cleanup::cleanup_empty_trash,
             convert::convert_caps,
             convert::convert_images,
+            convert::convert_files,
+            convert::convert_targets,
             convert::convert_cancel,
             convert::convert_estimate,
             convert::preview::convert_preview,

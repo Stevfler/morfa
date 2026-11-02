@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FORMATS, caps } from '../../lib/convert'
+import { FORMATS } from '../../lib/convert'
 import { t } from '../../lib/i18n'
 
+/** `formats`: valid targets for the selection (backend order); null while loading. */
+const props = defineProps<{ formats: string[] | null }>()
 const model = defineModel<string>({ required: true })
-const list = computed(() => {
-  const c = caps.value
-  return c ? FORMATS.filter((f) => c.formats.includes(f.ext)) : FORMATS
-})
+const list = computed(() =>
+  (props.formats ?? []).map((ext) => FORMATS.find((f) => f.ext === ext) ?? { ext, label: ext.toUpperCase(), hint: '' }),
+)
 </script>
 
 <template>
-  <div class="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-2" role="radiogroup" :aria-label="t('convert.outputFormat')">
+  <p v-if="!formats" class="text-[12px] text-faint">{{ t('convert.loadingTargets') }}</p>
+  <p v-else-if="!list.length" class="text-[12px] text-faint">{{ t('convert.noTargets') }}</p>
+  <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-2" role="radiogroup" :aria-label="t('convert.outputFormat')">
     <button
-      v-for="f in list" :key="f.ext" type="button" role="radio" :aria-checked="model === f.ext" :disabled="!caps"
+      v-for="f in list" :key="f.ext" type="button" role="radio" :aria-checked="model === f.ext"
       class="flex flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left transition outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-40"
       :class="model === f.ext ? 'bg-accent-soft ring-1 ring-accent/50' : 'bg-raised/60 hover:bg-raised'"
       @click="model = f.ext"

@@ -37,6 +37,7 @@ export const pane = {
   'pane.menu.rename': 'Rename',
   'pane.menu.renameN': { one: 'Rename {count} item…', other: 'Rename {count} items…' },
   'pane.menu.convertTo': 'Convert to',
+  'pane.menu.convertNFilesTo': { one: 'Convert {count} file to', other: 'Convert {count} files to' },
   'pane.menu.convertNTo': { one: 'Convert {count} image to', other: 'Convert {count} images to' },
   'pane.menu.moreOptions': 'More options…',
   'pane.menu.copyPath': 'Copy path',

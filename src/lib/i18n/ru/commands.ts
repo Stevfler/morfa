@@ -27,7 +27,7 @@ export const commands = {
   'cmd.undo': 'Отменить',
   'cmd.redo': 'Повторить',
   'cmd.selectall': 'Выделить всё',
-  'cmd.convert': 'Конвертировать изображения…',
+  'cmd.convert': 'Конвертировать файлы…',
   'cmd.copypath': 'Копировать путь',
   'cmd.copyother': 'Копировать на другую панель',
   'cmd.moveother': 'Переместить на другую панель',
@@ -44,6 +44,6 @@ export const commands = {
   'cmd.closetab': 'Закрыть вкладку',
   'cmd.bookmark': 'Добавить / убрать папку из избранного',
   'cmd.terminal': 'Открыть терминал здесь',
-  'cmd.convertNone': 'Выберите одно или несколько изображений для конвертации',
+  'cmd.convertNone': 'Выберите изображения или документы для конвертации',
   'cmd.properties': 'Свойства',
 }

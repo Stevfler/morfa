@@ -37,6 +37,7 @@ export const pane = {
   'pane.menu.rename': 'Переименовать',
   'pane.menu.renameN': { one: 'Переименовать {count} элемент…', few: 'Переименовать {count} элемента…', many: 'Переименовать {count} элементов…', other: 'Переименовать {count} элемента…' },
   'pane.menu.convertTo': 'Конвертировать в',
+  'pane.menu.convertNFilesTo': { one: 'Конвертировать {count} файл в', few: 'Конвертировать {count} файла в', many: 'Конвертировать {count} файлов в', other: 'Конвертировать {count} файла в' },
   'pane.menu.convertNTo': { one: 'Конвертировать {count} изображение в', few: 'Конвертировать {count} изображения в', many: 'Конвертировать {count} изображений в', other: 'Конвертировать {count} изображения в' },
   'pane.menu.moreOptions': 'Другие параметры…',
   'pane.menu.copyPath': 'Копировать путь',

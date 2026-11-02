@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { state } from '../store'
-import type { Caps, ConvertOpts } from './formats'
+import { extOf, isImage, isImageFormat, type Caps, type ConvertOpts } from './formats'
 
 export const caps = ref<Caps | null>(null)
 let pending: Promise<Caps> | null = null
@@ -21,3 +21,28 @@ export function loadCaps(): Promise<Caps> {
 export const openConvert = (paths: string[], format?: string) => (state.convert = { paths, format })
 
 export const estimate = (source: string, opts: ConvertOpts) => invoke<{ before: number; after: number }>('convert_estimate', { source, opts })
+
+const targets = new Map<string, Promise<string[]>>()
+/** Output formats valid for every given file (backend intersection, most useful first); cached per extension set. */
+export function targetsFor(paths: string[]): Promise<string[]> {
+  const exts = [...new Set(paths.map(extOf))].sort()
+  const key = exts.join(',')
+  let p = targets.get(key)
+  if (!p) {
+    p = invoke<string[]>('convert_targets', { exts }).catch((e) => (targets.delete(key), Promise.reject(e)))
+    targets.set(key, p)
+  }
+  return p
+}
+
+export type Engine = 'image' | 'office' | 'pandoc'
+/** First engine this route needs that isn't installed (per caps), else null. */
+export function missingEngine(paths: string[], format: string, c: Caps | null): Engine | null {
+  if (!c) return 'image'
+  const exts = paths.map(extOf)
+  const docs = exts.filter((e) => !isImage(`x.${e}`) && e !== 'pdf')
+  if (docs.includes('md') && c.pandoc === false) return 'pandoc'
+  if (docs.some((e) => e !== 'md') && c.office === false) return 'office'
+  const raster = isImageFormat(format) || exts.some((e) => isImage(`x.${e}`))
+  return raster && c.engine === null ? 'image' : null
+}

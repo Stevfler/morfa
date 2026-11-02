@@ -50,7 +50,7 @@ export const core = {
   'convert.noEngineDesc': 'Install libvips (e.g. sudo pacman -S libvips) or ImageMagick, then try again.',
   'convert.failed': 'Conversion failed',
   'convert.converting': 'Converting {what} → {fmt}',
-  'convert.failedN': { one: '{count} image couldn’t be converted', other: '{count} images couldn’t be converted' },
+  'convert.failedN': { one: '{count} file couldn’t be converted', other: '{count} files couldn’t be converted' },
   'convert.cancelled': 'Conversion cancelled',
   'convert.converted': 'Converted {what} to {fmt}',
   'convert.show': 'Show',

@@ -2,7 +2,7 @@ import type { IconName } from './icons'
 import { openCleanup } from '../components/cleanup/cleanup'
 import { openSettings } from './settings'
 import * as S from './store'
-import { isImage, openConvert } from './convert'
+import { isConvertible, openConvert } from './convert'
 import { t, type MsgKey } from './i18n'
 import { canQuickLook, isMac, otherMod, primaryMod, prettyKeys } from './util'
 
@@ -137,9 +137,9 @@ function mountRoot(path: string) {
   return drives.sort((a, b) => b.path.length - a.path.length)[0]?.path ?? path
 }
 
-/** Opens the convert dialog for the selected images (non-images are skipped). */
+/** Opens the convert dialog for the selected images/documents (others are skipped). */
 function convertTargets() {
-  const paths = S.targets().filter((e) => !e.isDir && isImage(e.path)).map((e) => e.path)
+  const paths = S.targets().filter((e) => !e.isDir && isConvertible(e.path)).map((e) => e.path)
   if (paths.length) openConvert(paths)
   else S.toast({ title: t('cmd.convertNone'), tone: 'info' }, 2500)
 }

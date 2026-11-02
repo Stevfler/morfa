@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
   ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent,
@@ -11,7 +11,7 @@ import type { Pane } from '../../lib/store'
 import { keyLabel, parent } from '../../lib/util'
 import { cmd, openProperties } from '../../lib/commands'
 import { t as tr } from '../../lib/i18n'
-import { FORMATS, QUICK_FORMATS, caps, isImage, loadCaps, openConvert, quickConvert } from '../../lib/convert'
+import { formatLabel, isConvertible, isImage, openConvert, quickConvert, targetsFor } from '../../lib/convert'
 
 const props = defineProps<{ pane: Pane }>()
 const onItem = defineModel<boolean>('onItem', { required: true })
@@ -21,17 +21,30 @@ const cursorEntry = computed(() => S.visible(p)[p.cursor])
 const paths = () => S.targets(p).map((e) => e.path)
 // Right-click focuses this pane so keyboard shortcuts after the menu act on it too.
 const focusThis = () => S.focusPane(S.tab().panes.indexOf(p))
-const images = computed(() => {
+const convertible = computed(() => {
   const t = S.targets(p)
-  return t.length && t.every((e) => !e.isDir && isImage(e.path)) ? t.map((e) => e.path) : null
+  return t.length && t.every((e) => !e.isDir && isConvertible(e.path)) ? t.map((e) => e.path) : null
 })
-// Caps load lazily on first open; until then offer every quick format.
-const quick = computed(() => QUICK_FORMATS.filter((f) => !caps.value || caps.value.formats.includes(f)))
-const label = (ext: string) => FORMATS.find((f) => f.ext === ext)?.label ?? ext.toUpperCase()
+const convertLabel = computed(() => {
+  const c = convertible.value!
+  if (c.length === 1) return tr('pane.menu.convertTo')
+  return c.every(isImage) ? tr('pane.menu.convertNTo', { count: c.length }) : tr('pane.menu.convertNFilesTo', { count: c.length })
+})
+// Targets load lazily on menu open (cached per extension set); null while loading.
+const quick = ref<string[] | null>(null)
+let seq = 0
+async function loadQuick() {
+  const c = convertible.value
+  const my = ++seq
+  quick.value = null
+  if (!c) return
+  const list = await targetsFor(c).catch(() => [])
+  if (my === seq) quick.value = list.slice(0, 4)
+}
 function onOpen(o: boolean) {
   if (!o) return (onItem.value = false)
   focusThis()
-  loadCaps().catch(() => {})
+  void loadQuick()
 }
 
 function openIn(where: 'tab' | 'other') {
@@ -60,13 +73,14 @@ function openIn(where: 'tab' | 'other') {
           <ContextMenuItem class="mi" @select="S.copyToClipboard('copy', p)"><Icon name="copy" />{{ tr('pane.menu.copy') }}<span>{{ keyLabel('Ctrl+C') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.copyToClipboard('move', p)"><Icon name="scissors" />{{ tr('pane.menu.cut') }}<span>{{ keyLabel('Ctrl+X') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.startRename(p)"><Icon name="pencil" />{{ S.targets(p).length > 1 ? tr('pane.menu.renameN', { count: S.targets(p).length }) : tr('pane.menu.rename') }}<span>F2</span></ContextMenuItem>
-          <ContextMenuSub v-if="images">
-            <ContextMenuSubTrigger class="mi"><Icon name="image" />{{ images.length > 1 ? tr('pane.menu.convertNTo', { count: images.length }) : tr('pane.menu.convertTo') }}<Icon name="chevron-right" class="ml-auto" /></ContextMenuSubTrigger>
+          <ContextMenuSub v-if="convertible">
+            <ContextMenuSubTrigger class="mi"><Icon name="image" />{{ convertLabel }}<Icon name="chevron-right" class="ml-auto" /></ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent class="menu min-w-40" :side-offset="4">
-                <ContextMenuItem v-for="f in quick" :key="f" class="mi" @select="quickConvert(images, f)">{{ label(f) }}</ContextMenuItem>
-                <ContextMenuSeparator class="sep" />
-                <ContextMenuItem class="mi" @select="openConvert(images)">{{ tr('pane.menu.moreOptions') }}</ContextMenuItem>
+                <ContextMenuItem v-if="!quick" class="mi" disabled>…</ContextMenuItem>
+                <ContextMenuItem v-for="f in quick ?? []" :key="f" class="mi" @select="quickConvert(convertible, f)">{{ formatLabel(f) }}</ContextMenuItem>
+                <ContextMenuSeparator v-if="quick?.length !== 0" class="sep" />
+                <ContextMenuItem class="mi" @select="openConvert(convertible)">{{ tr('pane.menu.moreOptions') }}</ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuPortal>
           </ContextMenuSub>

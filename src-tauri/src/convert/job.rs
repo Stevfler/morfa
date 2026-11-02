@@ -1,11 +1,6 @@
 //! Converts a single file: run the engine into a temp file, then publish it.
 use super::{engine::{command, Engine}, naming, ConvertOpts};
-use std::{
-    io::Read,
-    path::{Path, PathBuf},
-    process::Stdio,
-    time::Duration,
-};
+use std::path::{Path, PathBuf};
 
 /// Convert `src` to `dest` (a temp file is used and removed on any failure). `cancelled` is polled
 /// while the child runs; returning true kills it.
@@ -21,38 +16,8 @@ fn run(e: &Engine, src: &Path, tmp: &Path, o: &ConvertOpts, cancelled: &dyn Fn()
     if !src.is_file() {
         return Err("not a file".into());
     }
-    let mut cmd = command(e, src, tmp, o)?;
-    cmd.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
-    let mut child = cmd.spawn().map_err(|err| format!("can't start converter: {err}"))?;
-    let mut stderr = child.stderr.take();
-    // Drain stderr on a thread so a chatty tool can't block on a full pipe.
-    let reader = std::thread::spawn(move || {
-        let mut s = String::new();
-        if let Some(r) = stderr.as_mut() {
-            let _ = r.read_to_string(&mut s);
-        }
-        s
-    });
-    let status = loop {
-        if cancelled() {
-            let _ = child.kill();
-            let _ = child.wait();
-            let _ = reader.join();
-            return Err("Cancelled".into());
-        }
-        match child.try_wait() {
-            Ok(Some(s)) => break s,
-            Ok(None) => std::thread::sleep(Duration::from_millis(30)),
-            Err(err) => return Err(err.to_string()),
-        }
-    };
-    let err = reader.join().unwrap_or_default();
-    let ok = std::fs::metadata(tmp).map(|m| m.len() > 0).unwrap_or(false);
-    if status.success() && ok {
-        return Ok(());
-    }
-    let msg = err.lines().map(str::trim).rfind(|l| !l.is_empty() && !l.contains("unable to load")).unwrap_or("conversion failed").to_string();
-    Err(msg)
+    super::proc::run(command(e, src, tmp, o)?, cancelled, None)?;
+    if super::proc::nonempty(tmp) { Ok(()) } else { Err("conversion failed".into()) }
 }
 
 /// Full per-file pipeline used by `convert_images`: pick a name, convert, publish.

@@ -27,7 +27,7 @@ export const commands = {
   'cmd.undo': 'Undo',
   'cmd.redo': 'Redo',
   'cmd.selectall': 'Select all',
-  'cmd.convert': 'Convert images…',
+  'cmd.convert': 'Convert files…',
   'cmd.copypath': 'Copy path',
   'cmd.copyother': 'Copy to the other pane',
   'cmd.moveother': 'Move to the other pane',
@@ -44,6 +44,6 @@ export const commands = {
   'cmd.closetab': 'Close tab',
   'cmd.bookmark': 'Add / remove folder from Favorites',
   'cmd.terminal': 'Open terminal here',
-  'cmd.convertNone': 'Select one or more images to convert',
+  'cmd.convertNone': 'Select images or documents to convert',
   'cmd.properties': 'Properties',
 }

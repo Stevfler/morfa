@@ -1,17 +1,23 @@
-//! Image conversion by shelling out to libvips (preferred) or ImageMagick.
+//! File conversion by shelling out: images via libvips/ImageMagick, documents via LibreOffice/pandoc.
+mod dispatch;
+mod doc;
 mod engine;
 mod job;
 mod naming;
+mod pdf;
 pub mod preview;
+mod proc;
+mod routes;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_doc;
 
 use crate::CmdResult;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashSet,
-    path::PathBuf,
-    sync::{atomic::{AtomicUsize, Ordering}, Arc, Mutex},
+    sync::{Arc, Mutex},
 };
 use tauri::{AppHandle, Emitter, State};
 
@@ -37,10 +43,13 @@ pub struct ConvertOpts {
 pub struct Caps {
     engine: Option<String>,
     formats: Vec<String>,
+    office: bool,
+    pandoc: bool,
 }
 
 #[derive(Serialize)]
 pub struct ConvertResult {
+    // one (src, dest) per written file; a PDF -> images source contributes one per page
     pairs: Vec<(String, String)>,
     failed: Vec<(String, String)>,
     cancelled: bool,
@@ -79,12 +88,22 @@ fn ready(o: &mut ConvertOpts) -> CmdResult<&'static engine::Engine> {
 
 #[tauri::command]
 pub async fn convert_caps() -> Caps {
-    tauri::async_runtime::spawn_blocking(|| match engine::engine() {
-        Some(e) => Caps { engine: Some(e.name().into()), formats: e.formats.clone() },
-        None => Caps { engine: None, formats: vec![] },
+    let none = || Caps { engine: None, formats: vec![], office: false, pandoc: false };
+    tauri::async_runtime::spawn_blocking(move || {
+        let (office, pandoc) = (doc::office().is_some(), doc::pandoc());
+        match engine::engine() {
+            Some(e) => Caps { engine: Some(e.name().into()), formats: e.formats.clone(), office, pandoc },
+            None => Caps { office, pandoc, ..none() },
+        }
     })
     .await
-    .unwrap_or(Caps { engine: None, formats: vec![] })
+    .unwrap_or_else(|_| none())
+}
+
+/// Output formats valid for all the given input extensions, most useful first.
+#[tauri::command]
+pub async fn convert_targets(exts: Vec<String>) -> Vec<String> {
+    tauri::async_runtime::spawn_blocking(move || routes::detected(|a| routes::targets(&exts, a))).await.unwrap_or_default()
 }
 
 #[tauri::command]
@@ -92,11 +111,11 @@ pub async fn convert_images(app: AppHandle, state: State<'_, ConvertState>, id: 
     let cancels = state.0.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let mut opts = opts;
-        let e = ready(&mut opts)?;
+        opts.format = routes::norm(&opts.format);
         let emit = |done: u64, current: &str, finished: bool| {
             let _ = app.emit("op-progress", Progress { id, done, total: sources.len() as u64, current: current.into(), finished });
         };
-        let r = run_all(e, &sources, &opts, &|| cancels.lock().unwrap_or_else(|x| x.into_inner()).contains(&id), &emit);
+        let r = dispatch::run_all(&sources, &opts, &|| cancels.lock().unwrap_or_else(|x| x.into_inner()).contains(&id), &emit);
         cancels.lock().unwrap_or_else(|x| x.into_inner()).remove(&id);
         Ok(r)
     })
@@ -104,37 +123,10 @@ pub async fn convert_images(app: AppHandle, state: State<'_, ConvertState>, id: 
     .map_err(|e| e.to_string())?
 }
 
-/// Converts with a small worker pool; one failure doesn't stop the others.
-fn run_all(e: &engine::Engine, sources: &[String], o: &ConvertOpts, cancelled: &(dyn Fn() -> bool + Sync), emit: &(dyn Fn(u64, &str, bool) + Sync)) -> ConvertResult {
-    let next = AtomicUsize::new(0);
-    let out = Mutex::new(ConvertResult { pairs: vec![], failed: vec![], cancelled: false });
-    let workers = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(2).clamp(2, 4).min(sources.len().max(1));
-    emit(0, sources.first().map(String::as_str).unwrap_or(""), false);
-    std::thread::scope(|s| {
-        for _ in 0..workers {
-            s.spawn(|| loop {
-                let i = next.fetch_add(1, Ordering::SeqCst);
-                if i >= sources.len() || cancelled() {
-                    break;
-                }
-                let src = &sources[i];
-                let res = job::convert_file(e, &PathBuf::from(src), o, cancelled);
-                let mut g = out.lock().unwrap_or_else(|x| x.into_inner());
-                match res {
-                    Ok(d) => g.pairs.push((src.clone(), d.to_string_lossy().into())),
-                    Err(_) if cancelled() => {}
-                    Err(err) => g.failed.push((src.clone(), err)),
-                }
-                let done = (g.pairs.len() + g.failed.len()) as u64;
-                drop(g);
-                emit(done, src, false);
-            });
-        }
-    });
-    let mut r = out.into_inner().unwrap_or_else(|x| x.into_inner());
-    r.cancelled = cancelled();
-    emit((r.pairs.len() + r.failed.len()) as u64, "", true);
-    r
+/// Alias of `convert_images` (accepts any mix of inputs).
+#[tauri::command]
+pub async fn convert_files(app: AppHandle, state: State<'_, ConvertState>, id: u64, sources: Vec<String>, opts: ConvertOpts) -> CmdResult<ConvertResult> {
+    convert_images(app, state, id, sources, opts).await
 }
 
 #[tauri::command]
@@ -144,5 +136,9 @@ pub fn convert_cancel(state: State<'_, ConvertState>, id: u64) {
 
 #[tauri::command]
 pub async fn convert_estimate(source: String, opts: ConvertOpts) -> CmdResult<Estimate> {
+    let ext = routes::norm(&std::path::Path::new(&source).extension().unwrap_or_default().to_string_lossy());
+    if !routes::is_image(&ext) {
+        return Err("UNSUPPORTED".into());
+    }
     tauri::async_runtime::spawn_blocking(move || job::estimate(&source, opts)).await.map_err(|e| e.to_string())?
 }

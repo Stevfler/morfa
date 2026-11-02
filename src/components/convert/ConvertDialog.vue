@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
-import { convertFileSrc } from '@tauri-apps/api/core'
+import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogClose } from 'reka-ui'
 import Icon from '../Icon.vue'
 import FormatPicker from './FormatPicker.vue'
 import QualityPicker from './QualityPicker.vue'
@@ -9,8 +8,9 @@ import ResizePicker from './ResizePicker.vue'
 import OutputPicker from './OutputPicker.vue'
 import SizeEstimate from './SizeEstimate.vue'
 import EngineBanner from './EngineBanner.vue'
+import ConvertHeader from './ConvertHeader.vue'
 import * as S from '../../lib/store'
-import { caps, loadCaps, defaultOpts, runConvert, PRESETS, type ConvertOpts } from '../../lib/convert'
+import { caps, loadCaps, defaultOpts, runConvert, targetsFor, missingEngine, isImage, isImageFormat, PRESETS, type ConvertOpts } from '../../lib/convert'
 import { basename, load, save } from '../../lib/util'
 import { t } from '../../lib/i18n'
 
@@ -24,6 +24,7 @@ const paths = computed(() => state.convert?.paths ?? [])
 const opts = reactive<ConvertOpts>(defaultOpts('webp'))
 const preset = ref('balanced')
 const loading = ref(false)
+const targets = ref<string[] | null>(null)
 
 watch(open, async (v) => {
   if (!v) return
@@ -34,31 +35,41 @@ watch(open, async (v) => {
     if (!state.convert?.format || state.convert.format === last.format) opts.quality = last.quality
     opts.stripMetadata = last.stripMetadata
   } else preset.value = PRESETS.find((p) => p.quality === opts.quality)?.key ?? 'custom'
-  if (!caps.value) {
-    loading.value = true
-    try { await loadCaps() } catch { /* banner covers it */ } finally { loading.value = false }
-  }
-  const avail = caps.value?.formats ?? []
-  if (avail.length && !avail.includes(opts.format)) opts.format = avail.includes('webp') ? 'webp' : avail[0]
+  targets.value = null
+  loading.value = true
+  const forPaths = paths.value
+  const [, list] = await Promise.all([
+    caps.value ? null : loadCaps().catch(() => null), // banner covers a failure
+    targetsFor(forPaths).catch(() => [] as string[]),
+  ])
+  if (forPaths !== paths.value) return
+  loading.value = false
+  targets.value = list
+  if (list.length && !list.includes(opts.format)) opts.format = list[0]
 }, { immediate: true })
 
 const lossless = computed(() => LOSSLESS.has(opts.format))
-const noEngine = computed(() => !loading.value && (!caps.value || caps.value.engine === null))
-const title = computed(() => (paths.value.length === 1 ? t('convert.titleOne', { name: basename(paths.value[0]) }) : t('convert.titleMany', { count: paths.value.length })))
-const thumbs = computed(() => paths.value.slice(0, 6).map((p) => ({ p, src: convertFileSrc(p) })))
+// A format the backend offers is convertible here; only explain a gap otherwise.
+const engine = computed(() => (loading.value || targets.value?.includes(opts.format) ? null : missingEngine(paths.value, opts.format, caps.value)))
+const noEngine = computed(() => !!engine.value)
+const allImages = computed(() => paths.value.every(isImage))
+// Raster output: quality applies (pdf→jpg too); resize/metadata/estimate only for image sources.
+const imageOut = computed(() => isImageFormat(opts.format))
+const imageIn = computed(() => imageOut.value && allImages.value)
+const perPage = computed(() => imageOut.value && paths.value.some((p) => p.toLowerCase().endsWith('.pdf')))
 const example = computed(() => {
   const n = basename(paths.value[0] ?? 'image.jpg')
   const dot = n.lastIndexOf('.')
   const stem = dot > 0 ? n.slice(0, dot) : n
   return (opts.nameTemplate || '{name}').replace(/\{name\}/g, stem) + '.' + opts.format
 })
-const canConvert = computed(() => !loading.value && !noEngine.value && paths.value.length > 0 && !!opts.nameTemplate.trim())
+const canConvert = computed(() => !loading.value && !noEngine.value && !!targets.value?.includes(opts.format) && paths.value.length > 0 && !!opts.nameTemplate.trim())
 
 function submit() {
   if (!canConvert.value) return
   save(KEY, { format: opts.format, preset: preset.value, quality: opts.quality, stripMetadata: opts.stripMetadata } satisfies Remembered)
   const sources = [...paths.value]
-  const o: ConvertOpts = { ...opts, resize: opts.resize ? { ...opts.resize } : null }
+  const o: ConvertOpts = imageIn.value ? { ...opts, resize: opts.resize ? { ...opts.resize } : null } : { ...opts, resize: null, stripMetadata: false }
   state.convert = null
   void runConvert(sources, o)
 }
@@ -75,39 +86,24 @@ function onKey(e: KeyboardEvent) {
         class="fixed top-1/2 left-1/2 z-50 flex max-h-[88vh] w-[min(640px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl border border-line bg-panel shadow-2xl outline-none"
         @keydown="onKey"
       >
-        <header class="flex items-start gap-4 px-7 pt-6 pb-5">
-          <div class="flex shrink-0 -space-x-3">
-            <img
-              v-for="(t, i) in thumbs.slice(0, 3)" :key="t.p" :src="t.src" alt="" loading="lazy"
-              class="size-12 rounded-lg bg-raised object-cover ring-2 ring-panel" :style="{ zIndex: 3 - i }"
-            />
-          </div>
-          <div class="min-w-0 flex-1">
-            <DialogTitle class="truncate text-[16px] font-medium">{{ title }}</DialogTitle>
-            <DialogDescription class="mt-1 text-[12px] text-faint">
-              {{ t('convert.desc') }}{{ thumbs.length < paths.length ? ` · ${t('convert.moreHidden', { n: paths.length - thumbs.length })}` : '' }}.
-            </DialogDescription>
-          </div>
-          <DialogClose class="grid size-7 place-items-center rounded-md text-dim outline-none hover:bg-raised hover:text-fg focus-visible:ring-2 focus-visible:ring-accent/60" :aria-label="t('common.close')">
-            <Icon name="x" class="size-4" />
-          </DialogClose>
-        </header>
+        <ConvertHeader :paths="paths" />
 
         <div class="min-h-0 flex-1 space-y-7 overflow-y-auto px-7 pb-6">
-          <EngineBanner v-if="noEngine" />
+          <EngineBanner v-if="engine" :engine="engine" />
           <section>
             <h3 class="sec">{{ t('convert.format') }}</h3>
-            <FormatPicker v-model="opts.format" />
+            <FormatPicker v-model="opts.format" :formats="targets" />
+            <p v-if="perPage" class="mt-2 text-[12px] text-faint">{{ t('convert.perPage') }}</p>
           </section>
-          <section>
+          <section v-if="imageOut">
             <h3 class="sec">{{ t('convert.quality') }}</h3>
             <QualityPicker v-model:quality="opts.quality" v-model:preset="preset" :lossless="lossless" />
           </section>
-          <section>
+          <section v-if="imageIn">
             <h3 class="sec">{{ t('convert.size') }}</h3>
             <ResizePicker v-model="opts.resize" />
           </section>
-          <section>
+          <section v-if="imageIn">
             <label class="flex cursor-pointer items-center justify-between gap-4 rounded-lg px-1 py-1">
               <span>
                 <span class="block text-[13px] text-fg">{{ t('convert.strip') }}</span>
@@ -123,7 +119,7 @@ function onKey(e: KeyboardEvent) {
         </div>
 
         <footer class="flex items-center gap-3 border-t border-line/60 px-7 py-4">
-          <SizeEstimate :source="paths[0] ?? null" :opts="opts" :disabled="noEngine || loading" />
+          <SizeEstimate :source="imageIn ? paths[0] ?? null : null" :opts="opts" :disabled="noEngine || loading" />
           <DialogClose class="ml-auto h-9 rounded-lg px-4 text-[12.5px] text-dim transition hover:bg-raised hover:text-fg">{{ t('common.cancel') }}</DialogClose>
           <button
             class="flex h-9 items-center gap-2 rounded-lg bg-accent px-5 text-[12.5px] font-medium text-on-accent transition hover:brightness-110 disabled:opacity-40"

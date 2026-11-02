@@ -1,5 +1,5 @@
 use super::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 fn opts(format: &str, resize: Option<Resize>) -> ConvertOpts {
     ConvertOpts { format: format.into(), quality: 80, resize, strip_metadata: true, out_dir: None, name_template: "{name}".into() }
@@ -41,7 +41,7 @@ fn converts_png_to_webp() {
     std::fs::write(d.join("pic.webp"), b"occupied").unwrap();
     let s = vec![src.to_string_lossy().into_owned(), d.join("missing.png").to_string_lossy().into_owned()];
     let o = opts("webp", Some(Resize { mode: "max".into(), value: 100 }));
-    let r = run_all(e, &s, &o, &|| false, &|_, _, _| {});
+    let r = dispatch::run_all(&s, &o, &|| false, &|_, _, _| {});
     assert_eq!(r.pairs.len(), 1, "failed: {:?}", r.failed);
     assert_eq!(r.failed.len(), 1);
     assert!(!r.cancelled);
@@ -57,7 +57,7 @@ fn converts_png_to_webp() {
     let est = job::estimate(&src.to_string_lossy(), opts("jpg", Some(Resize { mode: "percent".into(), value: 50 }))).unwrap();
     assert!(est.before > 0 && est.after > 0);
     // Cancelled before start: nothing written.
-    let r = run_all(e, &s, &o, &|| true, &|_, _, _| {});
+    let r = dispatch::run_all(&s, &o, &|| true, &|_, _, _| {});
     assert!(r.cancelled && r.pairs.is_empty());
     let _ = std::fs::remove_dir_all(&d);
 }
