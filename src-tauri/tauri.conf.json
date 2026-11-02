@@ -51,6 +51,24 @@
         "type": "embedBootstrapper",
         "silent": true
       }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libvips-tools"],
+        "recommends": [
+          "libreoffice-writer",
+          "libreoffice-calc",
+          "libreoffice-impress"
+        ]
+      },
+      "rpm": {
+        "depends": ["vips-tools"],
+        "recommends": [
+          "libreoffice-writer",
+          "libreoffice-calc",
+          "libreoffice-impress"
+        ]
+      }
     }
   }
 }

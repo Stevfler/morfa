@@ -1,0 +1,17 @@
+# Пакет для Arch Linux: перепаковывает содержимое .deb, собранного tauri в arch-контейнере
+# (бинарь слинкован с библиотеками Arch). MORFA_VERSION и DEB_PATH задаёт ci/build-linux.sh.
+pkgname=morfa
+pkgver=${MORFA_VERSION}
+pkgrel=1
+pkgdesc="Morfa: fast file manager with built-in file conversion"
+arch=('x86_64')
+license=('custom')
+depends=('webkit2gtk-4.1' 'gtk3' 'librsvg' 'openssl' 'hicolor-icon-theme' 'libvips' 'poppler-glib')
+optdepends=('libreoffice-fresh: document conversion (docx, xlsx, pptx, pdf)'
+            'pandoc-cli: Markdown and other text formats'
+            'imagemagick: fallback image converter')
+options=('!strip' '!debug')
+
+package() {
+  bsdtar -xOf "${DEB_PATH}" 'data.tar.*' | bsdtar -xf - -C "${pkgdir}"
+}
