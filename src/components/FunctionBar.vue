@@ -35,13 +35,13 @@ const run = (b: Btn, e: MouseEvent) => cmd(b.id === 'trash' && e.shiftKey ? 'del
 </script>
 
 <template>
-  <div class="flex h-9 shrink-0 items-stretch gap-1 border-t border-line bg-panel px-2 py-1">
+  <div class="flex h-9 shrink-0 items-stretch gap-1.5 px-2 pb-2">
     <TooltipRoot v-for="b in buttons" :key="b.id">
       <TooltipTrigger as-child>
         <!-- Wrapper span keeps the tooltip alive on disabled buttons (they swallow pointer events). -->
         <span class="flex min-w-0 flex-1">
           <button
-            class="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-[12px] text-dim transition hover:bg-raised hover:text-fg disabled:pointer-events-none disabled:opacity-35"
+            class="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-[12px] text-dim transition hover:bg-raised hover:text-fg disabled:pointer-events-none disabled:opacity-35"
             :disabled="!!b.disabled"
             :aria-label="`${b.text} (${b.fkey})`"
             @click="run(b, $event)"
@@ -56,7 +56,7 @@ const run = (b: Btn, e: MouseEvent) => cmd(b.id === 'trash' && e.shiftKey ? 'del
         <TooltipContent
           side="top"
           :side-offset="6"
-          class="z-50 flex items-center gap-2 rounded-md border border-line bg-raised px-2 py-1 text-[12px] text-fg shadow-xl"
+          class="z-50 flex items-center gap-2 rounded-md bg-raised px-2 py-1 ring-1 ring-fg/5 text-[12px] text-fg shadow-xl"
         >
           {{ b.disabled ?? b.tip }}
           <span v-if="!b.disabled" class="flex gap-0.5"><kbd v-for="k in prettyKeys(b.fkey)" :key="k">{{ k }}</kbd></span>

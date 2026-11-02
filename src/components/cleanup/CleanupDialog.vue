@@ -37,8 +37,8 @@ function deleteForever() {
   <DialogRoot v-model:open="open">
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
-      <DialogContent class="fixed top-1/2 left-1/2 z-40 flex h-[85vh] w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-2xl outline-none">
-        <header class="flex h-12 shrink-0 items-center gap-3 border-b border-line px-4">
+      <DialogContent class="fixed top-1/2 left-1/2 z-40 flex h-[85vh] w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-panel ring-1 ring-fg/5 shadow-2xl outline-none">
+        <header class="flex h-12 shrink-0 items-center gap-3 px-4">
           <Icon name="broom" class="size-4 text-accent" />
           <DialogTitle class="truncate text-[14px] font-medium">Clean up — {{ cleanup.name }}</DialogTitle>
           <DialogDescription class="sr-only">Space used on {{ cleanup.root }} and items that can be cleaned up.</DialogDescription>
@@ -47,8 +47,8 @@ function deleteForever() {
             <span>{{ cleanup.files.toLocaleString() }} files</span>
             <span>{{ fmtSize(cleanup.bytes) }}</span>
             <span>{{ elapsed }}</span>
-            <button v-if="cleanup.scanning" class="h-7 rounded-md border border-line px-2.5 text-fg hover:bg-raised" @click="cancelScan">Cancel</button>
-            <button v-else class="flex h-7 items-center gap-1.5 rounded-md border border-line px-2.5 text-fg hover:bg-raised" @click="scan">
+            <button v-if="cleanup.scanning" class="h-7 rounded-full bg-raised px-3 text-fg hover:bg-accent-soft" @click="cancelScan">Cancel</button>
+            <button v-else class="flex h-7 items-center gap-1.5 rounded-full bg-raised px-3 text-fg hover:bg-accent-soft" @click="scan">
               <Icon name="refresh" class="size-3.5" /> Rescan
             </button>
           </div>
@@ -58,7 +58,7 @@ function deleteForever() {
         </header>
 
         <div v-if="cleanup.report" class="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <SpaceMap class="min-h-0 border-b border-line md:border-r md:border-b-0" />
+          <SpaceMap class="min-h-0 rounded-lg" />
           <section class="min-h-0 space-y-2 overflow-y-auto p-3" aria-label="Clean-up suggestions">
             <CategoryCard v-for="c in cleanup.report.categories" :key="c.id" :cat="c" />
           </section>
@@ -68,7 +68,7 @@ function deleteForever() {
           <p v-else>{{ cleanup.error || 'No results.' }}</p>
         </div>
 
-        <footer class="flex h-13 shrink-0 items-center gap-2 border-t border-line px-4 text-[12.5px]">
+        <footer class="flex h-13 shrink-0 items-center gap-2 px-4 text-[12.5px]">
           <span class="text-dim">Selected: <span class="text-fg tabular-nums">{{ count }} item{{ count === 1 ? '' : 's' }}, {{ fmtSize(selectedBytes()) || '0 B' }}</span></span>
           <button class="ml-auto h-8 rounded-md px-3 text-danger hover:bg-danger/10 disabled:opacity-40" :disabled="!count || cleanup.busy" @click="deleteForever">Delete permanently…</button>
           <button class="flex h-8 items-center gap-1.5 rounded-md bg-accent px-4 font-medium text-on-accent hover:brightness-110 disabled:opacity-40" :disabled="!count || cleanup.busy" @click="removeSelected(false)">

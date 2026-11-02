@@ -14,7 +14,7 @@ function sortBy(key: SortKey) {
 </script>
 
 <template>
-  <div class="grid h-7 shrink-0 items-center border-b border-line px-3 text-[11.5px] text-faint" :style="{ gridTemplateColumns: 'minmax(0,1fr) 90px 150px 80px' }">
+  <div class="file-cols grid h-7 shrink-0 items-center px-3 text-[11.5px] text-faint">
     <button v-for="[k, label] in cols"
       :key="k" class="flex items-center gap-1 hover:text-fg" :class="k !== 'name' && 'justify-end'" :disabled="searching" @click="sortBy(k)"
     >

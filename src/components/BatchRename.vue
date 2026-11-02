@@ -79,8 +79,8 @@ function apply() {
   <DialogRoot v-model:open="open">
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
-      <DialogContent class="fixed top-1/2 left-1/2 z-50 flex max-h-[86vh] w-[min(760px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-line bg-panel shadow-2xl outline-none">
-        <div class="border-b border-line px-5 py-4">
+      <DialogContent class="fixed top-1/2 left-1/2 z-50 flex max-h-[86vh] w-[min(760px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl bg-panel ring-1 ring-fg/5 shadow-2xl outline-none">
+        <div class="px-5 pt-5 pb-3">
           <DialogTitle class="text-[15px] font-medium">Rename {{ state.batchRename?.length }} items</DialogTitle>
           <DialogDescription class="mt-0.5 text-[12px] text-faint">Every change is previewed live. Extensions are kept. You can undo with {{ keyLabel('Ctrl+Z') }}.</DialogDescription>
         </div>
@@ -114,8 +114,8 @@ function apply() {
           </div>
         </div>
 
-        <div class="mx-5 min-h-0 flex-1 overflow-y-auto rounded-lg border border-line bg-bg/60">
-          <div v-for="r in preview.rows" :key="r.path" class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-line/60 px-3 py-1.5 text-[12px] last:border-0">
+        <div class="mx-5 min-h-0 flex-1 overflow-y-auto rounded-lg bg-raised/60">
+          <div v-for="r in preview.rows" :key="r.path" class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-md px-3 py-1.5 text-[12px] odd:bg-raised">
             <span class="truncate text-dim">{{ r.name }}</span>
             <Icon name="arrow-right" class="size-3.5" :class="r.changed ? 'text-accent' : 'text-line'" />
             <span class="truncate" :class="r.changed ? 'text-fg' : 'text-faint'">{{ r.next }}</span>
@@ -145,6 +145,6 @@ function apply() {
 }
 .field input:not([type='checkbox']),
 .field select {
-  @apply h-8 rounded-md border border-line bg-bg px-2.5 text-[12.5px] text-fg outline-none focus:border-accent/60;
+  @apply h-8 rounded-full bg-raised px-3 text-[12.5px] text-fg outline-none focus:ring-1 focus:ring-accent/50;
 }
 </style>

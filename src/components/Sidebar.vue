@@ -35,7 +35,7 @@ function onDropFav(e: DragEvent) {
 </script>
 
 <template>
-  <aside class="flex w-56 shrink-0 flex-col gap-4 overflow-y-auto border-r border-line bg-panel px-2 py-3">
+  <aside class="flex w-56 shrink-0 flex-col gap-5 overflow-y-auto px-2 py-2">
     <section>
       <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Places</h3>
       <button
@@ -49,7 +49,7 @@ function onDropFav(e: DragEvent) {
 
     <section @dragover.prevent @drop.prevent="onDropFav">
       <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Favorites</h3>
-      <p v-if="!state.bookmarks.length" class="mx-2 rounded-md border border-dashed border-line px-2 py-2 text-[11.5px] leading-snug text-faint">
+      <p v-if="!state.bookmarks.length" class="mx-2 rounded-lg bg-raised/50 px-3 py-2.5 text-[11.5px] leading-snug text-faint">
         Drag folders here or press <kbd>{{ keyLabel('Ctrl+D') }}</kbd>
       </p>
       <button
@@ -77,7 +77,7 @@ function onDropFav(e: DragEvent) {
 <style scoped>
 @reference '../style.css';
 .item {
-  @apply flex h-7 w-full items-center gap-2.5 rounded-md px-2 text-left text-[12.5px] text-dim transition hover:bg-raised hover:text-fg;
+  @apply flex h-8 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[12.5px] text-dim transition hover:bg-raised hover:text-fg;
 }
 .item.on {
   @apply bg-accent-soft text-fg;

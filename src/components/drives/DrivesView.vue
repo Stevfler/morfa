@@ -39,7 +39,7 @@ function onKey(e: KeyboardEvent) {
     <h2 class="mb-4 text-[13px] font-medium text-dim">Drives</h2>
     <div ref="grid" class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3" @keydown="onKey">
       <DriveTile v-for="d in disks" :key="d.path" :place="d" :pane="pane" />
-      <div v-for="d in drives.list" :key="d.device" class="relative rounded-xl border border-dashed border-line opacity-60 transition hover:opacity-100">
+      <div v-for="d in drives.list" :key="d.device" class="relative rounded-xl border border-dashed border-line/60 opacity-60 transition hover:opacity-100">
         <button data-tile class="flex w-full flex-col gap-2 rounded-xl p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent"
           :title="`${d.device} · ${d.fstype}`" @click="clickDrive(d)">
           <span class="flex items-start gap-3">

@@ -22,10 +22,10 @@ const densities = [{ value: 'comfortable', label: 'Comfortable' }, { value: 'com
       <h3 class="mb-2 text-[11px] font-medium uppercase tracking-wide text-faint">Corners</h3>
       <Segmented v-model="settings.radius" :options="radii" label="Corner radius" />
       <!-- live preview: follows the radius tokens -->
-      <div class="mt-3 flex items-center gap-2 rounded-xl border border-line bg-bg p-3">
+      <div class="mt-3 flex items-center gap-2 rounded-xl bg-raised p-3">
         <div class="h-8 flex-1 rounded-lg bg-raised" />
         <div class="grid h-8 place-items-center rounded-md bg-accent px-3 text-[12px] font-medium text-on-accent">Button</div>
-        <div class="size-8 rounded-md border border-line" />
+        <div class="size-8 rounded-md ring-1 ring-fg/10" />
       </div>
     </div>
     <div>

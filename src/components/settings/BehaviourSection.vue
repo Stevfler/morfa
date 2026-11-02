@@ -6,7 +6,7 @@ import Toggle from './Toggle.vue'
 </script>
 
 <template>
-  <section class="divide-y divide-line">
+  <section class="flex flex-col gap-1">
     <Row title="Show hidden files" desc="Dotfiles and hidden entries">
       <Toggle v-model="state.showHidden" label="Show hidden files" />
     </Row>

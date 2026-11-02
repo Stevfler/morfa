@@ -16,7 +16,7 @@ const selectedBytes = computed(() =>
 </script>
 
 <template>
-  <footer class="flex h-7 shrink-0 items-center gap-3 border-t border-line px-3 text-[11.5px] text-faint">
+  <footer class="flex h-8 shrink-0 items-center gap-3 px-4 text-[11.5px] text-faint">
     <span v-if="p.search">{{ p.search.results.length.toLocaleString() }}{{ p.search.results.length >= 5000 ? '+' : '' }} found</span>
     <span v-else>{{ list.length.toLocaleString() }} items</span>
     <span v-if="p.selected.size" class="text-accent">{{ p.selected.size }} selected<template v-if="selectedBytes"> · {{ fmtSize(selectedBytes) }}</template></span>

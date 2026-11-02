@@ -19,7 +19,7 @@ const long = (h: string) => (h.length === 4 ? '#' + [...h.slice(1)].map((c) => c
 </script>
 
 <template>
-  <div class="mt-4 border-t border-line pt-3">
+  <div class="mt-5 pt-1">
     <Row title="Icon colour" desc="Folders and file icons in lists and previews">
       <div class="w-72"><Segmented v-model="settings.iconColor" :options="modes" label="Icon colour" /></div>
     </Row>
@@ -30,12 +30,12 @@ const long = (h: string) => (h.length === 4 ? '#' + [...h.slice(1)].map((c) => c
         :class="settings.iconCustom === c ? 'border-fg' : 'border-transparent'"
         :style="{ background: c }" @click="setCustom(c)"
       />
-      <label class="ml-2 flex h-7 cursor-pointer items-center gap-2 rounded-md border border-line bg-bg px-2 text-[12px] text-dim hover:text-fg">
+      <label class="ml-2 flex h-7 cursor-pointer items-center gap-2 rounded-full bg-raised px-3 text-[12px] text-dim hover:text-fg">
         <input type="color" class="size-4 cursor-pointer border-0 bg-transparent p-0" :value="long(settings.iconCustom)" @input="setCustom(($event.target as HTMLInputElement).value)" />
         <span class="font-mono">{{ settings.iconCustom }}</span>
       </label>
     </div>
-    <div class="flex items-center gap-4 rounded-lg border border-line bg-bg px-3 py-2.5" aria-label="Icon colour preview">
+    <div class="flex items-center gap-4 rounded-lg bg-raised px-3 py-2.5" aria-label="Icon colour preview">
       <span v-for="k in sample" :key="k" class="flex items-center gap-1.5 text-[12px] text-dim">
         <Icon :name="KIND_ICON[k]" class="size-5" :style="{ color: KIND_COLOR[k] }" :tint="k === 'folder' ? 0.18 : 0" />
         {{ k === 'folder' ? 'Folder' : k[0].toUpperCase() + k.slice(1) }}

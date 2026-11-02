@@ -19,7 +19,7 @@ const sample: IconName[] = ['folder', 'image', 'trash', 'search', 'settings', 's
   <RadioGroupRoot v-model="settings.iconPack" aria-label="Icon pack" class="space-y-1">
     <RadioGroupItem
       v-for="p in packs" :key="p.id" :value="p.id"
-      class="flex h-10 w-full items-center gap-3 rounded-lg border border-transparent px-3 text-left text-[12.5px] outline-none transition hover:bg-raised focus-visible:ring-2 focus-visible:ring-accent/60 data-[state=checked]:border-line data-[state=checked]:bg-raised"
+      class="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-[12.5px] outline-none transition hover:bg-raised focus-visible:ring-2 focus-visible:ring-accent/60 data-[state=checked]:bg-raised"
     >
       <span class="grid size-4 place-items-center rounded-full border border-faint">
         <RadioGroupIndicator class="size-2 rounded-full bg-accent" />

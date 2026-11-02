@@ -116,7 +116,7 @@ kbd {
 
 /* shared context/dropdown menu styles */
 .menu {
-  @apply z-50 min-w-56 rounded-lg border border-line bg-raised p-1 text-[12.5px] text-fg shadow-2xl;
+  @apply z-50 min-w-56 rounded-lg bg-raised p-1 ring-1 ring-fg/5 text-[12.5px] text-fg shadow-2xl;
 }
 .mi {
   @apply flex h-7 cursor-default items-center gap-2.5 rounded-md px-2 outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-accent-soft;
@@ -135,4 +135,15 @@ kbd {
 }
 .sep {
   @apply mx-1 my-1 h-px bg-line;
+}
+
+/* file list columns: drop Modified and tighten when the pane is narrow */
+.file-cols { grid-template-columns: minmax(0, 1fr) 80px 140px 64px; }
+@container (max-width: 600px) {
+  .file-cols { grid-template-columns: minmax(0, 1fr) 64px 0 48px; }
+  .file-cols > :nth-child(3) { visibility: hidden; overflow: hidden; }
+}
+/* cards: faint edge so they read on light themes and OLED */
+@layer components {
+  .card { box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-fg) 7%, transparent), 0 1px 2px rgb(0 0 0 / 0.05); }
 }

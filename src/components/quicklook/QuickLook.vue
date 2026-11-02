@@ -88,7 +88,7 @@ function onKey(e: KeyboardEvent) {
       <DialogOverlay :class="motion" class="ql-overlay fixed inset-0 z-40 bg-overlay backdrop-blur-sm" />
       <DialogContent
         :class="motion"
-        class="ql-content fixed top-1/2 left-1/2 z-50 flex h-[82vh] w-[80vw] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-2xl outline-none"
+        class="ql-content fixed top-1/2 left-1/2 z-50 flex h-[82vh] w-[80vw] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-panel ring-1 ring-fg/5 shadow-2xl outline-none"
         @keydown="onKey"
         @open-auto-focus.prevent="($event.currentTarget as HTMLElement | null)?.focus()"
       >

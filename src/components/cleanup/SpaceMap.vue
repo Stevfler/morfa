@@ -12,7 +12,7 @@ const icon = (n: SpaceNode) => (n.kind === 'dir' ? 'folder' : n.kind === 'file' 
 
 <template>
   <section class="flex min-h-0 flex-col" aria-label="Space map">
-    <nav class="flex min-h-9 flex-wrap items-center gap-0.5 border-b border-line px-3 py-1 text-[12px]" aria-label="Folder path">
+    <nav class="flex min-h-9 flex-wrap items-center gap-0.5 px-3 py-1 text-[12px]" aria-label="Folder path">
       <template v-for="(c, i) in cleanup.crumbs" :key="c.path">
         <Icon v-if="i" name="chevron-right" class="size-3 text-dim" />
         <button

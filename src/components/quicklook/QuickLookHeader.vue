@@ -16,7 +16,7 @@ const meta = computed(() => {
 </script>
 
 <template>
-  <div class="flex h-14 shrink-0 items-center gap-3 border-b border-line px-4">
+  <div class="flex h-14 shrink-0 items-center gap-3 px-4">
     <Icon :name="KIND_ICON[kind]" class="size-6 shrink-0" :style="{ color: KIND_COLOR[kind] }" :stroke-width="1.5" :tint="entry.isDir ? 0.15 : 0" />
     <div class="min-w-0 flex-1">
       <DialogTitle class="truncate text-[14px] font-medium">{{ entry.name }}</DialogTitle>
@@ -24,7 +24,7 @@ const meta = computed(() => {
     </div>
     <span class="shrink-0 text-[11.5px] text-faint tabular-nums">{{ pos }}</span>
     <button
-      class="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-line bg-bg px-3 text-[12.5px] text-dim transition hover:border-accent/50 hover:text-fg"
+      class="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-raised px-3 text-[12.5px] text-dim transition hover:bg-accent-soft hover:text-fg"
       @click="$emit('open')"
     >
       <Icon name="external-link" class="size-3.5" /> Open <kbd>Enter</kbd>
