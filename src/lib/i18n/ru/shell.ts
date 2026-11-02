@@ -47,7 +47,7 @@ export const shell = {
   'batch.replacePh': '(пусто — удалить)',
   'batch.pattern': 'Шаблон имени',
   'batch.optional': '— необязательно',
-  'batch.patternPh': 'например, Поездка {n} или {name}-final',
+  'batch.patternPh': 'например, Поездка {n} или {name}-итог',
   'batch.from': '{n} с',
   'batch.case': 'Регистр',
   'batch.keep': 'Как есть',
