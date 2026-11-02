@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { invoke, convertFileSrc } from '@tauri-apps/api/core'
+import { invoke } from '@tauri-apps/api/core'
+import { useImageUrl } from '../composables/useImageUrl'
 import Icon from './Icon.vue'
 import * as S from '../lib/store'
 import type { Entry } from '../lib/store'
@@ -12,7 +13,7 @@ const entry = computed<Entry | undefined>(() => {
   return S.visible(p)[p.cursor]
 })
 const kind = computed(() => (entry.value ? kindOf(entry.value) : 'file'))
-const src = computed(() => (entry.value ? convertFileSrc(entry.value.path) : ''))
+const src = useImageUrl(() => (entry.value && kindOf(entry.value) === 'image' ? entry.value.path : null))
 
 const text = ref<string | null>(null)
 const children = ref<Entry[] | null>(null)
@@ -70,7 +71,7 @@ const size = computed(() => {
     </div>
     <template v-else>
       <div class="grid min-h-48 shrink-0 place-items-center overflow-hidden m-3 mb-0 rounded-lg bg-bg/50 p-3" :class="text != null && 'hidden'">
-        <img v-if="kind === 'image'" :key="src" :src="src" class="max-h-72 max-w-full rounded object-contain shadow-lg" />
+        <img v-if="kind === 'image' && src" :key="src" :src="src" class="max-h-72 max-w-full rounded object-contain shadow-lg" />
         <Icon v-else :name="KIND_ICON[kind]" class="size-20" :style="{ color: KIND_COLOR[kind] }" :stroke-width="1" :tint="entry.isDir ? 0.15 : 0" />
       </div>
 

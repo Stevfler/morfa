@@ -1,23 +1,20 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { convertFileSrc, invoke } from '@tauri-apps/api/core'
+import { useImageUrl } from '../../../composables/useImageUrl'
 import Icon from '../../Icon.vue'
 import type { Entry } from '../../../lib/store'
 
 const props = defineProps<{ entry: Entry }>()
 const box = ref<HTMLDivElement>()
-// The webview can't decode every format (e.g. AVIF/HEIC/TIFF on WebKitGTK): fall back to a PNG the backend renders.
-const fallback = ref<string | null>(null)
-const src = computed(() => convertFileSrc(fallback.value ?? props.entry.path))
+const src = useImageUrl(() => props.entry.path)
 const nat = ref({ w: 0, h: 0 })
 const status = ref<'loading' | 'ok' | 'error'>('loading')
 const scale = ref(1)
 const pos = ref({ x: 0, y: 0 })
 const fitted = ref(true)
 
-watch(() => props.entry.path, () => (fallback.value = null))
-watch(src, () => {
-  status.value = 'loading'
+watch(src, (u) => {
+  status.value = u === null ? 'error' : 'loading'
   nat.value = { w: 0, h: 0 }
   fitted.value = true
 })
@@ -61,15 +58,6 @@ function onDbl(e: MouseEvent) {
   zoomAt(e.clientX - r.left, e.clientY - r.top, 1)
 }
 
-async function onError() {
-  if (fallback.value) return (status.value = 'error')
-  const path = props.entry.path
-  const out = await invoke<string>('convert_preview', { path }).catch(() => null)
-  if (path !== props.entry.path) return
-  if (out) fallback.value = out
-  else status.value = 'error'
-}
-
 let drag: { x: number; y: number } | null = null
 function onDown(e: PointerEvent) {
   if (e.button !== 0) return
@@ -101,6 +89,7 @@ onBeforeUnmount(() => ro?.disconnect())
     @pointercancel="drag = null"
   >
     <img
+      v-if="src"
       :key="src"
       :src="src"
       draggable="false"
@@ -108,7 +97,7 @@ onBeforeUnmount(() => ro?.disconnect())
       :class="status !== 'ok' && 'invisible'"
       :style="{ width: `${nat.w}px`, height: `${nat.h}px`, transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`, imageRendering: scale > 2 ? 'pixelated' : 'auto' }"
       @load="onLoad"
-      @error="onError"
+      @error="status = 'error'"
     />
     <div v-if="status === 'loading'" class="absolute inset-0 grid place-items-center">
       <Icon name="loader" class="size-6 animate-spin text-faint" />

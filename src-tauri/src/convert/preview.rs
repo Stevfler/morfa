@@ -37,3 +37,17 @@ pub async fn convert_preview(path: String) -> CmdResult<String> {
     .await
     .map_err(|e| e.to_string())?
 }
+
+/// Raw bytes of an image for the webview (a blob URL), sidestepping the asset protocol.
+#[tauri::command]
+pub async fn image_bytes(path: String) -> CmdResult<tauri::ipc::Response> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let len = std::fs::metadata(&path).map_err(|e| e.to_string())?.len();
+        if len > 256 << 20 {
+            return Err("image too large to preview".into());
+        }
+        std::fs::read(&path).map(tauri::ipc::Response::new).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
