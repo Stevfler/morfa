@@ -16,7 +16,7 @@ const current = computed(() => pane().path)
 const icon = (removable: boolean): IconName => (removable ? 'usb' : 'hard-drive')
 
 function drop(e: DragEvent, dest: string) {
-  const data = e.dataTransfer?.getData('application/x-orbit-paths')
+  const data = e.dataTransfer?.getData('application/x-morfa-paths')
   if (data) transfer(JSON.parse(data), dest, copyMod(e) ? 'copy' : 'move')
 }
 

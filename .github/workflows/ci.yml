@@ -62,7 +62,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: orbit-${{ matrix.os }}
+          name: morfa-${{ matrix.os }}
           path: |
             src-tauri/target/release/bundle/**/*.AppImage
             src-tauri/target/release/bundle/**/*.deb

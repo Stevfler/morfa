@@ -2162,6 +2162,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "morfa-files"
+version = "0.1.0"
+dependencies = [
+ "dirs 6.0.0",
+ "ignore",
+ "libc",
+ "notify",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sysinfo",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "trash",
+ "ureq",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "muda"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2541,26 +2561,6 @@ name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
-
-[[package]]
-name = "orbit-files"
-version = "0.1.0"
-dependencies = [
- "dirs 6.0.0",
- "ignore",
- "libc",
- "notify",
- "serde",
- "serde_json",
- "sha2",
- "sysinfo",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "trash",
- "ureq",
- "windows-sys 0.61.2",
-]
 
 [[package]]
 name = "ordered-stream"

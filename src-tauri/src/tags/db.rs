@@ -10,7 +10,7 @@ pub type Db = HashMap<String, Vec<String>>;
 static LOCK: Mutex<()> = Mutex::new(());
 
 fn file() -> Option<PathBuf> {
-    Some(dirs::data_dir()?.join("orbit").join("tags.json"))
+    Some(dirs::data_dir()?.join("morfa").join("tags.json"))
 }
 
 pub fn load() -> Db {

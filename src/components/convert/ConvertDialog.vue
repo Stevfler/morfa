@@ -16,7 +16,7 @@ import { t } from '../../lib/i18n'
 import { officeEpoch } from '../../lib/office'
 
 type Remembered = { format: string; preset: string; quality: number; stripMetadata: boolean }
-const KEY = 'orbit.convert.last'
+const KEY = 'morfa.convert.last'
 const LOSSLESS = new Set(['png', 'bmp', 'tiff', 'gif'])
 
 const state = S.state

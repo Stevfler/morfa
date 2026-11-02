@@ -7,7 +7,7 @@ fn opts(format: &str) -> ConvertOpts {
 }
 
 fn tmpdir(tag: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("orbit-convert-test-{tag}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("morfa-convert-test-{tag}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
     d
@@ -76,6 +76,6 @@ fn office_txt_to_pdf_odt_then_pdf_pages() {
     let r = dispatch::run_all(&[src.to_string_lossy().into()], &opts("rtf"), &|| true, &|_, _, _| {});
     assert!(r.cancelled && r.pairs.is_empty());
     assert_eq!(names(&d), before);
-    assert!(before.iter().all(|n| !n.starts_with(".orbit-convert")), "temp left: {before:?}");
+    assert!(before.iter().all(|n| !n.starts_with(".morfa-convert")), "temp left: {before:?}");
     let _ = std::fs::remove_dir_all(&d);
 }

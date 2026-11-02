@@ -3,9 +3,9 @@ import * as S from '../lib/store'
 import type { Entry, Pane } from '../lib/store'
 import { copyMod } from '../lib/util'
 
-const MIME = 'application/x-orbit-paths'
+const MIME = 'application/x-morfa-paths'
 /** Only the dragged directories (Favorites accept folders only). */
-export const DIRS_MIME = 'application/x-orbit-dirs'
+export const DIRS_MIME = 'application/x-morfa-dirs'
 
 export function useDragDrop(p: Pane) {
   const dropTarget = ref<string | null>(null)

@@ -108,7 +108,7 @@ export function bump(path: string) {
   if (keys.length > 400) {
     keys.sort((a, b) => frecencyScore(a) - frecencyScore(b)).slice(0, 100).forEach((k) => delete state.frecency[k])
   }
-  save('orbit.frecency', state.frecency)
+  save('morfa.frecency', state.frecency)
 }
 export function frecencyScore(path: string) {
   const f = state.frecency[path]

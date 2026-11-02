@@ -14,7 +14,7 @@ fn agent() -> ureq::Agent {
     ureq::Agent::config_builder()
         .timeout_connect(Some(Duration::from_secs(20)))
         .timeout_recv_body(None)
-        .user_agent(concat!("Orbit/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("Morfa/", env!("CARGO_PKG_VERSION")))
         .build()
         .into()
 }

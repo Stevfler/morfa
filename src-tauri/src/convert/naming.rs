@@ -39,7 +39,7 @@ pub fn temp_for(dest: &Path) -> PathBuf {
     static N: AtomicU64 = AtomicU64::new(0);
     let ext = dest.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default();
     let n = N.fetch_add(1, Ordering::Relaxed);
-    dest.with_file_name(format!(".orbit-convert-{}-{n}.{ext}", std::process::id()))
+    dest.with_file_name(format!(".morfa-convert-{}-{n}.{ext}", std::process::id()))
 }
 
 /// Move the finished temp into place without replacing anything; if `dest` got taken meanwhile,

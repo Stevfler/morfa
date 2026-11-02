@@ -23,7 +23,7 @@ export interface Settings {
   language: string
 }
 
-const KEY = 'orbit.settings'
+const KEY = 'morfa.settings'
 const prefersReduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const defaults: Settings = {
   theme: 'midnight',

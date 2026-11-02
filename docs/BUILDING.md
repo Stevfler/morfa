@@ -1,4 +1,4 @@
-# Building Orbit
+# Building Morfa
 
 Goal: every bundle works out of the box, with no extra packages installed by the user.
 
@@ -33,7 +33,7 @@ CC_aarch64_apple_darwin=clang cargo clippy --all-targets --target aarch64-apple-
 
 | Target | Runtime handling |
 |---|---|
-| AppImage / .deb / .rpm | WebKitGTK 4.1 (pulled in by apt/dnf for deb/rpm, bundled in the AppImage). No media framework needed: Orbit doesn't play audio/video. |
+| AppImage / .deb / .rpm | WebKitGTK 4.1 (pulled in by apt/dnf for deb/rpm, bundled in the AppImage). No media framework needed: Morfa doesn't play audio/video. |
 | Windows (NSIS/MSI) | `webviewInstallMode: embedBootstrapper` (silent). The installer ships the WebView2 bootstrapper and installs WebView2 if it is missing. |
 | macOS (.app/.dmg) | Nothing extra. WKWebView is part of the OS. |
 
@@ -50,7 +50,7 @@ CC_aarch64_apple_darwin=clang cargo clippy --all-targets --target aarch64-apple-
 
 ## Bundled image/video tools (sidecars)
 
-Orbit looks for `vips`, `vipsheader`, `magick` (and later `ffmpeg`) in this order: next to the Orbit executable, `<exe dir>/bin`, `<resource_dir>/bin`, then `PATH` (`src-tauri/src/sidecar.rs`). Nothing is bundled yet. To bundle:
+Morfa looks for `vips`, `vipsheader`, `magick` (and later `ffmpeg`) in this order: next to the Morfa executable, `<exe dir>/bin`, `<resource_dir>/bin`, then `PATH` (`src-tauri/src/sidecar.rs`). Nothing is bundled yet. To bundle:
 
 - **Tauri `externalBin`** (single executables): put binaries in `src-tauri/binaries/` named with the target triple, e.g. `vips-x86_64-pc-windows-msvc.exe`, `vips-aarch64-apple-darwin`, and list `"externalBin": ["binaries/vips", "binaries/vipsheader", "binaries/ffmpeg"]` under `bundle` in `tauri.conf.json`. Tauri strips the triple and installs them next to the app executable.
 - **Resources** (tools that need their DLLs/dylibs, e.g. libvips' Windows build): add `"resources": { "vendor/vips/bin/": "bin/" }` so they land in `<resource_dir>/bin`. On Windows the DLLs must sit in the same folder as `vips.exe`.
@@ -59,9 +59,9 @@ Orbit looks for `vips`, `vipsheader`, `magick` (and later `ffmpeg`) in this orde
 
 ## Office module (document conversion on Windows/macOS)
 
-Not bundled: Orbit downloads a pinned LibreOffice on demand (`src-tauri/src/office/`), unpacks it without installing (Windows: `msiexec /a` administrative image; macOS: copy out of the dmg), prunes it (`office/prune.rs`) and keeps it in `<local data dir>/Orbit/office`. To bump the version, edit `office/manifest.rs` (version + four SHA-256 values from `<url>.sha256`) and run `cargo test office -- --ignored` (HEAD-checks the URLs). To re-validate the prune list on Linux:
+Not bundled: Morfa downloads a pinned LibreOffice on demand (`src-tauri/src/office/`), unpacks it without installing (Windows: `msiexec /a` administrative image; macOS: copy out of the dmg), prunes it (`office/prune.rs`) and keeps it in `<local data dir>/Morfa/office`. To bump the version, edit `office/manifest.rs` (version + four SHA-256 values from `<url>.sha256`) and run `cargo test office -- --ignored` (HEAD-checks the URLs). To re-validate the prune list on Linux:
 
 ```sh
-cp -a /usr/lib/libreoffice /tmp/lo && ORBIT_PRUNE_DIR=/tmp/lo cargo test office::tests::prune_real_install -- --ignored
+cp -a /usr/lib/libreoffice /tmp/lo && MORFA_PRUNE_DIR=/tmp/lo cargo test office::tests::prune_real_install -- --ignored
 /tmp/lo/program/soffice --headless --convert-to pdf some.docx   # plus xlsx/csv/pptx/html samples
 ```

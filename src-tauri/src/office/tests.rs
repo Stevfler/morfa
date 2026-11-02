@@ -25,7 +25,7 @@ fn lib_patterns_per_os() {
 
 #[test]
 fn prune_fake_tree() {
-    let root = std::env::temp_dir().join(format!("orbit-prune-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("morfa-prune-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     let files = [
         "help/en-US/x.html", "share/extensions/dict-de/a", "share/config/images_colibre.zip",
@@ -78,11 +78,11 @@ fn manifest_urls_exist() {
     }
 }
 
-/// Prunes a COPY of a real LibreOffice in $ORBIT_PRUNE_DIR (e.g. of /usr/lib/libreoffice) in place.
+/// Prunes a COPY of a real LibreOffice in $MORFA_PRUNE_DIR (e.g. of /usr/lib/libreoffice) in place.
 #[test]
 #[ignore]
 fn prune_real_install() {
-    let Ok(dir) = std::env::var("ORBIT_PRUNE_DIR") else { return };
+    let Ok(dir) = std::env::var("MORFA_PRUNE_DIR") else { return };
     prune::apply(Path::new(&dir), Os::Linux).unwrap();
 }
 
@@ -91,7 +91,7 @@ fn prune_real_install() {
 #[ignore]
 fn download_resumes() {
     let url = format!("{}.sha256", manifest::package_for("windows", "x86_64").unwrap().urls()[0]);
-    let dir = std::env::temp_dir().join(format!("orbit-dl-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("morfa-dl-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let full = dir.join("full");
     super::download::fetch(&url, &full, &mut |_, _| {}, &|| false).unwrap();

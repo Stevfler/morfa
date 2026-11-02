@@ -14,7 +14,7 @@ fn cache_path(src: &Path) -> CmdResult<PathBuf> {
     let m = std::fs::metadata(src).map_err(|e| e.to_string())?;
     let mut h = DefaultHasher::new();
     (src, m.len(), m.modified().ok()).hash(&mut h);
-    let dir = std::env::temp_dir().join("orbit-preview");
+    let dir = std::env::temp_dir().join("morfa-preview");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir.join(format!("{:016x}.png", h.finish())))
 }

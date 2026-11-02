@@ -44,7 +44,7 @@ export function clickDrive(d: Drive) {
 
 export async function unmountPlace(p: Place) {
   const eject = p.kind === 'removable'
-  // Move panes off the drive first so nothing in Orbit keeps it busy.
+  // Move panes off the drive first so nothing in Morfa keeps it busy.
   const moved = state.tabs.flatMap((t) => t.panes)
     .filter((pn) => pn.path === p.path || pn.path.startsWith(p.path.replace(/\/?$/, '/')))
     .map((pn) => ({ pn, from: pn.path }))

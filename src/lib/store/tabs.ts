@@ -54,7 +54,7 @@ export function focusPane(i: number) {
 
 export function persist() {
   save(
-    'orbit.session',
+    'morfa.session',
     { tabs: state.tabs.map((t) => ({ paths: t.panes.map((p) => p.path), active: t.active })), activeTab: state.activeTab },
   )
 }

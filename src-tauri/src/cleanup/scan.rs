@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn sizes_roll_up() {
-        let d = std::env::temp_dir().join(format!("orbit-cleanup-scan-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("morfa-cleanup-scan-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(d.join("a/b")).unwrap();
         std::fs::write(d.join("a/b/x.bin"), vec![1u8; 100_000]).unwrap();

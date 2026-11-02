@@ -87,7 +87,7 @@ mod tests {
     use std::path::PathBuf;
 
     fn tmp(tag: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("orbit-fsops-{tag}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("morfa-fsops-{tag}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         d

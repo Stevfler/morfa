@@ -86,5 +86,5 @@ pub fn run() {
             office::office_remove,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Orbit");
+        .expect("error while running Morfa");
 }

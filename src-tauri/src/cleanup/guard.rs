@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn refuse_rules() {
-        let d = std::env::temp_dir().join(format!("orbit-cleanup-refuse-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("morfa-cleanup-refuse-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(d.join("a")).unwrap();
         std::fs::write(d.join("a/f"), vec![0u8; 8 << 20]).unwrap();

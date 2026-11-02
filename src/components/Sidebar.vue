@@ -24,7 +24,7 @@ const recent = computed(() =>
 const current = computed(() => pane().path)
 
 function drop(e: DragEvent, dest: string) {
-  const data = e.dataTransfer?.getData('application/x-orbit-paths')
+  const data = e.dataTransfer?.getData('application/x-morfa-paths')
   if (!data) return
   transfer(JSON.parse(data), dest, copyMod(e) ? 'copy' : 'move')
 }

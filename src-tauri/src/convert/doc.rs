@@ -21,7 +21,7 @@ pub fn system_office() -> Option<&'static str> {
 
 static OFFICE: Mutex<Option<Option<PathBuf>>> = Mutex::new(None);
 
-/// LibreOffice to use: Orbit's Office module if installed, else PATH. Cached until `invalidate`.
+/// LibreOffice to use: Morfa's Office module if installed, else PATH. Cached until `invalidate`.
 pub fn office() -> Option<PathBuf> {
     let mut g = OFFICE.lock().unwrap_or_else(|e| e.into_inner());
     g.get_or_insert_with(|| crate::office::soffice().or_else(|| system_office().map(PathBuf::from))).clone()
@@ -87,7 +87,7 @@ pub fn office_convert(src: &Path, o: &ConvertOpts, worker: usize, cancelled: &dy
     let dest = naming::dest_for(src, o.out_dir.as_deref(), &o.name_template, &o.format);
     let work = naming::temp_for(&dest).with_extension("d");
     std::fs::create_dir_all(&work).map_err(|e| e.to_string())?;
-    let profile = std::env::temp_dir().join(format!("orbit-lo-{worker}"));
+    let profile = std::env::temp_dir().join(format!("morfa-lo-{worker}"));
     let mut cmd = Command::new(bin);
     cmd.args(["--headless", "--norestore", "--nolockcheck", "--nodefault", "--nologo"])
         .arg(format!("-env:UserInstallation={}", file_url(&profile)));

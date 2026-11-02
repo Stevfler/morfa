@@ -3,7 +3,7 @@ use super::*;
 use std::{os::unix::fs::PermissionsExt, sync::Arc, time::Instant};
 
 fn tmp(tag: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("orbit-transfer-{tag}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("morfa-transfer-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&d);
     fs::create_dir_all(d.join("src")).unwrap();
     fs::create_dir_all(d.join("dst")).unwrap();

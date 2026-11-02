@@ -40,7 +40,7 @@ fn works(cmd: &str, arg: &str) -> bool {
 
 /// Save a tiny generated image to every candidate format; keep those that produce a file.
 fn probe(kind: Kind) -> Vec<String> {
-    let dir = std::env::temp_dir().join(format!("orbit-convert-probe-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("morfa-convert-probe-{}", std::process::id()));
     if std::fs::create_dir_all(&dir).is_err() {
         return vec![];
     }

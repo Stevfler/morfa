@@ -70,7 +70,7 @@ function apply() {
   if (pv.dupes || pv.invalid || pv.err || !pv.count) return
   const pairs = pv.rows.filter((r) => r.changed).map((r) => [r.path, join(parent(r.path)!, r.next)] as [string, string])
   // Two-phase via temp names so swaps like a→b, b→a don't collide.
-  const tmp = pairs.map(([from]) => [from, from + `.orbit-tmp-${Date.now()}`] as [string, string])
+  const tmp = pairs.map(([from]) => [from, from + `.morfa-tmp-${Date.now()}`] as [string, string])
   const steps: [string, string][] = [...tmp, ...tmp.map(([, t], i) => [t, pairs[i][1]] as [string, string])]
   state.batchRename = null
   S.movePairs(steps, t('batch.done', { count: pairs.length }))

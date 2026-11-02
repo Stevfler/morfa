@@ -34,8 +34,8 @@ export type Tab = { id: number; panes: Pane[]; active: number }
 export type Place = { name: string; path: string; kind: string; total: number; free: number; fs: string; removable: boolean }
 
 /** Pseudo-path for the "This PC"-style Drives overview; never sent to the backend. */
-export const DRIVES = 'orbit://drives'
-export const isSpecial = (path: string) => path.startsWith('orbit://')
+export const DRIVES = 'morfa://drives'
+export const isSpecial = (path: string) => path.startsWith('morfa://')
 
 /** A volume that is not mounted yet (from `list_drives`). */
 export type Drive = { name: string; device: string; fstype: string; size: number; encrypted: boolean; removable: boolean }

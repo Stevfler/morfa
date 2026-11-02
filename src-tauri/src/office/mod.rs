@@ -1,6 +1,6 @@
-//! "Office module": an on-demand, pruned, headless-only LibreOffice in Orbit's data dir
-//! (`%LOCALAPPDATA%\Orbit\office`, `~/Library/Application Support/Orbit/office`,
-//! `~/.local/share/Orbit/office`). Never registered with the OS: no shortcuts, file
+//! "Office module": an on-demand, pruned, headless-only LibreOffice in Morfa's data dir
+//! (`%LOCALAPPDATA%\Morfa\office`, `~/Library/Application Support/Morfa/office`,
+//! `~/.local/share/Morfa/office`). Never registered with the OS: no shortcuts, file
 //! associations, Add/Remove entry or Launchpad item. Offered on Windows and macOS.
 mod download;
 mod extract;
@@ -53,9 +53,9 @@ pub struct Status {
     supported: bool,
 }
 
-/// `<data dir>/Orbit/office`.
+/// `<data dir>/Morfa/office`.
 pub fn dir() -> Option<PathBuf> {
-    dirs::data_local_dir().map(|d| d.join("Orbit").join("office"))
+    dirs::data_local_dir().map(|d| d.join("Morfa").join("office"))
 }
 
 /// The soffice binary inside a module root, if present.
@@ -91,7 +91,7 @@ pub async fn office_status() -> Status {
         let version = root
             .as_deref()
             .filter(|_| installed)
-            .and_then(|r| std::fs::read_to_string(r.join("orbit-office-version")).ok())
+            .and_then(|r| std::fs::read_to_string(r.join("morfa-office-version")).ok())
             .unwrap_or_else(|| manifest::VERSION.into());
         let pkg = manifest::package();
         Status {

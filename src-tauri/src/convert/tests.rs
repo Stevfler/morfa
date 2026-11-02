@@ -6,7 +6,7 @@ fn opts(format: &str, resize: Option<Resize>) -> ConvertOpts {
 }
 
 fn tmpdir(tag: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("orbit-convert-test-{tag}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("morfa-convert-test-{tag}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
     d
@@ -49,7 +49,7 @@ fn converts_png_to_webp() {
     assert_eq!(out, d.join("pic (converted).webp"));
     assert_eq!(std::fs::read(d.join("pic.webp")).unwrap(), b"occupied");
     let names: Vec<_> = std::fs::read_dir(&d).unwrap().map(|x| x.unwrap().file_name().to_string_lossy().into_owned()).collect();
-    assert!(names.iter().all(|n| !n.starts_with(".orbit-convert")), "temp left: {names:?}");
+    assert!(names.iter().all(|n| !n.starts_with(".morfa-convert")), "temp left: {names:?}");
     if e.kind == engine::Kind::Vips {
         let o = std::process::Command::new("vipsheader").args(["-f", "width"]).arg(&out).output().unwrap();
         assert_eq!(String::from_utf8_lossy(&o.stdout).trim(), "100");

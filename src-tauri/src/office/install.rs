@@ -88,7 +88,7 @@ pub fn run(p: &Paths, emit: &dyn Fn(Progress), cancelled: &dyn Fn() -> bool) -> 
     emit(Progress::new("prune", 0, 0));
     prune::apply(&prune_root(&p.staging), host_os()).map_err(|e| format!("prune: {e}"))?;
     extract::finalize(&p.staging, cancelled)?;
-    std::fs::write(p.staging.join("orbit-office-version"), manifest::VERSION).map_err(|e| e.to_string())?;
+    std::fs::write(p.staging.join("morfa-office-version"), manifest::VERSION).map_err(|e| e.to_string())?;
     if super::soffice_in(&p.staging).is_none() {
         return Err("unpacked module has no soffice".into());
     }

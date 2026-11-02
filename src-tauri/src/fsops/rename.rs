@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn noreplace_refuses_existing_target() {
-        let d = std::env::temp_dir().join(format!("orbit-rename-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("morfa-rename-{}", std::process::id()));
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         let (a, b, c) = (d.join("a"), d.join("b"), d.join("c"));
@@ -200,7 +200,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn copy_refuses_fifo_and_keeps_source() {
-        let d = std::env::temp_dir().join(format!("orbit-fifo-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("morfa-fifo-{}", std::process::id()));
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(d.join("src")).unwrap();
         fs::write(d.join("src/f"), "data").unwrap();

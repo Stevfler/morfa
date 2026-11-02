@@ -7,7 +7,7 @@ export const office = {
   'office.statusMissing': 'Не установлен · загрузка {size}',
   'office.statusSystem': 'Используется системный LibreOffice',
   'office.statusUnsupported': 'Установите LibreOffice через пакетный менеджер',
-  'office.private': 'Устанавливается только для Orbit — не появится как приложение в системе.',
+  'office.private': 'Устанавливается только для Morfa — не появится как приложение в системе.',
   'office.download': 'Скачать',
   'office.remove': 'Удалить',
   'office.needed': 'Нужен офисный модуль',

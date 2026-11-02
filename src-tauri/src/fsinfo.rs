@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn size_dedupes_hard_links_and_cancels() {
-        let d = std::env::temp_dir().join(format!("orbit-size-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("morfa-size-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(d.join("sub")).unwrap();
         std::fs::write(d.join("a"), [0u8; 100]).unwrap();
