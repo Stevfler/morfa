@@ -25,7 +25,7 @@ defineProps<{ icon: IconName; label: string; keys?: string; active?: boolean; di
     <TooltipPortal>
       <TooltipContent
         :side-offset="6"
-        class="z-50 flex items-center gap-2 rounded-md border border-line bg-raised px-2 py-1 text-[12px] text-fg shadow-xl"
+        class="z-50 flex items-center gap-2 rounded-md bg-raised px-2 py-1 ring-1 ring-fg/5 text-[12px] text-fg shadow-xl"
       >
         {{ label }}
         <span v-if="keys" class="flex gap-0.5"><kbd v-for="k in prettyKeys(keys)" :key="k">{{ k }}</kbd></span>

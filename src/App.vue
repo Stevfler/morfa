@@ -51,7 +51,7 @@ const tabTitle = (i: number) => {
   <TooltipProvider :delay-duration="400">
     <div v-if="ready" class="flex h-full flex-col">
       <!-- tab strip -->
-      <div class="flex h-10 shrink-0 items-center gap-1 border-b border-line bg-panel px-2">
+      <div class="flex h-11 shrink-0 items-center gap-1 px-3">
         <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
           <button
             v-for="(t, i) in state.tabs"
@@ -74,24 +74,23 @@ const tabTitle = (i: number) => {
         <IconButton icon="eye" label="Info panel" keys="Ctrl+I" :active="state.preview" @click="state.preview = !state.preview" />
         <IconButton icon="settings" label="Settings" keys="Ctrl+," @click="openSettings" />
         <button
-          class="ml-1 flex h-7 items-center gap-2 rounded-md border border-line bg-bg px-2.5 text-[12px] text-dim transition hover:border-accent/50 hover:text-fg"
+          class="ml-1 flex h-7 items-center gap-2 rounded-full bg-raised px-3 text-[12px] text-dim transition hover:bg-raised/70 hover:text-fg focus-visible:ring-1 focus-visible:ring-accent/50"
           @click="state.palette = 'all'"
         >
           <Icon name="command" class="size-3.5" /> Do anything… <kbd>{{ keyLabel('Ctrl+K') }}</kbd>
         </button>
       </div>
 
-      <div class="flex min-h-0 flex-1">
+      <div class="flex min-h-0 flex-1 gap-2 px-2 pb-2">
         <Sidebar />
-        <div class="flex min-w-0 flex-1">
+        <div class="flex min-w-0 flex-1 gap-2">
           <FilePane
             v-for="(p, i) in state.tabs[state.activeTab].panes"
             :key="p.id"
             :pane="p"
             :active="i === state.tabs[state.activeTab].active"
             :split="state.tabs[state.activeTab].panes.length > 1"
-            class="min-w-0 flex-1"
-            :class="i > 0 && 'border-l border-line'"
+            class="card min-w-0 flex-1 overflow-hidden rounded-xl bg-panel"
             @mousedown="focusPane(i)"
           />
         </div>
@@ -105,7 +104,7 @@ const tabTitle = (i: number) => {
       >
         <div v-if="state.tabs[state.activeTab].panes.length > 1">
           <!-- One hints strip for both panes; it follows the active one. -->
-          <div class="flex h-7 items-center border-t border-line px-3 text-[11.5px] text-faint">
+          <div class="flex h-7 items-center px-4 text-[11.5px] text-faint">
             <HintList :pane="pane()" :split="true" class="ml-auto" />
           </div>
           <FunctionBar />

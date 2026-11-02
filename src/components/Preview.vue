@@ -64,12 +64,12 @@ const size = computed(() => {
 </script>
 
 <template>
-  <aside class="flex w-80 shrink-0 flex-col overflow-hidden border-l border-line bg-panel">
+  <aside class="card flex w-80 shrink-0 flex-col overflow-hidden rounded-xl bg-panel">
     <div v-if="!entry" class="grid flex-1 place-items-center p-6 text-center text-[12px] text-faint">
       Select something to preview it here.<br />Press <kbd>{{ keyLabel('Ctrl+I') }}</kbd> to hide this panel.
     </div>
     <template v-else>
-      <div class="grid min-h-48 shrink-0 place-items-center overflow-hidden border-b border-line bg-bg/50 p-3" :class="text != null && 'hidden'">
+      <div class="grid min-h-48 shrink-0 place-items-center overflow-hidden m-3 mb-0 rounded-lg bg-bg/50 p-3" :class="text != null && 'hidden'">
         <img v-if="kind === 'image'" :key="src" :src="src" class="max-h-72 max-w-full rounded object-contain shadow-lg" />
         <Icon v-else :name="KIND_ICON[kind]" class="size-20" :style="{ color: KIND_COLOR[kind] }" :stroke-width="1" :tint="entry.isDir ? 0.15 : 0" />
       </div>
@@ -99,7 +99,7 @@ const size = computed(() => {
           <dd class="font-mono text-[11px] break-all text-dim select-text">{{ entry.path }}</dd>
         </dl>
 
-        <ul v-if="children?.length" class="space-y-0.5 border-t border-line pt-3">
+        <ul v-if="children?.length" class="space-y-0.5 pt-3">
           <li v-for="c in children.slice(0, 14)" :key="c.path" class="flex items-center gap-2 truncate text-[12px] text-dim">
             <Icon :name="KIND_ICON[kindOf(c)]" class="size-3.5 shrink-0" :style="{ color: KIND_COLOR[kindOf(c)] }" />
             <span class="truncate">{{ c.name }}</span>
@@ -121,6 +121,6 @@ const size = computed(() => {
 <style scoped>
 @reference '../style.css';
 .btn {
-  @apply inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-raised px-2.5 text-[12px] text-fg transition hover:border-accent/60;
+  @apply inline-flex h-7 items-center gap-1.5 rounded-md bg-raised px-2.5 text-[12px] text-fg transition hover:bg-accent-soft/40;
 }
 </style>

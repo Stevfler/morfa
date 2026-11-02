@@ -27,7 +27,7 @@ const rel = (p: string) => (p.startsWith(cleanup.root) && p !== cleanup.root ? p
 </script>
 
 <template>
-  <div class="rounded-lg border border-line bg-bg/60">
+  <div class="rounded-lg bg-raised/60">
     <div class="flex items-center gap-2 px-3 py-2.5">
       <button
         class="flex min-w-0 flex-1 items-center gap-2 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
@@ -42,14 +42,14 @@ const rel = (p: string) => (p.startsWith(cleanup.root) && p !== cleanup.root ? p
       <span class="text-[13px] tabular-nums" :class="cat.total ? 'text-fg' : 'text-dim'">{{ fmtSize(cat.total) }}</span>
       <button
         v-if="isTrash" :disabled="!cat.total || cleanup.busy"
-        class="h-7 rounded-md border border-line px-2.5 text-[12px] hover:bg-raised disabled:opacity-40" @click="confirmEmpty"
+        class="h-7 rounded-full bg-raised px-3 text-[12px] hover:bg-accent-soft disabled:opacity-40" @click="confirmEmpty"
       >Empty Trash…</button>
       <button
         v-else-if="free.length" class="h-7 rounded-md px-2 text-[12px] text-dim hover:bg-raised hover:text-fg"
         @click="toggleAll"
       >{{ allOn ? 'None' : 'All' }}</button>
     </div>
-    <ul v-if="open && !isTrash" class="max-h-72 overflow-y-auto border-t border-line py-1">
+    <ul v-if="open && !isTrash" class="max-h-72 overflow-y-auto pt-1 pb-2">
       <li v-for="i in cat.items" :key="i.path" class="flex h-7 items-center gap-2 px-3 text-[12px]" :title="i.path">
         <input
           type="checkbox" class="size-3.5 shrink-0 accent-[var(--color-accent)] disabled:opacity-40"
@@ -63,7 +63,7 @@ const rel = (p: string) => (p.startsWith(cleanup.root) && p !== cleanup.root ? p
             </span>
           </TooltipTrigger>
           <TooltipPortal>
-            <TooltipContent :side-offset="6" class="z-[60] rounded-md border border-line bg-raised px-2 py-1 text-[12px] shadow-xl">System file — can't be removed</TooltipContent>
+            <TooltipContent :side-offset="6" class="z-[60] rounded-md bg-raised px-2 py-1 ring-1 ring-fg/5 text-[12px] shadow-xl">System file — can't be removed</TooltipContent>
           </TooltipPortal>
         </TooltipRoot>
         <span v-else-if="i.risk === 'review'" class="rounded bg-warn/15 px-1.5 text-[10.5px] text-warn">Review</span>

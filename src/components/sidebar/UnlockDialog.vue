@@ -33,7 +33,7 @@ async function submit() {
   <DialogRoot v-model:open="open">
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
-      <DialogContent class="fixed top-1/2 left-1/2 z-50 w-[min(400px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-panel p-5 shadow-2xl outline-none">
+      <DialogContent class="fixed top-1/2 left-1/2 z-50 w-[min(400px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-panel p-5 shadow-2xl ring-1 ring-fg/5 outline-none">
         <DialogTitle class="flex items-center gap-2 text-[15px] font-medium">
           <Icon name="lock" class="size-4 text-dim" />Unlock {{ drives.unlock?.name || 'encrypted drive' }}
         </DialogTitle>
@@ -44,7 +44,7 @@ async function submit() {
           <input
             v-model="pass" type="password" autofocus autocomplete="off" spellcheck="false" placeholder="Passphrase"
             :disabled="working"
-            class="h-8 w-full rounded-md border border-line bg-bg px-2.5 text-[12.5px] outline-none focus:border-accent"
+            class="h-8 w-full rounded-md bg-raised px-2.5 text-[12.5px] outline-none focus:ring-1 focus:ring-accent/50"
           />
           <p v-if="error" class="mt-2 flex items-center gap-1.5 text-[12px] text-danger"><Icon name="alert-circle" class="size-4" />{{ error }}</p>
           <div class="mt-5 flex justify-end gap-2">

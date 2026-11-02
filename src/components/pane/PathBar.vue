@@ -53,10 +53,10 @@ function pathKey(ev: KeyboardEvent) {
     <template v-if="editing">
       <input
         ref="pathInput" v-model="pathText"
-        class="h-7 w-full rounded-md border border-accent/60 bg-panel px-2 font-mono text-[12px] outline-none"
+        class="h-7 w-full rounded-full bg-raised px-3 ring-1 ring-accent/50 font-mono text-[12px] outline-none"
         spellcheck="false" @keydown="pathKey" @blur="state.editPath = false"
       />
-      <div v-if="completions.length" class="absolute inset-x-0 top-8 z-30 overflow-hidden rounded-md border border-line bg-raised shadow-2xl">
+      <div v-if="completions.length" class="absolute inset-x-0 top-8 z-30 overflow-hidden rounded-lg bg-raised shadow-2xl ring-1 ring-fg/5">
         <button
           v-for="(c, k) in completions" :key="c"
           class="flex w-full items-center gap-2 px-2 py-1 text-left font-mono text-[12px] hover:bg-accent-soft"
@@ -67,13 +67,13 @@ function pathKey(ev: KeyboardEvent) {
         </button>
       </div>
     </template>
-    <div v-else-if="S.isSpecial(p.path)" class="flex h-7 cursor-text items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium hover:bg-panel"
+    <div v-else-if="S.isSpecial(p.path)" class="flex h-7 cursor-text items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium hover:bg-raised"
       @click="state.editPath = true; S.focusPane(S.tab().panes.indexOf(p))">
       <Icon name="hard-drive" class="size-3.5 text-dim" />Drives
     </div>
     <div
       v-else
-      class="flex h-7 cursor-text items-center overflow-hidden rounded-md px-1 hover:bg-panel"
+      class="flex h-7 cursor-text items-center overflow-hidden rounded-md px-1 hover:bg-raised"
       :title="`Click empty space or press ${keyLabel('Ctrl+L')} to type a path`"
       @click.self="state.editPath = true; S.focusPane(S.tab().panes.indexOf(p))"
     >

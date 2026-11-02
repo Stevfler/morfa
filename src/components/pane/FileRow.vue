@@ -38,8 +38,8 @@ function sizeCell(e: Entry) {
 
 <template>
   <div
-    class="absolute inset-x-1 grid cursor-default items-center gap-2 rounded-md px-2 text-[12.5px]"
-    :style="{ top: `${i * row}px`, height: `${row - 2}px`, gridTemplateColumns: 'minmax(0,1fr) 90px 150px 80px' }"
+    class="file-cols absolute inset-x-1 grid cursor-default items-center gap-2 rounded-md px-2 text-[12.5px]"
+    :style="{ top: `${i * row}px`, height: `${row - 2}px` }"
     :class="[
       p.selected.has(e.path) ? 'bg-accent/25' : i === p.cursor && active ? 'bg-raised' : 'hover:bg-raised/50',
       i === p.cursor && active && 'ring-1 ring-inset ring-accent/70',

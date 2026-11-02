@@ -19,7 +19,7 @@ function ok() {
   <AlertDialogRoot v-model:open="cleanup.warn">
     <AlertDialogPortal>
       <AlertDialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
-      <AlertDialogContent class="fixed top-1/2 left-1/2 z-50 w-[min(460px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-panel p-5 shadow-2xl outline-none">
+      <AlertDialogContent class="fixed top-1/2 left-1/2 z-50 w-[min(460px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-panel ring-1 ring-fg/5 p-5 shadow-2xl outline-none">
         <AlertDialogTitle class="flex items-center gap-2 text-[15px] font-medium">
           <Icon name="warning" class="size-4.5 text-warn" /> Clean up is for experienced users
         </AlertDialogTitle>

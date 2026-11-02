@@ -47,8 +47,8 @@ function filterKey(ev: KeyboardEvent) {
 <template>
   <!-- filter / deep search -->
   <div
-    class="flex h-7 w-60 items-center gap-1.5 rounded-md border px-2 transition focus-within:w-80"
-    :class="searching ? 'border-accent/60 bg-accent-soft/40' : 'border-line bg-panel focus-within:border-accent/60'"
+    class="flex h-7 w-36 shrink-0 items-center gap-1.5 rounded-full px-3 transition focus-within:w-56 @2xl:w-60 @2xl:focus-within:w-80"
+    :class="searching ? 'bg-accent-soft/40 ring-1 ring-accent/50' : 'bg-raised focus-within:ring-1 focus-within:ring-accent/50'"
   >
     <Icon name="search" v-if="searching" class="size-3.5 shrink-0 text-accent" />
     <Icon name="filter" v-else class="size-3.5 shrink-0 text-faint" />
@@ -60,6 +60,6 @@ function filterKey(ev: KeyboardEvent) {
     />
     <Icon name="loader" v-if="p.search && !p.search.done" class="size-3.5 shrink-0 animate-spin text-accent" />
     <button v-if="query || searching" class="text-faint hover:text-fg" @click="searching ? S.stopSearch(p) : (p.filter = '')"><Icon name="x" class="size-3.5" /></button>
-    <button v-else class="text-faint hover:text-accent" :title="`Search subfolders too (${keyLabel('Ctrl+F')})`" @click="S.openSearch(p)"><kbd>{{ keyLabel('Ctrl+F') }}</kbd></button>
+    <button v-else class="hidden text-faint hover:text-accent @2xl:block" :title="`Search subfolders too (${keyLabel('Ctrl+F')})`" @click="S.openSearch(p)"><kbd>{{ keyLabel('Ctrl+F') }}</kbd></button>
   </div>
 </template>

@@ -77,6 +77,6 @@ async function copyPath() {
 <style scoped>
 @reference '../../style.css';
 .tile {
-  @apply rounded-xl border border-line bg-panel transition hover:border-accent/50 hover:bg-raised has-[[data-tile]:focus-visible]:ring-2 has-[[data-tile]:focus-visible]:ring-accent;
+  @apply rounded-xl bg-panel transition hover:bg-raised has-[[data-tile]:focus-visible]:ring-2 has-[[data-tile]:focus-visible]:ring-accent;
 }
 </style>

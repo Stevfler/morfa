@@ -44,7 +44,7 @@ const lines = computed(() => (text.value ?? '').split('\n'))
       </div>
     </div>
     <template v-else>
-      <div class="flex h-8 shrink-0 items-center gap-2 border-b border-line px-3 text-[11.5px] text-faint">
+      <div class="flex h-8 shrink-0 items-center gap-2 px-3 text-[11.5px] text-faint">
         <span v-if="truncated" class="text-warn">Truncated — showing first {{ fmtSize(MAX) }} of {{ fmtSize(entry.size) }}</span>
         <span v-else>{{ lines.length }} lines</span>
         <div class="flex-1" />

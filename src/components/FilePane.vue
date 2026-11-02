@@ -21,9 +21,9 @@ const menuOnItem = ref(false)
 </script>
 
 <template>
-  <section class="flex min-h-0 flex-col" :class="active ? 'bg-bg' : 'bg-bg/60'">
+  <section class="@container flex min-h-0 flex-col" :class="split && active && 'ring-1 ring-accent/45'">
     <!-- toolbar -->
-    <div class="flex h-11 shrink-0 items-center gap-1 border-b border-line px-2" :class="split && active && 'shadow-[inset_0_2px_0_var(--color-accent)]'">
+    <div class="flex h-12 shrink-0 items-center gap-1 px-3 transition" :class="split && active && 'bg-accent-soft/30'">
       <IconButton icon="chevron-left" label="Back" keys="Alt+←" :disabled="!p.back.length" @click="S.back(p)" />
       <IconButton icon="chevron-right" label="Forward" keys="Alt+→" :disabled="!p.fwd.length" @click="S.forward(p)" />
       <IconButton icon="arrow-up" label="Parent folder" keys="Backspace" :disabled="S.isSpecial(p.path) || !parent(p.path)" @click="S.up(p)" />

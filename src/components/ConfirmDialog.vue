@@ -18,7 +18,7 @@ function ok() {
   <AlertDialogRoot v-model:open="open">
     <AlertDialogPortal>
       <AlertDialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
-      <AlertDialogContent class="fixed top-1/2 left-1/2 z-50 w-[min(440px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-panel p-5 shadow-2xl outline-none">
+      <AlertDialogContent class="fixed top-1/2 left-1/2 z-50 w-[min(440px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-panel ring-1 ring-fg/5 p-5 shadow-2xl outline-none">
         <AlertDialogTitle class="text-[15px] font-medium">{{ state.confirm?.title }}</AlertDialogTitle>
         <AlertDialogDescription class="mt-2 text-[12.5px] leading-relaxed text-dim">{{ state.confirm?.desc }}</AlertDialogDescription>
         <div class="mt-5 flex justify-end gap-2">

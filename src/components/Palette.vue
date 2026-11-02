@@ -86,14 +86,14 @@ function key(e: KeyboardEvent) {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
       <DialogContent
-        class="fixed top-[12vh] left-1/2 z-50 w-[min(640px,92vw)] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-panel shadow-2xl outline-none"
+        class="fixed top-[12vh] left-1/2 z-50 w-[min(640px,92vw)] -translate-x-1/2 overflow-hidden rounded-xl bg-panel ring-1 ring-fg/5 shadow-2xl outline-none"
         @open-auto-focus.prevent
       >
         <VisuallyHidden>
           <DialogTitle>{{ state.palette === 'folders' ? 'Jump to folder' : 'Command palette' }}</DialogTitle>
           <DialogDescription>Type to search, Enter to run</DialogDescription>
         </VisuallyHidden>
-        <div class="flex items-center gap-3 border-b border-line px-4">
+        <div class="flex items-center gap-3 px-4 pt-1">
           <Icon :name="state.palette === 'folders' ? 'zap' : 'search'" class="size-4 text-accent" />
           <input
             ref="input" v-model="q"
@@ -119,7 +119,7 @@ function key(e: KeyboardEvent) {
           </template>
           <p v-if="!items.length" class="px-3 py-6 text-center text-faint">No matches</p>
         </div>
-        <div class="flex gap-4 border-t border-line px-4 py-2 text-[11px] text-faint">
+        <div class="flex gap-4 bg-raised/50 px-4 py-2 text-[11px] text-faint">
           <span><kbd>↑↓</kbd> choose</span><span><kbd>Enter</kbd> run</span><span><kbd>Esc</kbd> close</span>
           <span class="ml-auto"><kbd>{{ keyLabel('Ctrl+P') }}</kbd> jump to folder</span>
         </div>

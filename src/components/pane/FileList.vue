@@ -15,7 +15,7 @@ const state = S.state
 const { dropTarget, dragStart, dragOver, dragLeave, drop } = props.dnd
 
 // Row height follows the density setting; all scroll math below reads ROW.value.
-const ROW = computed(() => (settings.density === 'compact' ? 24 : 30))
+const ROW = computed(() => (settings.density === 'compact' ? 28 : 34))
 const list = computed(() => S.visible(p))
 const scroller = ref<HTMLElement>()
 const scrollTop = ref(0)

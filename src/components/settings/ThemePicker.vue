@@ -7,7 +7,7 @@ import { settings, THEMES, ACCENTS } from '../../lib/settings'
   <RadioGroupRoot v-model="settings.theme" aria-label="Theme" class="grid grid-cols-3 gap-2">
     <RadioGroupItem
       v-for="t in THEMES" :key="t.id" :value="t.id"
-      class="group rounded-lg border border-line p-1.5 text-left outline-none transition hover:border-faint focus-visible:ring-2 focus-visible:ring-accent/60 data-[state=checked]:border-accent"
+      class="group rounded-lg bg-raised/50 p-1.5 text-left outline-none transition hover:bg-raised focus-visible:ring-2 focus-visible:ring-accent/60 data-[state=checked]:ring-2 data-[state=checked]:ring-accent"
     >
       <!-- mini window preview drawn in the theme's own colors -->
       <div class="flex h-14 overflow-hidden rounded-md border" :style="{ background: t.c[0], borderColor: t.c[3] }">
