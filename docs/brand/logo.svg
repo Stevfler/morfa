@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b2063"/><stop offset="1" stop-color="#110c29"/></linearGradient>
+    <linearGradient id="folder" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c3b3ff"/><stop offset="1" stop-color="#7752ff"/></linearGradient>
+    <linearGradient id="bits" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#86e6ff"/><stop offset="1" stop-color="#8b6cff"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
+  <!-- Morfa: a folder whose right edge breaks into pieces that round off as they drift — a file changing form -->
+  <path d="M170 318a56 56 0 0 1 56-56h158l64 64h132v448H226a56 56 0 0 1-56-56z" fill="url(#folder)"/>
+  <rect x="618" y="326" width="132" height="132" rx="34" fill="url(#bits)"/>
+  <rect x="618" y="490" width="132" height="132" rx="66" fill="url(#bits)" opacity=".8"/>
+  <circle cx="684" cy="712" r="62" fill="url(#bits)" opacity=".6"/>
+  <circle cx="830" cy="392" r="48" fill="url(#bits)" opacity=".55"/>
+  <circle cx="836" cy="556" r="34" fill="url(#bits)" opacity=".38"/>
+</svg>
