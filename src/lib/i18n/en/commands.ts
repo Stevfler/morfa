@@ -45,4 +45,5 @@ export const commands = {
   'cmd.bookmark': 'Add / remove folder from Favorites',
   'cmd.terminal': 'Open terminal here',
   'cmd.convertNone': 'Select one or more images to convert',
+  'cmd.properties': 'Properties',
 }

@@ -51,6 +51,7 @@ export const commands = ([
   { id: 'selectall', group: 'edit', icon: 'check-all', keys: 'Ctrl+A', run: () => S.selectAll() },
   { id: 'convert', group: 'edit', icon: 'image', run: () => convertTargets() },
   { id: 'copypath', group: 'edit', icon: 'link', keys: 'Ctrl+Shift+C', run: () => S.copyPath() },
+  { id: 'properties', group: 'edit', icon: 'info', keys: 'Alt+Enter', run: () => openProperties() },
 
   { id: 'copyother', group: 'dual', icon: 'copy', fkey: 'F5', fkeyMode: 'split', run: () => S.toOther('copy') },
   { id: 'moveother', group: 'dual', icon: 'arrow-swap', fkey: 'F6', fkeyMode: 'split', run: () => S.toOther('move') },
@@ -141,4 +142,10 @@ function convertTargets() {
   const paths = S.targets().filter((e) => !e.isDir && isImage(e.path)).map((e) => e.path)
   if (paths.length) openConvert(paths)
   else S.toast({ title: t('cmd.convertNone'), tone: 'info' }, 2500)
+}
+
+/** Properties of the selection, or of the current folder when nothing is selected. */
+export function openProperties(p = S.pane()) {
+  const t = S.targets(p)
+  S.state.properties = t.length ? t.map((e) => e.path) : [p.path]
 }

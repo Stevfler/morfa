@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { IconName } from '../lib/icons'
 import Icon from './Icon.vue'
 import DrivesSection from './sidebar/DrivesSection.vue'
+import TagsSection from './tags/TagsSection.vue'
 import { state, pane, go, frecencyScore, transfer } from '../lib/store'
 import { basename, copyMod, keyLabel } from '../lib/util'
 import { DIRS_MIME } from '../composables/useDragDrop'
@@ -70,6 +71,8 @@ function onDropFav(e: DragEvent) {
         <Icon name="clock" class="size-4 shrink-0" /><span class="truncate">{{ basename(r) || r }}</span>
       </button>
     </section>
+
+    <TagsSection />
 
     <DrivesSection />
   </aside>

@@ -7,6 +7,7 @@ import * as S from '../lib/store'
 import { commands, prettyKeys } from '../lib/commands'
 import { basename, fuzzy, keyLabel } from '../lib/util'
 import { t } from '../lib/i18n'
+import { allTags, refreshAllTags, showTag } from '../lib/tags'
 
 type Item = { key: string; title: string; sub?: string; icon: IconName; keys?: string; group: string; run: () => unknown }
 
@@ -20,6 +21,7 @@ watch(open, async (v) => {
   if (!v) return
   q.value = ''
   idx.value = 0
+  refreshAllTags()
   await nextTick()
   input.value?.focus()
 })
@@ -36,6 +38,12 @@ function folderItems(): Item[] {
   }))
 }
 
+// "#" filters by tag: lists every file carrying it in the active pane.
+const tagItems = (): Item[] =>
+  Object.entries(allTags.value).map(([t, n]) => ({
+    key: 't:' + t, title: `#${t}`, sub: `${n} item${n === 1 ? '' : 's'}`, icon: 'tag', group: 'Tags', run: () => showTag(S.pane(), t),
+  }))
+
 const items = computed<Item[]>(() => {
   const query = q.value.trim()
   const out: Item[] = []
@@ -45,6 +53,10 @@ const items = computed<Item[]>(() => {
   }
   if (query.includes('*') && state.palette === 'all') {
     out.push({ key: 'sel', title: t('palette.selectMatching', { query }), icon: 'check-all', group: t('palette.select'), run: () => S.selectPattern(S.pane(), query) })
+  }
+  if (query.startsWith('#')) {
+    const tq = query.slice(1)
+    return tagItems().map((t) => [tq ? fuzzy(tq, t.title.slice(1)) : 0, t] as const).filter(([s]) => s >= 0).sort((a, b) => b[0] - a[0]).map(([, t]) => t)
   }
   const folders = folderItems()
   if (state.palette === 'folders') {
@@ -60,7 +72,8 @@ const items = computed<Item[]>(() => {
   if (!query) return [...out, ...cmds]
   const scoredCmds = cmds.map((c) => [fuzzy(query, c.title + ' ' + c.group), c] as const).filter(([s]) => s >= 0)
   const scoredFolders = folders.map((f) => [fuzzy(query, f.title) - 50 + S.frecencyScore(f.sub!), f] as const).filter(([s]) => s > -50)
-  return [...out, ...[...scoredCmds, ...scoredFolders].sort((a, b) => b[0] - a[0]).map(([, x]) => x)].slice(0, 60)
+  const scoredTags = tagItems().map((t) => [fuzzy(query, t.title.slice(1)) - 40, t] as const).filter(([s]) => s > -40)
+  return [...out, ...[...scoredCmds, ...scoredFolders, ...scoredTags].sort((a, b) => b[0] - a[0]).map(([, x]) => x)].slice(0, 60)
 })
 
 watch(q, () => (idx.value = 0))

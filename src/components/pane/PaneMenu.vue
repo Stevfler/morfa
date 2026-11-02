@@ -5,10 +5,11 @@ import {
   ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent,
 } from 'reka-ui'
 import Icon from '../Icon.vue'
+import TagsMenuItems from '../tags/TagsMenuItems.vue'
 import * as S from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { keyLabel, parent } from '../../lib/util'
-import { cmd } from '../../lib/commands'
+import { cmd, openProperties } from '../../lib/commands'
 import { t as tr } from '../../lib/i18n'
 import { FORMATS, QUICK_FORMATS, caps, isImage, loadCaps, openConvert, quickConvert } from '../../lib/convert'
 
@@ -70,12 +71,15 @@ function openIn(where: 'tab' | 'other') {
             </ContextMenuPortal>
           </ContextMenuSub>
           <ContextMenuItem class="mi" @select="S.copyPath(p)"><Icon name="link" />{{ tr('pane.menu.copyPath') }}<span>{{ keyLabel('Ctrl+Shift+C') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="openProperties(p)"><Icon name="info" />{{ tr('pane.menu.properties') }}<span>{{ keyLabel('Alt+Enter') }}</span></ContextMenuItem>
           <template v-if="cursorEntry.isDir">
             <ContextMenuItem class="mi" @select="S.toggleBookmark(cursorEntry.path)"><Icon name="star" />{{ state.bookmarks.includes(cursorEntry.path) ? tr('pane.menu.removeFav') : tr('pane.menu.addFav') }}</ContextMenuItem>
             <ContextMenuItem class="mi" @select="S.computeSizes(S.targets(p).filter((x) => x.isDir).map((x) => x.path))"><Icon name="gauge" />{{ tr('pane.menu.calcSize') }}</ContextMenuItem>
             <ContextMenuItem class="mi" @select="S.openTerminal(cursorEntry.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}</ContextMenuItem>
           </template>
           <ContextMenuItem v-else class="mi" @select="S.reveal(cursorEntry.path)"><Icon name="eye" />{{ tr('pane.menu.showInSystem') }}</ContextMenuItem>
+          <ContextMenuSeparator class="sep" />
+          <TagsMenuItems :paths="paths()" />
           <ContextMenuSeparator class="sep" />
           <ContextMenuItem class="mi" @select="S.trash(paths())"><Icon name="trash" />{{ tr('pane.menu.trash') }}<span>{{ keyLabel(cmd('trash').keys!) }}</span></ContextMenuItem>
           <ContextMenuItem class="mi danger" @select="S.deleteForever(paths())"><Icon name="x" />{{ tr('pane.menu.deleteForever') }}<span>{{ keyLabel(cmd('delete').keys!) }}</span></ContextMenuItem>
@@ -90,6 +94,7 @@ function openIn(where: 'tab' | 'other') {
           <ContextMenuItem class="mi" @select="S.calcFolderSizes(p)"><Icon name="gauge" />{{ tr('pane.menu.folderSizes') }}<span>{{ keyLabel('Ctrl+Shift+S') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.toggleBookmark(p.path)"><Icon name="star" />{{ state.bookmarks.includes(p.path) ? tr('pane.menu.removeFav') : tr('pane.menu.addFav') }}<span>{{ keyLabel('Ctrl+D') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.openTerminal(p.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}<span>{{ keyLabel('Ctrl+`') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="state.properties = [p.path]"><Icon name="info" />{{ tr('pane.menu.properties') }}<span>{{ keyLabel('Alt+Enter') }}</span></ContextMenuItem>
         </template>
       </ContextMenuContent>
     </ContextMenuPortal>

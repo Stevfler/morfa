@@ -5,8 +5,10 @@ mod fsinfo;
 mod fsops;
 mod mount;
 mod places;
+mod props;
 mod search;
 mod system;
+mod tags;
 mod transfer;
 mod watch;
 
@@ -30,6 +32,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             list_dir,
             stat,
+            props::properties,
             places,
             mount::list_drives,
             mount::mount_drive,
@@ -63,6 +66,10 @@ pub fn run() {
             convert::convert_estimate,
             convert::preview::convert_preview,
             convert::preview::image_bytes,
+            tags::tags_get,
+            tags::tags_set,
+            tags::tags_all,
+            tags::tags_find,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Orbit");

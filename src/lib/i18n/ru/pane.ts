@@ -63,4 +63,5 @@ export const pane = {
   'ql.truncated': 'Обрезано — показаны первые {max} из {size}',
   'ql.lines': { one: '{count} строка', few: '{count} строки', many: '{count} строк', other: '{count} строки' },
   'ql.wrap': 'Перенос',
+  'pane.menu.properties': 'Свойства',
 }

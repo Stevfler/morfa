@@ -63,4 +63,5 @@ export const pane = {
   'ql.truncated': 'Truncated — showing first {max} of {size}',
   'ql.lines': { one: '{count} line', other: '{count} lines' },
   'ql.wrap': 'Wrap',
+  'pane.menu.properties': 'Properties',
 }

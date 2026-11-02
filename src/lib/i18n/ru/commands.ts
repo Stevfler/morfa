@@ -45,4 +45,5 @@ export const commands = {
   'cmd.bookmark': 'Добавить / убрать папку из избранного',
   'cmd.terminal': 'Открыть терминал здесь',
   'cmd.convertNone': 'Выберите одно или несколько изображений для конвертации',
+  'cmd.properties': 'Свойства',
 }

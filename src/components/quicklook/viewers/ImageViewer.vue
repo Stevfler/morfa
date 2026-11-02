@@ -94,13 +94,13 @@ onBeforeUnmount(() => ro?.disconnect())
       :key="src"
       :src="src"
       draggable="false"
-      class="absolute top-0 left-0 max-w-none origin-top-left"
-      :class="status !== 'ok' && 'invisible'"
+      class="absolute top-0 left-0 max-w-none origin-top-left transition-opacity duration-150 ease-out"
+      :class="status === 'ok' ? 'opacity-100' : 'opacity-0'"
       :style="{ width: `${nat.w}px`, height: `${nat.h}px`, transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`, imageRendering: scale > 2 ? 'pixelated' : 'auto' }"
       @load="onLoad"
       @error="status = 'error'"
     />
-    <div v-if="status === 'loading'" class="absolute inset-0 grid place-items-center">
+    <div v-if="status === 'loading'" class="ql-spin absolute inset-0 grid place-items-center">
       <Icon name="loader" class="size-6 animate-spin text-faint" />
     </div>
     <div v-else-if="status === 'error'" class="absolute inset-0 grid place-items-center text-center text-[13px] text-dim">
@@ -113,6 +113,9 @@ onBeforeUnmount(() => ro?.disconnect())
 </template>
 
 <style scoped>
+/* Only show the spinner if loading is actually slow. */
+.ql-spin { animation: ql-spin-in 0s 250ms both }
+@keyframes ql-spin-in { from { visibility: hidden } }
 .checker {
   background-color: var(--color-bg);
   background-image: conic-gradient(var(--color-raised) 25%, transparent 0 50%, var(--color-raised) 0 75%, transparent 0);

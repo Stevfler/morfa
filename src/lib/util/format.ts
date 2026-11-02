@@ -13,25 +13,15 @@ export function fmtSize(n: number | undefined) {
 }
 
 // Rebuilt when the locale changes; reading `locale` keeps callers reactive.
-let cached: { loc: string; rtf: Intl.RelativeTimeFormat; dtf: Intl.DateTimeFormat } | undefined
+let cached: { loc: string; dtf: Intl.DateTimeFormat; short: Intl.DateTimeFormat } | undefined
 const fmts = () => {
   const loc = locale.value
-  if (cached?.loc !== loc) cached = { loc, rtf: new Intl.RelativeTimeFormat(loc, { numeric: 'auto' }), dtf: new Intl.DateTimeFormat(loc, { dateStyle: 'medium', timeStyle: 'short' }) }
+  if (cached?.loc !== loc) cached = { loc, dtf: new Intl.DateTimeFormat(loc, { dateStyle: 'medium', timeStyle: 'short' }), short: new Intl.DateTimeFormat(loc, { day: 'numeric', month: 'short', year: 'numeric' }) }
   return cached
 }
 
-/** "5 min ago" for recent things, an absolute date for older ones. */
-export function fmtDate(ms: number) {
-  if (!ms) return ''
-  const { rtf, dtf } = fmts()
-  const diff = (ms - Date.now()) / 1000
-  const a = Math.abs(diff)
-  if (a < 60) return t('date.justNow')
-  if (a < 3600) return rtf.format(Math.round(diff / 60), 'minute')
-  if (a < 86400) return rtf.format(Math.round(diff / 3600), 'hour')
-  if (a < 86400 * 7) return rtf.format(Math.round(diff / 86400), 'day')
-  return dtf.format(ms)
-}
+/** Compact date for list columns ("12 Oct 2025"); full date and time live in the info panel. */
+export const fmtDate = (ms: number) => (ms ? fmts().short.format(ms) : '')
 export const fmtDateFull = (ms: number) => (ms ? fmts().dtf.format(ms) : '')
 
 export const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
