@@ -5,13 +5,14 @@ import { load, save } from '../util'
 import { newPane, nextId, state } from './state'
 import { go, load_ } from './navigation'
 import { persist, syncWatch } from './tabs'
+import { startSearch } from './search'
 import type { Entry, Place } from './types'
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
 const dirty = new Set<string>()
 
 export async function init() {
-  state.home = await invoke<string>('home_dir')
+  state.home = await invoke<string>('home_dir').catch(() => '/')
   const session = load<{ tabs: { paths: string[]; active: number }[]; activeTab: number } | null>('orbit.session', null)
   if (session?.tabs.length) {
     state.tabs = session.tabs.map((t) => ({ id: nextId(), panes: t.paths.map(newPane), active: t.active }))
@@ -48,7 +49,11 @@ export async function init() {
   })
 
   watch(() => state.bookmarks, (v) => save('orbit.bookmarks', v), { deep: true })
-  watch(() => state.showHidden, (v) => save('orbit.hidden', v))
+  watch(() => state.showHidden, (v) => {
+    save('orbit.hidden', v)
+    // Re-run active searches so results honour the new hidden-files setting.
+    for (const t of state.tabs) for (const p of t.panes) if (p.search?.query.trim()) startSearch(p, p.search.query)
+  })
   watch(() => state.preview, (v) => save('orbit.preview', v))
   watch(() => state.activeTab, persist)
 }

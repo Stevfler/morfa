@@ -41,7 +41,9 @@ export function toggleSplit() {
 }
 
 export function focusPane(i: number) {
-  if (tab().panes[i]) tab().active = i
+  if (!tab().panes[i] || tab().active === i) return
+  tab().active = i
+  persist()
 }
 
 export function persist() {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Search } from 'lucide-vue-next'
 import type { Pane } from '../../lib/store'
-import { basename } from '../../lib/util'
+import { basename, keyLabel } from '../../lib/util'
 
 defineProps<{ pane: Pane }>()
 </script>
@@ -25,11 +25,11 @@ defineProps<{ pane: Pane }>()
       </template>
       <template v-else-if="pane.filter">
         <p>No names match “{{ pane.filter }}”</p>
-        <p class="mt-1 text-[12px] text-faint">Press <kbd>Ctrl F</kbd> to search subfolders too</p>
+        <p class="mt-1 text-[12px] text-faint">Press <kbd>{{ keyLabel('Ctrl+F') }}</kbd> to search subfolders too</p>
       </template>
       <template v-else>
         <p>This folder is empty</p>
-        <p class="mt-1 text-[12px] text-faint">Drop files here or press <kbd>Ctrl Shift N</kbd> for a new folder</p>
+        <p class="mt-1 text-[12px] text-faint">Drop files here or press <kbd>{{ keyLabel('Ctrl+Shift+N') }}</kbd> for a new folder</p>
       </template>
     </div>
   </div>

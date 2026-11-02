@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as S from '../../lib/store'
+import { primaryMod } from '../../lib/util'
 import type { Pane } from '../../lib/store'
 import type { DragDrop } from '../../composables/useDragDrop'
 import FileRow from './FileRow.vue'
@@ -57,7 +58,7 @@ let pendingCollapse = -1
 function pressRow(ev: MouseEvent, i: number) {
   pendingCollapse = -1
   if (ev.shiftKey) S.setCursor(p, i, 'extend')
-  else if (ev.ctrlKey || ev.metaKey) S.setCursor(p, i, 'toggle')
+  else if (primaryMod(ev)) S.setCursor(p, i, 'toggle')
   else if (p.selected.size > 1 && p.selected.has(list.value[i].path)) {
     p.cursor = i
     pendingCollapse = i

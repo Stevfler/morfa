@@ -1,6 +1,9 @@
 use crate::CmdResult;
 use serde::Serialize;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+mod disks;
+use disks::{disk_name, filter_disks, Os, RawDisk};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -29,23 +32,25 @@ pub async fn places() -> CmdResult<Vec<Place>> {
     push("Videos", dirs::video_dir(), "videos");
 
     let disks = sysinfo::Disks::new_with_refreshed_list().ok();
-    let mut seen = std::collections::HashSet::new();
-    for d in disks.iter().flat_map(|d| d.iter()) {
-        let mount = d.mount_point().to_string_lossy().to_string();
-        // Hide pseudo/system mounts that only add noise.
-        if mount.starts_with("/boot") || mount.starts_with("/snap") || mount.starts_with("/var") || mount.starts_with("/sys") || mount.starts_with("/proc") {
-            continue;
-        }
-        if mount != "/" && !seen.insert(d.name().to_string_lossy().to_string()) {
-            continue;
-        }
-        let label = Path::new(&mount).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| mount.clone());
-        out.push(Place {
-            name: if mount == "/" { "System".into() } else { label },
-            path: mount,
-            kind: if d.is_removable() { "removable".into() } else { "disk".into() },
+    let raw: Vec<RawDisk> = disks
+        .iter()
+        .flat_map(|d| d.iter())
+        .map(|d| RawDisk {
+            label: d.name().to_string_lossy().into(),
+            mount: d.mount_point().to_string_lossy().into(),
+            fs: d.file_system().to_string_lossy().into(),
+            removable: d.is_removable(),
             total: d.total_space(),
             free: d.available_space(),
+        })
+        .collect();
+    for d in filter_disks(Os::current(), raw) {
+        out.push(Place {
+            name: disk_name(Os::current(), &d),
+            kind: if d.removable { "removable".into() } else { "disk".into() },
+            path: d.mount,
+            total: d.total,
+            free: d.free,
         });
     }
     Ok(out)

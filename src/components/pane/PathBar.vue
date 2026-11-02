@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { ChevronRight, FolderOpen } from 'lucide-vue-next'
 import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
-import { crumbs, parent } from '../../lib/util'
+import { crumbs, keyLabel, parent } from '../../lib/util'
 import type { DragDrop } from '../../composables/useDragDrop'
 
 const props = defineProps<{ pane: Pane; active: boolean; dnd: DragDrop }>()
@@ -70,7 +70,7 @@ function pathKey(ev: KeyboardEvent) {
     <div
       v-else
       class="flex h-7 cursor-text items-center overflow-hidden rounded-md px-1 hover:bg-panel"
-      title="Click empty space or press Ctrl+L to type a path"
+      :title="`Click empty space or press ${keyLabel('Ctrl+L')} to type a path`"
       @click.self="state.editPath = true; S.focusPane(S.tab().panes.indexOf(p))"
     >
       <template v-for="(c, k) in crumbs(p.path)" :key="c.path">

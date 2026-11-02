@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
 import { ArrowRight, TriangleAlert } from 'lucide-vue-next'
 import * as S from '../lib/store'
-import { basename, join, parent } from '../lib/util'
+import { basename, join, keyLabel, parent } from '../lib/util'
 
 const state = S.state
 const open = computed({ get: () => !!state.batchRename, set: (v) => !v && (state.batchRename = null) })
@@ -82,7 +82,7 @@ function apply() {
       <DialogContent class="fixed top-1/2 left-1/2 z-50 flex max-h-[86vh] w-[min(760px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-line bg-panel shadow-2xl outline-none">
         <div class="border-b border-line px-5 py-4">
           <DialogTitle class="text-[15px] font-medium">Rename {{ state.batchRename?.length }} items</DialogTitle>
-          <DialogDescription class="mt-0.5 text-[12px] text-faint">Every change is previewed live. Extensions are kept. You can undo with Ctrl+Z.</DialogDescription>
+          <DialogDescription class="mt-0.5 text-[12px] text-faint">Every change is previewed live. Extensions are kept. You can undo with {{ keyLabel('Ctrl+Z') }}.</DialogDescription>
         </div>
 
         <div class="grid grid-cols-2 gap-4 px-5 py-4">

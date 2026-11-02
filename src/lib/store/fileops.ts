@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import { basename, join, parent } from '../util'
+import { basename, join, keyLabel, parent } from '../util'
 import { nextId, pane, state } from './state'
 import { targets } from './view'
 import { fail, toast } from './toast'
@@ -15,14 +15,14 @@ export function copyToClipboard(mode: 'copy' | 'move', p: Pane = pane()) {
   if (!t.length) return
   state.clipboard = { mode, paths: t.map((e) => e.path) }
   toast(
-    { title: mode === 'copy' ? `Copied ${describe(state.clipboard.paths)}` : `Cut ${describe(state.clipboard.paths)}`, desc: 'Press Ctrl+V in any folder to paste', tone: 'info' },
+    { title: mode === 'copy' ? `Copied ${describe(state.clipboard.paths)}` : `Cut ${describe(state.clipboard.paths)}`, desc: `Press ${keyLabel('Ctrl+V')} in any folder to paste`, tone: 'info' },
     2500,
   )
 }
 
 export async function paste(p: Pane = pane()) {
   const c = state.clipboard
-  if (!c) return toast({ title: 'Clipboard is empty', desc: 'Copy (Ctrl+C) or cut (Ctrl+X) something first', tone: 'info' }, 2500)
+  if (!c) return toast({ title: 'Clipboard is empty', desc: `Copy (${keyLabel('Ctrl+C')}) or cut (${keyLabel('Ctrl+X')}) something first`, tone: 'info' }, 2500)
   await transfer(c.paths, p.path, c.mode)
   if (c.mode === 'move') state.clipboard = null
 }

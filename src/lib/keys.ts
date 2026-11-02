@@ -1,5 +1,6 @@
 import { nextTick } from 'vue'
-import { commands, matches } from './commands'
+import { commands, matches, matchesCmd } from './commands'
+import { primaryMod } from './util'
 import * as S from './store'
 
 const ROW_PAGE = 15
@@ -22,7 +23,7 @@ export function navKey(p: S.Pane, e: KeyboardEvent): boolean {
       S.setCursor(p, p.cursor - ROW_PAGE, mode)
       break
     case 'Enter':
-      S.open(p, S.visible(p)[p.cursor], { reveal: e.ctrlKey || e.metaKey })
+      S.open(p, S.visible(p)[p.cursor], { reveal: primaryMod(e) })
       break
     default:
       return false
@@ -71,7 +72,7 @@ export function onGlobalKey(e: KeyboardEvent) {
       return
     }
   }
-  if (e.ctrlKey && /^Digit[1-9]$/.test(e.code)) {
+  if (primaryMod(e) && !e.altKey && /^Digit[1-9]$/.test(e.code)) {
     e.preventDefault()
     S.state.activeTab = Math.min(Number(e.code.slice(5)) - 1, S.state.tabs.length - 1)
     return
@@ -84,7 +85,7 @@ export function onGlobalKey(e: KeyboardEvent) {
     S.focusPane(1 - S.tab().active)
     return
   }
-  if (e.key === 'Backspace' || (e.altKey && e.key === 'ArrowUp')) {
+  if ((e.key === 'Backspace' && !primaryMod(e) && !e.shiftKey) || (e.altKey && e.key === 'ArrowUp')) {
     e.preventDefault()
     return S.up(p)
   }
@@ -104,7 +105,7 @@ export function onGlobalKey(e: KeyboardEvent) {
   }
 
   for (const c of commands) {
-    if (c.keys && matches(e, c.keys)) {
+    if (matchesCmd(e, c)) {
       e.preventDefault()
       c.run()
       return

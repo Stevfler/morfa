@@ -5,7 +5,7 @@ use crate::{
 };
 use std::{
     collections::HashSet,
-    path::{Path, PathBuf},
+    path::Path,
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
         Mutex,
@@ -108,15 +108,11 @@ pub async fn read_text(path: String, max: usize) -> CmdResult<Option<String>> {
     .map_err(|e| e.to_string())?
 }
 
-/// Folder completion for the editable path bar.
+/// Folder completion for the editable path bar. Empty input completes from home.
 #[tauri::command]
 pub async fn complete_path(input: String) -> CmdResult<Vec<String>> {
-    let p = PathBuf::from(&input);
-    let (dir, prefix) = if input.ends_with(std::path::MAIN_SEPARATOR) {
-        (p.clone(), String::new())
-    } else {
-        (p.parent().map(Path::to_path_buf).unwrap_or_default(), p.file_name().map(|s| s.to_string_lossy().to_lowercase()).unwrap_or_default())
-    };
+    let input = if input.is_empty() { home_dir()? + std::path::MAIN_SEPARATOR_STR } else { input };
+    let Some((dir, prefix)) = split_completion(&input, cfg!(windows)) else { return Ok(Vec::new()) };
     let mut out: Vec<String> = std::fs::read_dir(&dir)
         .map_err(|e| e.to_string())?
         .filter_map(|e| e.ok())
@@ -132,9 +128,27 @@ pub async fn complete_path(input: String) -> CmdResult<Vec<String>> {
     Ok(out)
 }
 
+/// Splits typed text into (directory to list, lowercase name prefix). `None` = nothing listable
+/// (relative text, or a bare `\\server\` UNC root). On Windows `/` counts as a separator and
+/// `X:` means `X:\` (not that drive's cwd).
+fn split_completion(input: &str, windows: bool) -> Option<(String, String)> {
+    let mut s = if windows { input.replace('/', "\\") } else { input.to_string() };
+    let sep = if windows { '\\' } else { '/' };
+    if windows && s.len() == 2 && s.as_bytes()[0].is_ascii_alphabetic() && s.as_bytes()[1] == b':' {
+        s.push('\\');
+    }
+    let idx = s.rfind(sep)?;
+    let (dir, prefix) = (&s[..=idx], &s[idx + 1..]);
+    if windows && dir.starts_with("\\\\") && dir[2..].matches('\\').count() < 2 {
+        return None; // `\\server\` lists shares, which read_dir can't enumerate
+    }
+    Some((dir.to_string(), prefix.to_lowercase()))
+}
+
+/// The user's home directory, or an error if the OS doesn't report one.
 #[tauri::command]
-pub fn home_dir() -> String {
-    dirs::home_dir().map(|p| p.to_string_lossy().to_string()).unwrap_or_else(|| "/".into())
+pub fn home_dir() -> CmdResult<String> {
+    dirs::home_dir().map(|p| p.to_string_lossy().to_string()).ok_or_else(|| "no home directory".into())
 }
 
 #[cfg(test)]
@@ -153,5 +167,33 @@ mod tests {
         assert_eq!(walk_size(&d, &|| false), Some((110, 2)));
         assert_eq!(walk_size(&d, &|| true), None);
         std::fs::remove_dir_all(&d).unwrap();
+    }
+
+    fn sc(i: &str, w: bool) -> Option<(String, String)> {
+        split_completion(i, w)
+    }
+    fn some(d: &str, p: &str) -> Option<(String, String)> {
+        Some((d.into(), p.into()))
+    }
+
+    #[test]
+    fn completion_split_unix() {
+        assert_eq!(sc("/home/u/Do", false), some("/home/u/", "do"));
+        assert_eq!(sc("/home/", false), some("/home/", ""));
+        assert_eq!(sc("/", false), some("/", ""));
+        assert_eq!(sc("rel", false), None);
+        assert_eq!(sc("C:\\x", false), None);
+    }
+
+    #[test]
+    fn completion_split_windows() {
+        assert_eq!(sc("C:", true), some("C:\\", ""));
+        assert_eq!(sc("c:/Users/Bo", true), some("c:\\Users\\", "bo"));
+        assert_eq!(sc("C:\\Users\\", true), some("C:\\Users\\", ""));
+        assert_eq!(sc("C:/", true), some("C:\\", ""));
+        assert_eq!(sc("\\\\srv\\share\\Pro", true), some("\\\\srv\\share\\", "pro"));
+        assert_eq!(sc("//srv/share/", true), some("\\\\srv\\share\\", ""));
+        assert_eq!(sc("\\\\srv\\sha", true), None);
+        assert_eq!(sc("Users", true), None);
     }
 }

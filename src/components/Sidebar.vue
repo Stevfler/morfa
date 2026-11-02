@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { House, Monitor, Download, FileText, Image, Music, Video, HardDrive, Usb, Star, Clock, X } from 'lucide-vue-next'
 import { state, pane, go, frecencyScore, transfer } from '../lib/store'
-import { basename, fmtSize } from '../lib/util'
+import { basename, copyMod, fmtSize, keyLabel } from '../lib/util'
+import { DIRS_MIME } from '../composables/useDragDrop'
 
 const ICONS: Record<string, unknown> = {
   home: House, desktop: Monitor, downloads: Download, documents: FileText,
@@ -22,11 +23,11 @@ const current = computed(() => pane().path)
 function drop(e: DragEvent, dest: string) {
   const data = e.dataTransfer?.getData('application/x-orbit-paths')
   if (!data) return
-  transfer(JSON.parse(data), dest, e.ctrlKey ? 'copy' : 'move')
+  transfer(JSON.parse(data), dest, copyMod(e) ? 'copy' : 'move')
 }
 
 function onDropFav(e: DragEvent) {
-  const data = e.dataTransfer?.getData('application/x-orbit-paths')
+  const data = e.dataTransfer?.getData(DIRS_MIME)
   if (!data) return
   for (const p of JSON.parse(data) as string[]) if (!state.bookmarks.includes(p)) state.bookmarks.push(p)
 }
@@ -48,7 +49,7 @@ function onDropFav(e: DragEvent) {
     <section @dragover.prevent @drop.prevent="onDropFav">
       <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Favorites</h3>
       <p v-if="!state.bookmarks.length" class="mx-2 rounded-md border border-dashed border-line px-2 py-2 text-[11.5px] leading-snug text-faint">
-        Drag folders here or press <kbd>Ctrl D</kbd>
+        Drag folders here or press <kbd>{{ keyLabel('Ctrl+D') }}</kbd>
       </p>
       <button
         v-for="b in state.bookmarks" :key="b"

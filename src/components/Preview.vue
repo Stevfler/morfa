@@ -4,7 +4,7 @@ import { invoke, convertFileSrc } from '@tauri-apps/api/core'
 import { Gauge, ExternalLink, FolderOpen, LoaderCircle } from 'lucide-vue-next'
 import * as S from '../lib/store'
 import type { Entry } from '../lib/store'
-import { fmtDateFull, fmtSize, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL } from '../lib/util'
+import { fmtDateFull, fmtSize, keyLabel, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL } from '../lib/util'
 
 const state = S.state
 const entry = computed<Entry | undefined>(() => {
@@ -66,7 +66,7 @@ const size = computed(() => {
 <template>
   <aside class="flex w-80 shrink-0 flex-col overflow-hidden border-l border-line bg-panel">
     <div v-if="!entry" class="grid flex-1 place-items-center p-6 text-center text-[12px] text-faint">
-      Select something to preview it here.<br />Press <kbd>Ctrl I</kbd> to hide this panel.
+      Select something to preview it here.<br />Press <kbd>{{ keyLabel('Ctrl+I') }}</kbd> to hide this panel.
     </div>
     <template v-else>
       <div class="grid min-h-48 shrink-0 place-items-center overflow-hidden border-b border-line bg-bg/50 p-3" :class="text != null && 'hidden'">

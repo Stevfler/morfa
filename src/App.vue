@@ -4,7 +4,7 @@ import { TooltipProvider } from 'reka-ui'
 import { Plus, X, Columns2, Eye, Command } from 'lucide-vue-next'
 import { state, init, newPane, nextId, newTab, closeTab, toggleSplit, focusPane } from './lib/store'
 import { onGlobalKey, isReloadOrPrint } from './lib/keys'
-import { basename } from './lib/util'
+import { basename, keyLabel } from './lib/util'
 import Sidebar from './components/Sidebar.vue'
 import FilePane from './components/FilePane.vue'
 import Preview from './components/Preview.vue'
@@ -69,7 +69,7 @@ const tabTitle = (i: number) => {
           class="ml-1 flex h-7 items-center gap-2 rounded-md border border-line bg-bg px-2.5 text-[12px] text-dim transition hover:border-accent/50 hover:text-fg"
           @click="state.palette = 'all'"
         >
-          <Command class="size-3.5" /> Do anything… <kbd>Ctrl K</kbd>
+          <Command class="size-3.5" /> Do anything… <kbd>{{ keyLabel('Ctrl+K') }}</kbd>
         </button>
       </div>
 

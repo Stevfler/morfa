@@ -31,7 +31,7 @@ import {
   ArrowRightLeft,
 } from 'lucide-vue-next'
 import * as S from './store'
-import { canQuickLook } from './util'
+import { canQuickLook, isMac, otherMod, primaryMod, prettyKeys } from './util'
 
 export type Cmd = {
   id: string
@@ -40,11 +40,12 @@ export type Cmd = {
   icon: Component
   /** Shown to the user, e.g. "Ctrl+Shift+N" */
   keys?: string
+  /** Extra binding that also triggers the command (not displayed). */
+  alt?: string
   run: () => unknown
 }
 
-const isMac = navigator.platform.toLowerCase().includes('mac')
-export const MOD = isMac ? '⌘' : 'Ctrl'
+export { prettyKeys }
 
 export const commands: Cmd[] = [
   { id: 'palette', title: 'Command palette', group: 'General', icon: Command, keys: 'Ctrl+K', run: () => (S.state.palette = 'all') },
@@ -64,8 +65,8 @@ export const commands: Cmd[] = [
   { id: 'cut', title: 'Cut', group: 'Edit', icon: Scissors, keys: 'Ctrl+X', run: () => S.copyToClipboard('move') },
   { id: 'paste', title: 'Paste here', group: 'Edit', icon: ClipboardPaste, keys: 'Ctrl+V', run: () => S.paste() },
   { id: 'rename', title: 'Rename (several selected → batch rename)', group: 'Edit', icon: Pencil, keys: 'F2', run: () => S.startRename() },
-  { id: 'trash', title: 'Move to Trash', group: 'Edit', icon: Trash2, keys: 'Del', run: () => S.trash() },
-  { id: 'delete', title: 'Delete forever', group: 'Edit', icon: X, keys: 'Shift+Del', run: () => S.deleteForever() },
+  { id: 'trash', title: 'Move to Trash', group: 'Edit', icon: Trash2, keys: isMac ? 'Ctrl+Backspace' : 'Del', alt: 'Del', run: () => S.trash() },
+  { id: 'delete', title: 'Delete forever', group: 'Edit', icon: X, keys: isMac ? 'Ctrl+Shift+Backspace' : 'Shift+Del', alt: 'Shift+Del', run: () => S.deleteForever() },
   { id: 'undo', title: 'Undo', group: 'Edit', icon: Undo2, keys: 'Ctrl+Z', run: () => S.undo() },
   { id: 'redo', title: 'Redo', group: 'Edit', icon: Redo2, keys: 'Ctrl+Shift+Z', run: () => S.redo() },
   { id: 'selectall', title: 'Select all', group: 'Edit', icon: CheckCheck, keys: 'Ctrl+A', run: () => S.selectAll() },
@@ -106,12 +107,13 @@ export const commands: Cmd[] = [
 
 export const cmd = (id: string) => commands.find((c) => c.id === id)!
 
-/** "Ctrl+Shift+N" → does this KeyboardEvent match? */
+/** "Ctrl+Shift+N" → does this KeyboardEvent match? "Ctrl" means the primary modifier (⌘ on macOS). */
 export function matches(e: KeyboardEvent, keys: string) {
+  if (otherMod(e)) return false
   const parts = keys.split('+')
   const key = parts.pop()!.toLowerCase()
   const want = { ctrl: parts.includes('Ctrl'), shift: parts.includes('Shift'), alt: parts.includes('Alt') }
-  const ctrl = e.ctrlKey || e.metaKey
+  const ctrl = primaryMod(e)
   if (ctrl !== want.ctrl || e.altKey !== want.alt) return false
   // Shift is implied for symbols on some layouts; only enforce it when the binding names it or for letters.
   if (want.shift !== e.shiftKey && (want.shift || /^[a-z]$/.test(key) || key.length > 1)) return false
@@ -124,6 +126,5 @@ export function matches(e: KeyboardEvent, keys: string) {
   return e.key.toLowerCase() === k
 }
 
-export function prettyKeys(keys?: string) {
-  return keys?.replace(/Ctrl/g, MOD).split('+') ?? []
-}
+/** Matches the command's main or alternate binding. */
+export const matchesCmd = (e: KeyboardEvent, c: Cmd) => (!!c.keys && matches(e, c.keys)) || (!!c.alt && matches(e, c.alt))

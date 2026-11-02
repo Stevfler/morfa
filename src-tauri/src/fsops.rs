@@ -2,6 +2,7 @@ use crate::CmdResult;
 use std::{fs, io, path::Path};
 
 mod names;
+pub mod trashcan;
 pub(crate) mod rename;
 #[cfg(test)]
 use rename::{move_by_copy, same_file};
@@ -63,32 +64,6 @@ pub async fn move_pairs(pairs: Vec<(String, String)>) -> CmdResult<()> {
         }
     }
     Ok(())
-}
-
-#[tauri::command]
-pub async fn trash_items(paths: Vec<String>) -> CmdResult<()> {
-    trash::delete_all(&paths).map_err(|e| e.to_string())
-}
-
-/// Put trashed items back where they came from (Linux & Windows).
-#[tauri::command]
-pub async fn restore_trashed(paths: Vec<String>) -> CmdResult<()> {
-    #[cfg(any(windows, all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android"))))]
-    {
-        use std::{collections::HashSet, path::PathBuf};
-        let wanted: HashSet<PathBuf> = paths.iter().map(PathBuf::from).collect();
-        let mut items: Vec<_> = trash::os_limited::list().map_err(|e| e.to_string())?.into_iter().filter(|i| wanted.contains(&i.original_path())).collect();
-        // If an item was trashed more than once, restore only the newest copy.
-        items.sort_by_key(|i| std::cmp::Reverse(i.time_deleted));
-        let mut seen = HashSet::new();
-        items.retain(|i| seen.insert(i.original_path()));
-        trash::os_limited::restore_all(items).map_err(|e| e.to_string())
-    }
-    #[cfg(target_os = "macos")]
-    {
-        let _ = paths;
-        Err("Restoring from Trash isn't supported on macOS yet — open Trash in Finder".into())
-    }
 }
 
 #[tauri::command]

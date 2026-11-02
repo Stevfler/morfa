@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { state } from './state'
 import { fail, toast } from './toast'
 import { refreshAll } from './navigation'
@@ -18,7 +19,13 @@ export async function undo() {
     state.redo.push(item)
     toast({ title: `Undone: ${item.label}`, tone: 'info', action: { label: 'Redo', run: redo } })
   } catch (e) {
-    fail(e)
+    // macOS can't restore from Trash programmatically; point the user at Finder's "Put Back".
+    if (String(e).includes('UNSUPPORTED_RESTORE:'))
+      toast(
+        { title: "Restore isn't available on macOS", desc: 'Open the Trash and use “Put Back” to restore the items.', tone: 'info', action: { label: 'Show Trash', run: () => invoke('reveal_trash').catch(fail) } },
+        10000,
+      )
+    else fail(e)
   }
   refreshAll()
 }

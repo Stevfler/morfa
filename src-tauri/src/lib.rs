@@ -40,8 +40,9 @@ pub fn run() {
             fsops::move_pairs,
             transfer::transfer,
             transfer::cancel_op,
-            fsops::trash_items,
-            fsops::restore_trashed,
+            fsops::trashcan::trash_items,
+            fsops::trashcan::restore_trashed,
+            fsops::trashcan::reveal_trash,
             fsops::delete_items,
         ])
         .run(tauri::generate_context!())

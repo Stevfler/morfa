@@ -4,7 +4,7 @@ import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, Di
 import { Search, Folder, Star, CornerDownLeft, CheckCheck, Zap } from 'lucide-vue-next'
 import * as S from '../lib/store'
 import { commands, prettyKeys } from '../lib/commands'
-import { basename, fuzzy } from '../lib/util'
+import { basename, fuzzy, keyLabel } from '../lib/util'
 
 type Item = { key: string; title: string; sub?: string; icon: Component; keys?: string; group: string; run: () => unknown }
 
@@ -120,7 +120,7 @@ function key(e: KeyboardEvent) {
         </div>
         <div class="flex gap-4 border-t border-line px-4 py-2 text-[11px] text-faint">
           <span><kbd>↑↓</kbd> choose</span><span><kbd>Enter</kbd> run</span><span><kbd>Esc</kbd> close</span>
-          <span class="ml-auto"><kbd>Ctrl P</kbd> jump to folder</span>
+          <span class="ml-auto"><kbd>{{ keyLabel('Ctrl+P') }}</kbd> jump to folder</span>
         </div>
       </DialogContent>
     </DialogPortal>

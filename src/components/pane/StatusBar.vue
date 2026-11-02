@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import * as S from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { fmtSize } from '../../lib/util'
-import { prettyKeys } from '../../lib/commands'
+import { cmd, prettyKeys } from '../../lib/commands'
 
 const props = defineProps<{ pane: Pane; split: boolean }>()
 const p = props.pane
@@ -16,7 +16,7 @@ const selectedBytes = computed(() =>
 const hint = computed(() => {
   if (state.clipboard) return [['Ctrl+V', `paste ${state.clipboard.paths.length} here`], ['Esc', 'forget clipboard']]
   if (p.search) return [['Enter', 'open'], ['Ctrl+Enter', 'show in folder'], ['Esc', 'exit search']]
-  if (p.selected.size > 1) return [['F2', 'batch rename'], ['Ctrl+C', 'copy'], ['Del', 'trash'], ...(props.split ? [['F7', 'copy → other pane']] : [])]
+  if (p.selected.size > 1) return [['F2', 'batch rename'], ['Ctrl+C', 'copy'], [cmd('trash').keys!, 'trash'], ...(props.split ? [['F7', 'copy → other pane']] : [])]
   if (p.filter) return [['↑↓', 'pick'], ['Enter', 'open'], ['Esc', 'clear filter']]
   return [['type', 'to filter'], ['Ctrl+F', 'deep search'], ['Space', 'preview'], ['Ctrl+K', 'all actions']]
 })

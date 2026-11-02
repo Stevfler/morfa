@@ -45,7 +45,12 @@ fn is_hidden_attr(meta: &std::fs::Metadata) -> bool {
     use std::os::windows::fs::MetadataExt;
     meta.file_attributes() & 0x2 != 0
 }
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+fn is_hidden_attr(meta: &std::fs::Metadata) -> bool {
+    use std::os::macos::fs::MetadataExt;
+    meta.st_flags() & libc::UF_HIDDEN != 0
+}
+#[cfg(not(any(windows, target_os = "macos")))]
 fn is_hidden_attr(_: &std::fs::Metadata) -> bool {
     false
 }
