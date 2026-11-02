@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
+import type { IconName } from '../lib/icons'
+import Icon from './Icon.vue'
 import { TooltipRoot, TooltipTrigger, TooltipPortal, TooltipContent } from 'reka-ui'
 import { prettyKeys } from '../lib/commands'
 
 // TooltipRoot renders no element, so listeners like @click must go to the <button> explicitly.
 defineOptions({ inheritAttrs: false })
-defineProps<{ icon: Component; label: string; keys?: string; active?: boolean; disabled?: boolean }>()
+defineProps<{ icon: IconName; label: string; keys?: string; active?: boolean; disabled?: boolean }>()
 </script>
 
 <template>
@@ -18,7 +19,7 @@ defineProps<{ icon: Component; label: string; keys?: string; active?: boolean; d
         :disabled="disabled"
         :aria-label="label"
       >
-        <component :is="icon" class="size-4" />
+        <Icon :name="icon" class="size-4" />
       </button>
     </TooltipTrigger>
     <TooltipPortal>

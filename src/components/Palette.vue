@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, type Component } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import type { IconName } from '../lib/icons'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription, VisuallyHidden } from 'reka-ui'
-import { Search, Folder, Star, CornerDownLeft, CheckCheck, Zap } from 'lucide-vue-next'
+import Icon from './Icon.vue'
 import * as S from '../lib/store'
 import { commands, prettyKeys } from '../lib/commands'
 import { basename, fuzzy, keyLabel } from '../lib/util'
 
-type Item = { key: string; title: string; sub?: string; icon: Component; keys?: string; group: string; run: () => unknown }
+type Item = { key: string; title: string; sub?: string; icon: IconName; keys?: string; group: string; run: () => unknown }
 
 const state = S.state
 const q = ref('')
@@ -28,7 +29,7 @@ function folderItems(): Item[] {
     key: 'f:' + p,
     title: basename(p) || p,
     sub: p,
-    icon: state.bookmarks.includes(p) ? Star : Folder,
+    icon: state.bookmarks.includes(p) ? 'star' : 'folder',
     group: 'Folders',
     run: () => S.go(S.pane(), p),
   }))
@@ -39,10 +40,10 @@ const items = computed<Item[]>(() => {
   const out: Item[] = []
   if (/^([~/]|[A-Za-z]:\\)/.test(query)) {
     const path = query.replace(/^~/, state.home)
-    out.push({ key: 'go', title: `Go to ${path}`, icon: CornerDownLeft, group: 'Path', run: () => S.go(S.pane(), path) })
+    out.push({ key: 'go', title: `Go to ${path}`, icon: 'enter', group: 'Path', run: () => S.go(S.pane(), path) })
   }
   if (query.includes('*') && state.palette === 'all') {
-    out.push({ key: 'sel', title: `Select all matching “${query}”`, icon: CheckCheck, group: 'Select', run: () => S.selectPattern(S.pane(), query) })
+    out.push({ key: 'sel', title: `Select all matching “${query}”`, icon: 'check-all', group: 'Select', run: () => S.selectPattern(S.pane(), query) })
   }
   const folders = folderItems()
   if (state.palette === 'folders') {
@@ -83,7 +84,7 @@ function key(e: KeyboardEvent) {
 <template>
   <DialogRoot v-model:open="open">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]" />
+      <DialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
       <DialogContent
         class="fixed top-[12vh] left-1/2 z-50 w-[min(640px,92vw)] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-panel shadow-2xl outline-none"
         @open-auto-focus.prevent
@@ -93,7 +94,7 @@ function key(e: KeyboardEvent) {
           <DialogDescription>Type to search, Enter to run</DialogDescription>
         </VisuallyHidden>
         <div class="flex items-center gap-3 border-b border-line px-4">
-          <component :is="state.palette === 'folders' ? Zap : Search" class="size-4 text-accent" />
+          <Icon :name="state.palette === 'folders' ? 'zap' : 'search'" class="size-4 text-accent" />
           <input
             ref="input" v-model="q"
             class="h-12 flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint"
@@ -110,7 +111,7 @@ function key(e: KeyboardEvent) {
               :data-palette-active="i === idx || undefined"
               @mousemove="idx = i" @click="run(it)"
             >
-              <component :is="it.icon" class="size-4 shrink-0" :class="i === idx && 'text-accent'" />
+              <Icon :name="it.icon" class="size-4 shrink-0" :class="i === idx && 'text-accent'" />
               <span class="truncate">{{ it.title }}</span>
               <span v-if="it.sub && it.sub !== it.title" class="truncate font-mono text-[11px] text-faint">{{ it.sub }}</span>
               <span v-if="it.keys" class="ml-auto flex shrink-0 gap-0.5"><kbd v-for="k in prettyKeys(it.keys)" :key="k">{{ k }}</kbd></span>

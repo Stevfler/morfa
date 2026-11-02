@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search } from 'lucide-vue-next'
+import Icon from '../Icon.vue'
 import type { Pane } from '../../lib/store'
 import { basename, keyLabel } from '../../lib/util'
 
@@ -15,7 +15,7 @@ defineProps<{ pane: Pane }>()
         <p class="mt-1 text-[12px] text-faint">{{ pane.error }}</p>
       </template>
       <template v-else-if="pane.search && !pane.search.query">
-        <Search class="mx-auto mb-2 size-8 text-accent/60" />
+        <Icon name="search" class="mx-auto mb-2 size-8 text-accent/60" />
         <p>Search everything inside <b class="text-fg">{{ basename(pane.path) || '/' }}</b></p>
         <p class="mt-1 text-[12px] text-faint">Words match anywhere in the name. Add <kbd>*.pdf</kbd> to filter by type.</p>
       </template>

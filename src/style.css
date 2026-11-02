@@ -13,8 +13,42 @@
   --color-ok: #3ecf8e;
   --color-warn: #f5a524;
   --color-danger: #ff5c6c;
+  --color-on-accent: #ffffff;
+  --color-overlay: #00000080;
   --font-sans: 'Inter', 'SF Pro Text', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  /* corner radius — overridden by [data-radius]; 'default' is softer than Tailwind's stock */
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --default-transition-duration: calc(150ms * var(--motion-scale, 1));
+}
+
+/* ---- settings-driven tokens (see src/lib/settings) ---- */
+:root {
+  --motion-scale: 1;
+}
+:root[data-radius='sharp'] { --radius-xs: 0px; --radius-sm: 1px; --radius-md: 2px; --radius-lg: 3px; --radius-xl: 4px; --radius-2xl: 6px; }
+:root[data-radius='round'] { --radius-xs: 4px; --radius-sm: 7px; --radius-md: 10px; --radius-lg: 14px; --radius-xl: 18px; --radius-2xl: 24px; }
+:root[data-radius='extra'] { --radius-xs: 6px; --radius-sm: 10px; --radius-md: 14px; --radius-lg: 18px; --radius-xl: 24px; --radius-2xl: 30px; }
+:root[data-motion='reduced'] { --motion-scale: 0.5; }
+:root[data-motion='off'] { --motion-scale: 0; }
+:root[data-motion='off'] *,
+:root[data-motion='off'] *::before,
+:root[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+/* light themes: lighter scrim, softer shadows */
+:root[data-theme='daylight'] {
+  --color-overlay: #1a1c2333;
+  --shadow-sm: 0 1px 2px #1a1c2314;
+  --shadow-lg: 0 6px 16px -4px #1a1c231f;
+  --shadow-xl: 0 10px 24px -6px #1a1c2324;
+  --shadow-2xl: 0 18px 40px -10px #1a1c232e;
 }
 
 html,
@@ -41,20 +75,20 @@ textarea {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2c2e3a;
+  background: var(--color-line);
   border-radius: 10px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #3a3d4d;
+  background-color: var(--color-faint);
 }
 
 kbd {
   font-family: var(--font-mono);
   font-size: 10.5px;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--color-raised);
   border: 1px solid var(--color-line);
   color: var(--color-dim);

@@ -5,7 +5,12 @@ import { load_ } from './navigation'
 
 export function syncWatch() {
   const paths = [...new Set(state.tabs.flatMap((t) => t.panes.map((p) => p.path)))]
-  invoke('watch', { paths }).catch(() => {})
+  // The backend watches what it can and returns folders it couldn't (usually
+  // deleted/unmounted, which the pane notices on its own) — keep that quiet.
+  // Anything else (watcher couldn't start at all) is logged, never toasted.
+  invoke<string[]>('watch', { paths })
+    .then((failed) => failed.length && console.debug('watch: not watching', failed))
+    .catch((e) => console.warn('watch:', e))
 }
 
 export function newTab(path = pane()?.path ?? state.home) {

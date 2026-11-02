@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { ChevronRight, FolderOpen } from 'lucide-vue-next'
+import Icon from '../Icon.vue'
 import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
 import { crumbs, keyLabel, parent } from '../../lib/util'
@@ -62,7 +62,7 @@ function pathKey(ev: KeyboardEvent) {
           class="flex w-full items-center gap-2 px-2 py-1 text-left font-mono text-[12px] hover:bg-accent-soft"
           :class="k === 0 && 'bg-accent-soft/50'" @mousedown.prevent="commitPath(c)"
         >
-          <FolderOpen class="size-3.5 text-accent" />{{ c }}
+          <Icon name="folder-open" class="size-3.5 text-accent" />{{ c }}
           <kbd v-if="k === 0" class="ml-auto">Tab</kbd>
         </button>
       </div>
@@ -74,7 +74,7 @@ function pathKey(ev: KeyboardEvent) {
       @click.self="state.editPath = true; S.focusPane(S.tab().panes.indexOf(p))"
     >
       <template v-for="(c, k) in crumbs(p.path)" :key="c.path">
-        <ChevronRight v-if="k > 0" class="size-3.5 shrink-0 text-faint" />
+        <Icon name="chevron-right" v-if="k > 0" class="size-3.5 shrink-0 text-faint" />
         <button
           class="shrink-0 truncate rounded px-1.5 py-0.5 text-[12.5px] transition hover:bg-raised"
           :class="[k === crumbs(p.path).length - 1 ? 'font-medium text-fg' : 'text-dim', dropTarget === c.path && 'bg-accent-soft ring-1 ring-accent']"

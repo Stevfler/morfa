@@ -7,6 +7,7 @@ import { go, load_ } from './navigation'
 import { persist, syncWatch } from './tabs'
 import { startSearch } from './search'
 import type { Entry, Place } from './types'
+import { settings } from '../settings'
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
 const dirty = new Set<string>()
@@ -49,6 +50,10 @@ export async function init() {
   })
 
   watch(() => state.bookmarks, (v) => save('orbit.bookmarks', v), { deep: true })
+  const rerunSearches = () => {
+    for (const t of state.tabs) for (const p of t.panes) if (p.search?.query.trim()) startSearch(p, p.search.query)
+  }
+  watch(() => settings.respectGitignore, rerunSearches)
   watch(() => state.showHidden, (v) => {
     save('orbit.hidden', v)
     // Re-run active searches so results honour the new hidden-files setting.

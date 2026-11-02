@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Link2 } from 'lucide-vue-next'
+import Icon from '../Icon.vue'
 import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
 import { fmtDate, fmtDateFull, fmtSize, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL, parent } from '../../lib/util'
@@ -49,14 +49,14 @@ function sizeCell(e: Entry) {
     draggable="true"
   >
     <div class="flex min-w-0 items-center gap-2.5">
-      <component :is="KIND_ICON[kindOf(e)]" class="size-4 shrink-0" :style="{ color: KIND_COLOR[kindOf(e)] }" :fill="e.isDir ? 'currentColor' : 'none'" :fill-opacity="0.18" />
+      <Icon :name="KIND_ICON[kindOf(e)]" class="size-4 shrink-0" :style="{ color: KIND_COLOR[kindOf(e)] }" :tint="e.isDir ? 0.18 : 0" />
       <input
         v-if="state.renaming === e.path" ref="renameInput" :value="e.name"
         class="h-6 min-w-0 flex-1 rounded border border-accent bg-panel px-1.5 outline-none"
         spellcheck="false" @keydown="renameKey" @blur="S.renameTo(e.path, ($event.target as HTMLInputElement).value, pane)" @mousedown.stop
       />
       <span v-else class="truncate">{{ e.name }}</span>
-      <Link2 v-if="e.isSymlink" class="size-3 shrink-0 text-faint" />
+      <Icon name="link" v-if="e.isSymlink" class="size-3 shrink-0 text-faint" />
       <span v-if="p.search" class="truncate text-[11.5px] text-faint">{{ rel(e) }}</span>
     </div>
     <span class="text-right tabular-nums text-dim">{{ sizeCell(e) }}</span>

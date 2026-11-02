@@ -1,6 +1,7 @@
-import { nextTick } from 'vue'
+import { nextTick, reactive } from 'vue'
+import { settingsOpen } from './settings'
 import { commands, matches, matchesCmd } from './commands'
-import { primaryMod } from './util'
+import { canQuickLook, primaryMod } from './util'
 import * as S from './store'
 
 const ROW_PAGE = 15
@@ -55,10 +56,33 @@ export const isReloadOrPrint = (e: KeyboardEvent) => {
   return e.code === 'KeyR' || e.code === 'KeyP' || k === 'r' || k === 'p'
 }
 
+/** Quick Look is shown while Space is held; QuickLook.vue closes it on keyup/blur. */
+export const qlHold = reactive({ held: false })
+
+/** Any dialog that owns the keyboard: global shortcuts stay off while one is open. */
+export const anyModalOpen = () =>
+  !!(S.state.palette || S.state.batchRename || S.state.confirm || S.state.quickLook || settingsOpen.value)
+
+// Space on these activates them; don't turn it into Quick Look.
+const SPACE_TARGETS = 'button,[role=button],[role=switch],[role=radio],[role=tab],[role=checkbox],select,a,[contenteditable]'
+
+function holdSpace(e: KeyboardEvent): boolean {
+  if (e.key !== ' ' || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false
+  if ((e.target as HTMLElement).closest?.(SPACE_TARGETS)) return false
+  e.preventDefault()
+  if (e.repeat) return true
+  const p = S.pane()
+  if (canQuickLook(S.visible(p)[p.cursor])) {
+    S.state.quickLook = true
+    qlHold.held = true
+  }
+  return true
+}
+
 export function onGlobalKey(e: KeyboardEvent) {
   // Always block before any early return; the app's own F5 "Refresh" still runs below when allowed.
   if (isReloadOrPrint(e)) e.preventDefault()
-  if (S.state.palette || S.state.batchRename || S.state.confirm || S.state.quickLook) return
+  if (anyModalOpen()) return
   const p = S.pane()
   const field = inField(e)
 
@@ -72,7 +96,7 @@ export function onGlobalKey(e: KeyboardEvent) {
       return
     }
   }
-  if (primaryMod(e) && !e.altKey && /^Digit[1-9]$/.test(e.code)) {
+  if (!field && primaryMod(e) && !e.altKey && /^Digit[1-9]$/.test(e.code)) {
     e.preventDefault()
     S.state.activeTab = Math.min(Number(e.code.slice(5)) - 1, S.state.tabs.length - 1)
     return
@@ -104,6 +128,7 @@ export function onGlobalKey(e: KeyboardEvent) {
     return scrollCursorIntoView(p)
   }
 
+  if (holdSpace(e)) return
   for (const c of commands) {
     if (matchesCmd(e, c)) {
       e.preventDefault()

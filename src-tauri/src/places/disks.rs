@@ -36,8 +36,10 @@ fn under(mount: &str, root: &str) -> bool {
 
 /// Mount points a user cares about. On Linux, btrfs subvolumes share one
 /// device and show up as many mounts (/var/log, /var/cache, /.snapshots, ...);
-/// for btrfs we only keep `/`, `/home` and user-mount areas.
-pub fn keep(os: Os, d: &RawDisk) -> bool {
+/// for btrfs we hide the subvolumes that sit on the root device (other than
+/// `/` and `/home`), but keep a separate btrfs disk (e.g. `/data`).
+/// `root_dev` is the device (`label`) mounted at `/`, if known.
+pub fn keep(os: Os, d: &RawDisk, root_dev: Option<&str>) -> bool {
     let m = d.mount.as_str();
     match os {
         Os::Windows => m.len() <= 3 && m.as_bytes().get(1) == Some(&b':'),
@@ -48,8 +50,8 @@ pub fn keep(os: Os, d: &RawDisk) -> bool {
                 return false;
             }
             let user_area = ["/mnt", "/media", "/run/media"].iter().any(|r| m == *r || under(m, r));
-            if d.fs == "btrfs" {
-                return m == "/" || m == "/home" || user_area;
+            if d.fs == "btrfs" && m != "/" && m != "/home" && !user_area && root_dev == Some(d.label.as_str()) {
+                return false;
             }
             m == "/" || !m.starts_with("/run") || user_area
         }
@@ -59,8 +61,9 @@ pub fn keep(os: Os, d: &RawDisk) -> bool {
 /// Filter and dedupe by mount point (not device name: btrfs subvolumes share
 /// a device, and unlabeled Windows drives share an empty name).
 pub fn filter_disks(os: Os, raw: Vec<RawDisk>) -> Vec<RawDisk> {
+    let root_dev = raw.iter().find(|d| d.mount == "/").map(|d| d.label.clone());
     let mut seen = HashSet::new();
-    raw.into_iter().filter(|d| keep(os, d) && seen.insert(d.mount.clone())).collect()
+    raw.into_iter().filter(|d| keep(os, d, root_dev.as_deref()) && seen.insert(d.mount.clone())).collect()
 }
 
 pub fn disk_name(os: Os, d: &RawDisk) -> String {
@@ -103,8 +106,10 @@ mod tests {
             d("/run/user/1000/doc", "fuse", "portal"),
             d("/data", "ext4", "/dev/sdb1"),
             d("/data", "ext4", "/dev/sdb1"),
+            d("/tank", "btrfs", "/dev/sdc1"),
+            d("/tank/sub", "btrfs", "/dev/sdc1"),
         ];
-        assert_eq!(mounts(Os::Linux, v), ["/", "/home", "/run/media/u/USB", "/data"]);
+        assert_eq!(mounts(Os::Linux, v), ["/", "/home", "/run/media/u/USB", "/data", "/tank", "/tank/sub"]);
     }
 
     #[test]

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { invoke, convertFileSrc } from '@tauri-apps/api/core'
-import { Gauge, ExternalLink, FolderOpen, LoaderCircle } from 'lucide-vue-next'
+import Icon from './Icon.vue'
 import * as S from '../lib/store'
 import type { Entry } from '../lib/store'
 import { fmtDateFull, fmtSize, keyLabel, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL } from '../lib/util'
@@ -71,7 +71,7 @@ const size = computed(() => {
     <template v-else>
       <div class="grid min-h-48 shrink-0 place-items-center overflow-hidden border-b border-line bg-bg/50 p-3" :class="text != null && 'hidden'">
         <img v-if="kind === 'image'" :key="src" :src="src" class="max-h-72 max-w-full rounded object-contain shadow-lg" />
-        <component v-else :is="KIND_ICON[kind]" class="size-20" :style="{ color: KIND_COLOR[kind] }" :stroke-width="1" :fill="entry.isDir ? 'currentColor' : 'none'" :fill-opacity="0.15" />
+        <Icon v-else :name="KIND_ICON[kind]" class="size-20" :style="{ color: KIND_COLOR[kind] }" :stroke-width="1" :tint="entry.isDir ? 0.15 : 0" />
       </div>
 
       <pre v-if="text != null" class="min-h-0 flex-1 overflow-auto bg-bg/50 p-3 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-words text-dim select-text">{{ text || '(empty file)' }}</pre>
@@ -86,7 +86,7 @@ const size = computed(() => {
           <dd class="text-fg">
             <template v-if="size">{{ size }}</template>
             <button v-else class="inline-flex items-center gap-1 text-accent hover:underline" @click="S.computeSizes([entry.path])">
-              <Gauge class="size-3.5" />Calculate
+              <Icon name="gauge" class="size-3.5" />Calculate
             </button>
           </dd>
           <template v-if="childStats">
@@ -101,7 +101,7 @@ const size = computed(() => {
 
         <ul v-if="children?.length" class="space-y-0.5 border-t border-line pt-3">
           <li v-for="c in children.slice(0, 14)" :key="c.path" class="flex items-center gap-2 truncate text-[12px] text-dim">
-            <component :is="KIND_ICON[kindOf(c)]" class="size-3.5 shrink-0" :style="{ color: KIND_COLOR[kindOf(c)] }" />
+            <Icon :name="KIND_ICON[kindOf(c)]" class="size-3.5 shrink-0" :style="{ color: KIND_COLOR[kindOf(c)] }" />
             <span class="truncate">{{ c.name }}</span>
           </li>
           <li v-if="children.length > 14" class="text-[11.5px] text-faint">+ {{ children.length - 14 }} more</li>
@@ -109,10 +109,10 @@ const size = computed(() => {
 
         <div class="flex gap-2 pt-1">
           <button class="btn" @click="S.open(S.pane(), entry)">
-            <component :is="entry.isDir ? FolderOpen : ExternalLink" class="size-3.5" />{{ entry.isDir ? 'Open' : 'Open with default app' }}
+            <Icon :name="entry.isDir ? 'folder-open' : 'external-link'" class="size-3.5" />{{ entry.isDir ? 'Open' : 'Open with default app' }}
           </button>
         </div>
-        <LoaderCircle v-if="loading" class="size-4 animate-spin text-faint" />
+        <Icon name="loader" v-if="loading" class="size-4 animate-spin text-faint" />
       </div>
     </template>
   </aside>

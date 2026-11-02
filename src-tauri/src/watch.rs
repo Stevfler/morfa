@@ -30,7 +30,7 @@ fn ui_path(roots: &[(PathBuf, String)], p: &Path) -> String {
 }
 
 #[tauri::command]
-pub fn watch(app: AppHandle, state: State<'_, WatchState>, paths: Vec<String>) -> CmdResult<()> {
+pub fn watch(app: AppHandle, state: State<'_, WatchState>, paths: Vec<String>) -> CmdResult<Vec<String>> {
     // Drop the old watcher first so its OS handles are released before re-watching.
     *state.0.lock().unwrap() = None;
     let roots: Vec<(PathBuf, String)> = paths.iter().map(|p| (std::fs::canonicalize(p).unwrap_or_else(|_| p.into()), p.clone())).collect();
@@ -55,14 +55,17 @@ pub fn watch(app: AppHandle, state: State<'_, WatchState>, paths: Vec<String>) -
             let _ = app.emit("fs-changed", dirs.into_iter().collect::<Vec<_>>());
         }
     });
-    let errs: Vec<String> = paths.iter().filter_map(|p| w.watch(Path::new(p), RecursiveMode::NonRecursive).err().map(|e| format!("{p}: {e}"))).collect();
-    *state.0.lock().unwrap() = Some(w);
-    if errs.is_empty() {
-        Ok(())
-    } else {
-        eprintln!("watch: {}", errs.join("; "));
-        Err(errs.join("; "))
+    // Watch what we can; one bad folder (deleted, no permission) must not
+    // leave the others unwatched. Failed paths are returned to the caller.
+    let mut failed = vec![];
+    for p in &paths {
+        if let Err(e) = w.watch(Path::new(p), RecursiveMode::NonRecursive) {
+            eprintln!("watch: {p}: {e}");
+            failed.push(p.clone());
+        }
     }
+    *state.0.lock().unwrap() = Some(w);
+    Ok(failed)
 }
 
 #[cfg(test)]

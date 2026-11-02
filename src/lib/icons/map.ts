@@ -1,0 +1,86 @@
+/**
+ * Semantic icon registry: app name → icon name in each Iconify set.
+ * Only read at build time by scripts/build-icons.ts (imported as a type elsewhere),
+ * so these strings never reach the bundle. Suffixes are added by the script.
+ */
+//            name                lucide              ph (duotone)          solar (bold-duotone)          fluent (24-regular)           tabler
+const rows = [
+  ['folder',           'folder',            'folder',              'folder',                    'folder',                     'folder'],
+  ['folder-open',      'folder-open',       'folder-open',         'folder-open',               'folder-open',                'folder-open'],
+  ['folder-plus',      'folder-plus',       'folder-plus',         'add-folder',                'folder-add',                 'folder-plus'],
+  ['file',             'file',              'file',                'file',                      'document',                   'file'],
+  ['file-plus',        'file-plus',         'file-plus',           'file-add',                  'document-add',               'file-plus'],
+  ['file-image',       'file-image',        'file-image',          'gallery',                   'image',                      'photo'],
+  ['file-video',       'file-play',         'file-video',          'videocamera',               'video-clip',                 'movie'],
+  ['file-audio',       'file-music',        'file-audio',          'music-note',                'music-note-2',               'file-music'],
+  ['file-archive',     'file-archive',      'file-zip',            'zip-file',                  'folder-zip',                 'file-zip'],
+  ['file-code',        'file-code',         'file-code',           'code-file',                 'code-block',                 'file-code'],
+  ['file-text',        'file-text',         'file-text',           'document-text',             'document-text',              'file-text'],
+  ['file-warning',     'file-warning',      'file-x',              'file-corrupted',            'document-error',             'file-alert'],
+  ['image',            'image',             'image',               'gallery',                   'image',                      'photo'],
+  ['image-off',        'image-off',         'image-broken',        'gallery-remove',            'image-off',                  'photo-off'],
+  ['music',            'music',             'music-notes',         'music-notes',               'music-note-2',               'music'],
+  ['video',            'video',             'video-camera',        'videocamera-record',        'video',                      'video'],
+  ['home',             'house',             'house',               'home-2',                    'home',                       'home'],
+  ['monitor',          'monitor',           'monitor',             'monitor',                   'desktop',                    'device-desktop'],
+  ['download',         'download',          'download-simple',     'download-minimalistic',     'arrow-download',             'download'],
+  ['hard-drive',       'hard-drive',        'hard-drives',         'server',                    'hard-drive',                 'server'],
+  ['usb',              'usb',               'usb',                 'usb',                       'usb-stick',                  'usb'],
+  ['star',             'star',              'star',                'star',                      'star',                       'star'],
+  ['clock',            'clock',             'clock',               'clock-circle',              'clock',                      'clock'],
+  ['search',           'search',            'magnifying-glass',    'magnifer',                  'search',                     'search'],
+  ['filter',           'list-filter',       'funnel-simple',       'filter',                    'filter',                     'filter'],
+  ['x',                'x',                 'x',                   'close-circle',              'dismiss',                    'x'],
+  ['plus',             'plus',              'plus',                'add-circle',                'add',                        'plus'],
+  ['chevron-left',     'chevron-left',      'caret-left',          'alt-arrow-left',            'chevron-left',               'chevron-left'],
+  ['chevron-right',    'chevron-right',     'caret-right',         'alt-arrow-right',           'chevron-right',              'chevron-right'],
+  ['arrow-up',         'arrow-up',          'arrow-up',            'arrow-up',                  'arrow-up',                   'arrow-up'],
+  ['arrow-down',       'arrow-down',        'arrow-down',          'arrow-down',                'arrow-down',                 'arrow-down'],
+  ['arrow-right',      'arrow-right',       'arrow-right',         'arrow-right',               'arrow-right',                'arrow-right'],
+  ['arrow-swap',       'arrow-right-left',  'arrows-left-right',   'transfer-horizontal',       'arrow-swap',                 'arrows-exchange'],
+  ['enter',            'corner-down-left',  'arrow-elbow-down-left', 'undo-left-round',         'arrow-enter-left',           'corner-down-left'],
+  ['gauge',            'gauge',             'gauge',               'speedometer-middle',        'gauge',                      'gauge'],
+  ['external-link',    'external-link',     'arrow-square-out',    'square-arrow-right-up',     'open',                       'external-link'],
+  ['loader',           'loader-circle',     'circle-notch',        'refresh-circle',            'arrow-sync',                 'loader-2'],
+  ['refresh',          'refresh-cw',        'arrow-clockwise',     'refresh',                   'arrow-clockwise',            'refresh'],
+  ['undo',             'undo-2',            'arrow-u-up-left',     'undo-left',                 'arrow-undo',                 'arrow-back-up'],
+  ['redo',             'redo-2',            'arrow-u-up-right',    'undo-right',                'arrow-redo',                 'arrow-forward-up'],
+  ['columns',          'columns-2',         'columns',             'sidebar-minimalistic',      'split-vertical',             'layout-columns'],
+  ['panel-right',      'panel-right',       'sidebar-simple',      'sidebar',                   'panel-right',                'layout-sidebar-right'],
+  ['eye',              'eye',               'eye',                 'eye',                       'eye',                        'eye'],
+  ['quicklook',        'scan-eye',          'scan',                'eye-scan',                  'scan-dash',                  'scan-eye'],
+  ['command',          'command',           'command',             'command',                   'key-command',                'command'],
+  ['settings',         'settings',          'gear-six',            'settings',                  'settings',                   'settings'],
+  ['zap',              'zap',               'lightning',           'bolt',                      'flash',                      'bolt'],
+  ['check-circle',     'circle-check',      'check-circle',        'check-circle',              'checkmark-circle',           'circle-check'],
+  ['alert-circle',     'circle-alert',      'warning-circle',      'danger-circle',             'error-circle',               'alert-circle'],
+  ['info',             'info',              'info',                'info-circle',               'info',                       'info-circle'],
+  ['warning',          'triangle-alert',    'warning',             'danger-triangle',           'warning',                    'alert-triangle'],
+  ['check-all',        'check-check',       'checks',              'checklist-minimalistic',    'checkmark-starburst',        'checks'],
+  ['copy',             'copy',              'copy',                'copy',                      'copy',                       'copy'],
+  ['scissors',         'scissors',          'scissors',            'scissors',                  'cut',                        'scissors'],
+  ['paste',            'clipboard-paste',   'clipboard-text',      'clipboard-paste',           'clipboard-paste',            'clipboard'],
+  ['pencil',           'pencil',            'pencil-simple',       'pen-2',                     'edit',                       'pencil'],
+  ['trash',            'trash-2',           'trash',               'trash-bin-minimalistic',    'delete',                     'trash'],
+  ['link',             'link',              'link',                'link-round',                'link',                       'link'],
+  ['terminal',         'square-terminal',   'terminal-window',     'programming',               'window-dev-tools',           'terminal-2'],
+  ['locate',           'locate',            'crosshair',           'gps',                       'location-target-square',     'current-location'],
+  ['wrap-text',        'wrap-text',         'text-align-left',     'text-field',                'text-wrap',                  'text-wrap'],
+  ['palette',          'palette',           'palette',             'pallete-2',                 'color',                      'palette'],
+  ['shapes',           'shapes',            'shapes',              'widget-2',                  'shapes',                     'triangle-square-circle'],
+  ['sliders',          'sliders-horizontal','sliders-horizontal',  'tuning-2',                  'options',                    'adjustments-horizontal'],
+] as const
+
+export const PACKS = ['lucide', 'phosphor', 'solar', 'fluent', 'tabler'] as const
+export type IconName = (typeof rows)[number][0]
+
+/** Iconify set id, name suffix, and whether the set is stroke-based (tint/stroke-width apply). */
+export const SETS = {
+  lucide: { prefix: 'lucide', suffix: '', stroke: true, col: 1 },
+  phosphor: { prefix: 'ph', suffix: '-duotone', stroke: false, col: 2 },
+  solar: { prefix: 'solar', suffix: '-bold-duotone', stroke: false, col: 3 },
+  fluent: { prefix: 'fluent', suffix: '-24-regular', stroke: false, col: 4 },
+  tabler: { prefix: 'tabler', suffix: '', stroke: true, col: 5 },
+} as const
+
+export const ICON_ROWS = rows

@@ -1,14 +1,4 @@
-import type { Component } from 'vue'
-import {
-  File,
-  FileArchive,
-  FileCode,
-  FileImage,
-  FileMusic,
-  FilePlay,
-  FileText,
-  Folder,
-} from 'lucide-vue-next'
+import type { IconName } from '../icons'
 
 const IMG = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp', 'svg', 'ico', 'heic']
 const VID = ['mp4', 'webm', 'mkv', 'mov', 'avi', 'm4v', 'ogv']
@@ -37,16 +27,16 @@ export function canQuickLook(e: { isDir: boolean; ext: string; name: string } | 
   return !!e && ['image', 'text', 'code'].includes(kindOf(e))
 }
 
-export const KIND_ICON: Record<Kind, Component> = {
-  folder: Folder,
-  image: FileImage,
-  video: FilePlay,
-  audio: FileMusic,
-  archive: FileArchive,
-  code: FileCode,
-  text: FileText,
-  pdf: FileText,
-  file: File,
+export const KIND_ICON: Record<Kind, IconName> = {
+  folder: 'folder',
+  image: 'file-image',
+  video: 'file-video',
+  audio: 'file-audio',
+  archive: 'file-archive',
+  code: 'file-code',
+  text: 'file-text',
+  pdf: 'file-text',
+  file: 'file',
 }
 
 export const KIND_COLOR: Record<Kind, string> = {

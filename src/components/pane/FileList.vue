@@ -4,6 +4,7 @@ import * as S from '../../lib/store'
 import { primaryMod } from '../../lib/util'
 import type { Pane } from '../../lib/store'
 import type { DragDrop } from '../../composables/useDragDrop'
+import { settings } from '../../lib/settings'
 import FileRow from './FileRow.vue'
 import EmptyState from './EmptyState.vue'
 
@@ -13,14 +14,15 @@ const p = props.pane
 const state = S.state
 const { dropTarget, dragStart, dragOver, dragLeave, drop } = props.dnd
 
-const ROW = 30
+// Row height follows the density setting; all scroll math below reads ROW.value.
+const ROW = computed(() => (settings.density === 'compact' ? 24 : 30))
 const list = computed(() => S.visible(p))
 const scroller = ref<HTMLElement>()
 const scrollTop = ref(0)
 const viewH = ref(600)
 const range = computed(() => {
-  const start = Math.max(0, Math.floor(scrollTop.value / ROW) - 8)
-  const end = Math.min(list.value.length, Math.ceil((scrollTop.value + viewH.value) / ROW) + 8)
+  const start = Math.max(0, Math.floor(scrollTop.value / ROW.value) - 8)
+  const end = Math.min(list.value.length, Math.ceil((scrollTop.value + viewH.value) / ROW.value) + 8)
   return { start, end }
 })
 const rows = computed(() => list.value.slice(range.value.start, range.value.end).map((e, k) => ({ e, i: range.value.start + k })))
@@ -28,9 +30,9 @@ const rows = computed(() => list.value.slice(range.value.start, range.value.end)
 function revealCursor() {
   const el = scroller.value
   if (!el) return
-  const top = p.cursor * ROW
+  const top = p.cursor * ROW.value
   if (top < el.scrollTop) el.scrollTop = top
-  else if (top + ROW > el.scrollTop + el.clientHeight) el.scrollTop = top + ROW - el.clientHeight
+  else if (top + ROW.value > el.scrollTop + el.clientHeight) el.scrollTop = top + ROW.value - el.clientHeight
 }
 
 let ro: ResizeObserver | undefined

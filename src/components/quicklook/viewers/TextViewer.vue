@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { FileWarning, LoaderCircle, WrapText } from 'lucide-vue-next'
+import Icon from '../../Icon.vue'
 import type { Entry } from '../../../lib/store'
 import { fmtSize } from '../../../lib/util'
 
@@ -36,10 +36,10 @@ const lines = computed(() => (text.value ?? '').split('\n'))
 
 <template>
   <div class="relative flex h-full w-full flex-col overflow-hidden bg-bg">
-    <div v-if="status === 'loading'" class="grid flex-1 place-items-center"><LoaderCircle class="size-6 animate-spin text-faint" /></div>
+    <div v-if="status === 'loading'" class="grid flex-1 place-items-center"><Icon name="loader" class="size-6 animate-spin text-faint" /></div>
     <div v-else-if="status !== 'ok'" class="grid flex-1 place-items-center text-center text-[13px] text-dim">
       <div>
-        <FileWarning class="mx-auto mb-2 size-10 text-faint" :stroke-width="1.25" />
+        <Icon name="file-warning" class="mx-auto mb-2 size-10 text-faint" :stroke-width="1.25" />
         {{ status === 'binary' ? 'This looks like a binary file — no text preview' : "Couldn't read this file" }}
       </div>
     </div>
@@ -48,7 +48,7 @@ const lines = computed(() => (text.value ?? '').split('\n'))
         <span v-if="truncated" class="text-warn">Truncated — showing first {{ fmtSize(MAX) }} of {{ fmtSize(entry.size) }}</span>
         <span v-else>{{ lines.length }} lines</span>
         <div class="flex-1" />
-        <button class="tb" :class="wrap && 'on'" @click="wrap = !wrap"><WrapText class="size-3.5" />Wrap</button>
+        <button class="tb" :class="wrap && 'on'" @click="wrap = !wrap"><Icon name="wrap-text" class="size-3.5" />Wrap</button>
       </div>
       <div class="min-h-0 flex-1 overflow-auto font-mono text-[12px] leading-[1.6] select-text">
         <table class="border-collapse" :class="wrap ? 'w-full table-fixed' : 'min-w-full'">

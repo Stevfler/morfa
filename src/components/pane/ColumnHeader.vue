@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ArrowDown } from 'lucide-vue-next'
+import Icon from '../Icon.vue'
 import type { Pane, SortKey } from '../../lib/store'
 
 const props = defineProps<{ pane: Pane }>()
@@ -19,7 +19,7 @@ function sortBy(key: SortKey) {
       :key="k" class="flex items-center gap-1 hover:text-fg" :class="k !== 'name' && 'justify-end'" :disabled="searching" @click="sortBy(k)"
     >
       {{ label }}
-      <ArrowDown v-if="p.sort.key === k && !p.filter && !searching" class="size-3 transition" :class="p.sort.asc && 'rotate-180'" />
+      <Icon name="arrow-down" v-if="p.sort.key === k && !p.filter && !searching" class="size-3 transition" :class="p.sort.asc && 'rotate-180'" />
     </button>
   </div>
 </template>

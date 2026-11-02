@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { pane, state } from './state'
 import type { Pane } from './types'
+import { settings } from '../settings'
 
 let seq = Date.now()
 
@@ -19,7 +20,7 @@ export async function startSearch(p: Pane, query: string) {
   else p.search = { query, id, results: [], done: false, scanned: 0 }
   p.cursor = 0
   p.selected.clear()
-  return invoke('search', { root: p.path, query, hidden: state.showHidden, id })
+  return invoke('search', { root: p.path, query, hidden: state.showHidden, gitignore: settings.respectGitignore, id })
 }
 
 export function openSearch(p: Pane = pane()) {

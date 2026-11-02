@@ -9,6 +9,8 @@ use std::sync::{
 };
 use tauri::{AppHandle, Emitter, State};
 
+const MAX_RESULTS: usize = 5000;
+
 #[derive(Default)]
 pub struct SearchState(Arc<AtomicU64>);
 
@@ -40,14 +42,17 @@ fn matcher(query: &str) -> impl Fn(&str) -> bool {
 }
 
 #[tauri::command]
-pub async fn search(app: AppHandle, state: State<'_, SearchState>, root: String, query: String, hidden: bool, id: u64) -> CmdResult<u64> {
+pub async fn search(app: AppHandle, state: State<'_, SearchState>, root: String, query: String, hidden: bool, gitignore: Option<bool>, id: u64) -> CmdResult<u64> {
+    if id == 0 {
+        return Err("search id 0 is reserved".into());
+    }
     // The id comes from the frontend so it can claim batches before this returns.
     // Storing it cancels any older search; 0 is reserved for "cancelled".
     let gen = state.0.clone();
     gen.store(id, Ordering::SeqCst);
     std::thread::spawn(move || {
         let is_match = matcher(&query);
-        let walker = ignore::WalkBuilder::new(&root).hidden(!hidden).git_ignore(true).parents(false).threads(num_threads()).build_parallel();
+        let walker = ignore::WalkBuilder::new(&root).hidden(!hidden).git_ignore(gitignore.unwrap_or(false)).parents(false).threads(num_threads()).build_parallel();
         let (tx, rx) = std::sync::mpsc::channel::<Entry>();
         let scanned = Arc::new(AtomicU64::new(0));
         let sc = scanned.clone();
@@ -82,8 +87,11 @@ pub async fn search(app: AppHandle, state: State<'_, SearchState>, root: String,
             match rx.recv_timeout(std::time::Duration::from_millis(60)) {
                 Ok(e) => {
                     total += 1;
-                    if total <= 5000 {
-                        buf.push(e);
+                    buf.push(e);
+                    if total >= MAX_RESULTS {
+                        // Cap reached: stop the walker (it checks `gen` on every entry).
+                        let _ = gen.compare_exchange(id, 0, Ordering::SeqCst, Ordering::SeqCst);
+                        break;
                     }
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,

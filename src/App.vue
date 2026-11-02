@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import { TooltipProvider } from 'reka-ui'
-import { Plus, X, Columns2, Eye, Command } from 'lucide-vue-next'
+import Icon from './components/Icon.vue'
 import { state, init, newPane, nextId, newTab, closeTab, toggleSplit, focusPane } from './lib/store'
 import { onGlobalKey, isReloadOrPrint } from './lib/keys'
 import { basename, keyLabel } from './lib/util'
@@ -14,6 +14,8 @@ import Toasts from './components/Toasts.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import QuickLook from './components/quicklook/QuickLook.vue'
 import IconButton from './components/IconButton.vue'
+import SettingsDialog from './components/settings/SettingsDialog.vue'
+import { openSettings } from './lib/settings'
 
 const ready = ref(false)
 // Capture phase: a component's stopPropagation can't let webview reload/print through. Commands still run in onGlobalKey.
@@ -55,21 +57,22 @@ const tabTitle = (i: number) => {
             @mousedown.middle.prevent="closeTab(i)"
           >
             <span class="truncate">{{ tabTitle(i) }}</span>
-            <X
+            <Icon name="x"
               v-if="state.tabs.length > 1"
               class="size-3.5 shrink-0 opacity-0 transition group-hover:opacity-60 hover:!opacity-100"
               @click.stop="closeTab(i)"
             />
           </button>
-          <IconButton :icon="Plus" label="New tab" keys="Ctrl+T" @click="newTab()" />
+          <IconButton icon="plus" label="New tab" keys="Ctrl+T" @click="newTab()" />
         </div>
-        <IconButton :icon="Columns2" label="Dual pane" keys="Ctrl+\" :active="state.tabs[state.activeTab].panes.length > 1" @click="toggleSplit" />
-        <IconButton :icon="Eye" label="Info panel" keys="Ctrl+I" :active="state.preview" @click="state.preview = !state.preview" />
+        <IconButton icon="columns" label="Dual pane" keys="Ctrl+\" :active="state.tabs[state.activeTab].panes.length > 1" @click="toggleSplit" />
+        <IconButton icon="eye" label="Info panel" keys="Ctrl+I" :active="state.preview" @click="state.preview = !state.preview" />
+        <IconButton icon="settings" label="Settings" keys="Ctrl+," @click="openSettings" />
         <button
           class="ml-1 flex h-7 items-center gap-2 rounded-md border border-line bg-bg px-2.5 text-[12px] text-dim transition hover:border-accent/50 hover:text-fg"
           @click="state.palette = 'all'"
         >
-          <Command class="size-3.5" /> Do anything… <kbd>{{ keyLabel('Ctrl+K') }}</kbd>
+          <Icon name="command" class="size-3.5" /> Do anything… <kbd>{{ keyLabel('Ctrl+K') }}</kbd>
         </button>
       </div>
 
@@ -96,6 +99,7 @@ const tabTitle = (i: number) => {
       <BatchRename />
       <ConfirmDialog />
       <QuickLook />
+      <SettingsDialog />
       <Toasts />
     </template>
   </TooltipProvider>

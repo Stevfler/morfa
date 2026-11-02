@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
-import { ArrowRight, TriangleAlert } from 'lucide-vue-next'
+import Icon from './Icon.vue'
 import * as S from '../lib/store'
 import { basename, join, keyLabel, parent } from '../lib/util'
 
@@ -78,7 +78,7 @@ function apply() {
 <template>
   <DialogRoot v-model:open="open">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]" />
+      <DialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
       <DialogContent class="fixed top-1/2 left-1/2 z-50 flex max-h-[86vh] w-[min(760px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-line bg-panel shadow-2xl outline-none">
         <div class="border-b border-line px-5 py-4">
           <DialogTitle class="text-[15px] font-medium">Rename {{ state.batchRename?.length }} items</DialogTitle>
@@ -117,19 +117,19 @@ function apply() {
         <div class="mx-5 min-h-0 flex-1 overflow-y-auto rounded-lg border border-line bg-bg/60">
           <div v-for="r in preview.rows" :key="r.path" class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-line/60 px-3 py-1.5 text-[12px] last:border-0">
             <span class="truncate text-dim">{{ r.name }}</span>
-            <ArrowRight class="size-3.5" :class="r.changed ? 'text-accent' : 'text-line'" />
+            <Icon name="arrow-right" class="size-3.5" :class="r.changed ? 'text-accent' : 'text-line'" />
             <span class="truncate" :class="r.changed ? 'text-fg' : 'text-faint'">{{ r.next }}</span>
           </div>
         </div>
 
         <div class="flex items-center gap-3 px-5 py-4">
-          <p v-if="preview.err" class="flex items-center gap-1.5 text-[12px] text-danger"><TriangleAlert class="size-4" />Invalid pattern</p>
-          <p v-else-if="preview.dupes" class="flex items-center gap-1.5 text-[12px] text-warn"><TriangleAlert class="size-4" />Some names would be the same — add {n}</p>
-          <p v-else-if="preview.invalid" class="flex items-center gap-1.5 text-[12px] text-warn"><TriangleAlert class="size-4" />Names can’t be empty or contain / \</p>
+          <p v-if="preview.err" class="flex items-center gap-1.5 text-[12px] text-danger"><Icon name="warning" class="size-4" />Invalid pattern</p>
+          <p v-else-if="preview.dupes" class="flex items-center gap-1.5 text-[12px] text-warn"><Icon name="warning" class="size-4" />Some names would be the same — add {n}</p>
+          <p v-else-if="preview.invalid" class="flex items-center gap-1.5 text-[12px] text-warn"><Icon name="warning" class="size-4" />Names can’t be empty or contain / \</p>
           <p v-else class="text-[12px] text-faint">{{ preview.count }} of {{ preview.rows.length }} will change</p>
           <DialogClose class="ml-auto h-8 rounded-md px-3 text-[12.5px] text-dim hover:bg-raised">Cancel</DialogClose>
           <button
-            class="h-8 rounded-md bg-accent px-4 text-[12.5px] font-medium text-white transition hover:brightness-110 disabled:opacity-40"
+            class="h-8 rounded-md bg-accent px-4 text-[12.5px] font-medium text-on-accent transition hover:brightness-110 disabled:opacity-40"
             :disabled="!!preview.err || preview.dupes || preview.invalid || !preview.count" @click="apply"
           >Rename {{ preview.count || '' }}</button>
         </div>

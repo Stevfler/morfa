@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { House, Monitor, Download, FileText, Image, Music, Video, HardDrive, Usb, Star, Clock, X } from 'lucide-vue-next'
+import type { IconName } from '../lib/icons'
+import Icon from './Icon.vue'
 import { state, pane, go, frecencyScore, transfer } from '../lib/store'
 import { basename, copyMod, fmtSize, keyLabel } from '../lib/util'
 import { DIRS_MIME } from '../composables/useDragDrop'
 
-const ICONS: Record<string, unknown> = {
-  home: House, desktop: Monitor, downloads: Download, documents: FileText,
-  pictures: Image, music: Music, videos: Video, disk: HardDrive, removable: Usb,
+const ICONS: Record<string, IconName> = {
+  home: 'home', desktop: 'monitor', downloads: 'download', documents: 'file-text',
+  pictures: 'image', music: 'music', videos: 'video', disk: 'hard-drive', removable: 'usb',
 }
 
 const folders = computed(() => state.places.filter((p) => !['disk', 'removable'].includes(p.kind)))
@@ -42,7 +43,7 @@ function onDropFav(e: DragEvent) {
         class="item" :class="current === p.path && 'on'"
         @click="go(pane(), p.path)" @dragover.prevent @drop.prevent="drop($event, p.path)"
       >
-        <component :is="ICONS[p.kind]" class="size-4 shrink-0" />{{ p.name }}
+        <Icon :name="ICONS[p.kind]" class="size-4 shrink-0" />{{ p.name }}
       </button>
     </section>
 
@@ -56,8 +57,8 @@ function onDropFav(e: DragEvent) {
         class="item group" :class="current === b && 'on'" :title="b"
         @click="go(pane(), b)" @dragover.prevent @drop.prevent.stop="drop($event, b)"
       >
-        <Star class="size-4 shrink-0 text-warn" /><span class="truncate">{{ basename(b) || b }}</span>
-        <X class="ml-auto size-3.5 shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100"
+        <Icon name="star" class="size-4 shrink-0 text-warn" /><span class="truncate">{{ basename(b) || b }}</span>
+        <Icon name="x" class="ml-auto size-3.5 shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100"
            @click.stop="state.bookmarks.splice(state.bookmarks.indexOf(b), 1)" />
       </button>
     </section>
@@ -65,7 +66,7 @@ function onDropFav(e: DragEvent) {
     <section v-if="recent.length">
       <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Frequent</h3>
       <button v-for="r in recent" :key="r" class="item" :class="current === r && 'on'" :title="r" @click="go(pane(), r)">
-        <Clock class="size-4 shrink-0" /><span class="truncate">{{ basename(r) || r }}</span>
+        <Icon name="clock" class="size-4 shrink-0" /><span class="truncate">{{ basename(r) || r }}</span>
       </button>
     </section>
 
@@ -77,7 +78,7 @@ function onDropFav(e: DragEvent) {
         @click="go(pane(), d.path)" @dragover.prevent @drop.prevent="drop($event, d.path)"
       >
         <span class="flex items-center gap-2.5">
-          <component :is="ICONS[d.kind]" class="size-4 shrink-0" /><span class="truncate">{{ d.name }}</span>
+          <Icon :name="ICONS[d.kind]" class="size-4 shrink-0" /><span class="truncate">{{ d.name }}</span>
         </span>
         <span v-if="d.total" class="h-1 overflow-hidden rounded-full bg-line">
           <span class="block h-full rounded-full"
