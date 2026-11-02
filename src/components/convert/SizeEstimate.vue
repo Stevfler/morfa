@@ -3,6 +3,7 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 import Icon from '../Icon.vue'
 import { estimate, type ConvertOpts } from '../../lib/convert'
 import { fmtSize } from '../../lib/util'
+import { t } from '../../lib/i18n'
 
 const props = defineProps<{ source: string | null; opts: ConvertOpts; disabled?: boolean }>()
 const result = ref<{ before: number; after: number } | null>(null)
@@ -45,6 +46,6 @@ const pct = (r: { before: number; after: number }) => {
       <span class="text-fg">≈ {{ fmtSize(result.after) }}</span>
       <span :class="result.after <= result.before ? 'text-accent' : 'text-warn'">({{ pct(result) }})</span>
     </template>
-    <span v-else class="text-faint">Estimating…</span>
+    <span v-else class="text-faint">{{ t('convert.estimating') }}</span>
   </div>
 </template>

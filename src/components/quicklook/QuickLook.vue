@@ -8,6 +8,7 @@ import { qlHold, scrollCursorIntoView } from '../../lib/keys'
 import { settings } from '../../lib/settings'
 import QuickLookHeader from './QuickLookHeader.vue'
 import Icon from '../Icon.vue'
+import { t } from '../../lib/i18n'
 
 const Image = defineAsyncComponent(() => import('./viewers/ImageViewer.vue'))
 const Text = defineAsyncComponent(() => import('./viewers/TextViewer.vue'))
@@ -99,7 +100,7 @@ function onKey(e: KeyboardEvent) {
             <div v-else class="flex h-full flex-col items-center justify-center gap-3 text-dim">
               <Icon :name="entry.isDir ? 'folder' : 'file'" class="size-12" />
               <p class="max-w-[70%] truncate text-[13px]">{{ entry.name }}</p>
-              <p class="text-[12px]">No preview</p>
+              <p class="text-[12px]">{{ t('ql.noPreview') }}</p>
             </div>
           </div>
         </template>

@@ -3,12 +3,16 @@ import { openCleanup } from '../components/cleanup/cleanup'
 import { openSettings } from './settings'
 import * as S from './store'
 import { isImage, openConvert } from './convert'
+import { t, type MsgKey } from './i18n'
 import { canQuickLook, isMac, otherMod, primaryMod, prettyKeys } from './util'
 
 export type Cmd = {
   id: string
-  title: string
+  /** Translated; derived from `cmd.<id>`. */
+  readonly title: string
+  /** Stable group id (`group.<id>` in the dictionary); `groupLabel` is the translated name. */
   group: string
+  readonly groupLabel: string
   icon: IconName
   /** Shown to the user, e.g. "Ctrl+Shift+N" */
   keys?: string
@@ -22,49 +26,54 @@ export type Cmd = {
 
 export { prettyKeys }
 
-export const commands: Cmd[] = [
-  { id: 'palette', title: 'Command palette', group: 'General', icon: 'command', keys: 'Ctrl+K', run: () => (S.state.palette = 'all') },
-  { id: 'jump', title: 'Jump to folder…', group: 'Navigate', icon: 'zap', keys: 'Ctrl+P', run: () => (S.state.palette = 'folders') },
-  { id: 'search', title: 'Search in this folder and subfolders', group: 'Navigate', icon: 'search', keys: 'Ctrl+F', run: () => S.openSearch() },
-  { id: 'path', title: 'Type a path', group: 'Navigate', icon: 'link', keys: 'Ctrl+L', run: () => (S.state.editPath = true) },
-  { id: 'up', title: 'Go to parent folder', group: 'Navigate', icon: 'arrow-up', keys: 'Alt+↑', run: () => S.up() },
-  { id: 'back', title: 'Go back', group: 'Navigate', icon: 'chevron-left', keys: 'Alt+←', run: () => S.back() },
-  { id: 'forward', title: 'Go forward', group: 'Navigate', icon: 'chevron-right', keys: 'Alt+→', run: () => S.forward() },
-  { id: 'home', title: 'Go home', group: 'Navigate', icon: 'folder-open', keys: 'Alt+Home', run: () => S.go(S.pane(), S.state.home) },
-  { id: 'refresh', title: 'Refresh', group: 'Navigate', icon: 'refresh', keys: 'Ctrl+R', fkey: 'F5', fkeyMode: 'single', run: () => S.refreshAll() },
+export const commands = ([
+  { id: 'palette', group: 'general', icon: 'command', keys: 'Ctrl+K', run: () => (S.state.palette = 'all') },
+  { id: 'jump', group: 'navigate', icon: 'zap', keys: 'Ctrl+P', run: () => (S.state.palette = 'folders') },
+  { id: 'search', group: 'navigate', icon: 'search', keys: 'Ctrl+F', run: () => S.openSearch() },
+  { id: 'path', group: 'navigate', icon: 'link', keys: 'Ctrl+L', run: () => (S.state.editPath = true) },
+  { id: 'up', group: 'navigate', icon: 'arrow-up', keys: 'Alt+↑', run: () => S.up() },
+  { id: 'back', group: 'navigate', icon: 'chevron-left', keys: 'Alt+←', run: () => S.back() },
+  { id: 'forward', group: 'navigate', icon: 'chevron-right', keys: 'Alt+→', run: () => S.forward() },
+  { id: 'home', group: 'navigate', icon: 'folder-open', keys: 'Alt+Home', run: () => S.go(S.pane(), S.state.home) },
+  { id: 'refresh', group: 'navigate', icon: 'refresh', keys: 'Ctrl+R', fkey: 'F5', fkeyMode: 'single', run: () => S.refreshAll() },
 
-  { id: 'newdir', title: 'New folder', group: 'Create', icon: 'folder-plus', keys: 'Ctrl+Shift+N', fkey: 'F7', run: () => S.create('dir') },
-  { id: 'newfile', title: 'New empty file', group: 'Create', icon: 'file-plus', keys: 'Ctrl+Alt+N', run: () => S.create('file') },
+  { id: 'newdir', group: 'create', icon: 'folder-plus', keys: 'Ctrl+Shift+N', fkey: 'F7', run: () => S.create('dir') },
+  { id: 'newfile', group: 'create', icon: 'file-plus', keys: 'Ctrl+Alt+N', run: () => S.create('file') },
 
-  { id: 'copy', title: 'Copy', group: 'Edit', icon: 'copy', keys: 'Ctrl+C', run: () => S.copyToClipboard('copy') },
-  { id: 'cut', title: 'Cut', group: 'Edit', icon: 'scissors', keys: 'Ctrl+X', run: () => S.copyToClipboard('move') },
-  { id: 'paste', title: 'Paste here', group: 'Edit', icon: 'paste', keys: 'Ctrl+V', run: () => S.paste() },
-  { id: 'rename', title: 'Rename (several selected → batch rename)', group: 'Edit', icon: 'pencil', keys: 'F2', run: () => S.startRename() },
-  { id: 'trash', title: 'Move to Trash', group: 'Edit', icon: 'trash', keys: isMac ? 'Ctrl+Backspace' : 'Del', alt: 'Del', fkey: 'F8', run: () => S.trash() },
-  { id: 'delete', title: 'Delete forever', group: 'Edit', icon: 'x', keys: isMac ? 'Ctrl+Shift+Backspace' : 'Shift+Del', alt: 'Shift+Del', fkey: 'Shift+F8', run: () => S.deleteForever() },
-  { id: 'undo', title: 'Undo', group: 'Edit', icon: 'undo', keys: 'Ctrl+Z', run: () => S.undo() },
-  { id: 'redo', title: 'Redo', group: 'Edit', icon: 'redo', keys: 'Ctrl+Shift+Z', run: () => S.redo() },
-  { id: 'selectall', title: 'Select all', group: 'Edit', icon: 'check-all', keys: 'Ctrl+A', run: () => S.selectAll() },
-  { id: 'convert', title: 'Convert images…', group: 'Edit', icon: 'image', run: () => convertTargets() },
-  { id: 'copypath', title: 'Copy path', group: 'Edit', icon: 'link', keys: 'Ctrl+Shift+C', run: () => S.copyPath() },
+  { id: 'copy', group: 'edit', icon: 'copy', keys: 'Ctrl+C', run: () => S.copyToClipboard('copy') },
+  { id: 'cut', group: 'edit', icon: 'scissors', keys: 'Ctrl+X', run: () => S.copyToClipboard('move') },
+  { id: 'paste', group: 'edit', icon: 'paste', keys: 'Ctrl+V', run: () => S.paste() },
+  { id: 'rename', group: 'edit', icon: 'pencil', keys: 'F2', run: () => S.startRename() },
+  { id: 'trash', group: 'edit', icon: 'trash', keys: isMac ? 'Ctrl+Backspace' : 'Del', alt: 'Del', fkey: 'F8', run: () => S.trash() },
+  { id: 'delete', group: 'edit', icon: 'x', keys: isMac ? 'Ctrl+Shift+Backspace' : 'Shift+Del', alt: 'Shift+Del', fkey: 'Shift+F8', run: () => S.deleteForever() },
+  { id: 'undo', group: 'edit', icon: 'undo', keys: 'Ctrl+Z', run: () => S.undo() },
+  { id: 'redo', group: 'edit', icon: 'redo', keys: 'Ctrl+Shift+Z', run: () => S.redo() },
+  { id: 'selectall', group: 'edit', icon: 'check-all', keys: 'Ctrl+A', run: () => S.selectAll() },
+  { id: 'convert', group: 'edit', icon: 'image', run: () => convertTargets() },
+  { id: 'copypath', group: 'edit', icon: 'link', keys: 'Ctrl+Shift+C', run: () => S.copyPath() },
 
-  { id: 'copyother', title: 'Copy to the other pane', group: 'Dual pane', icon: 'copy', fkey: 'F5', fkeyMode: 'split', run: () => S.toOther('copy') },
-  { id: 'moveother', title: 'Move to the other pane', group: 'Dual pane', icon: 'arrow-swap', fkey: 'F6', fkeyMode: 'split', run: () => S.toOther('move') },
-  { id: 'openapp', title: 'Open with default app', group: 'Dual pane', icon: 'external-link', fkey: 'F4', fkeyMode: 'split', run: () => S.openDefault() },
-  { id: 'otherpane', title: 'Switch to the other pane (Tab)', group: 'Dual pane', icon: 'columns', run: () => S.focusPane(1 - S.tab().active) },
-  { id: 'split', title: 'Toggle dual pane', group: 'View', icon: 'columns', keys: 'Ctrl+\\', run: () => S.toggleSplit() },
+  { id: 'copyother', group: 'dual', icon: 'copy', fkey: 'F5', fkeyMode: 'split', run: () => S.toOther('copy') },
+  { id: 'moveother', group: 'dual', icon: 'arrow-swap', fkey: 'F6', fkeyMode: 'split', run: () => S.toOther('move') },
+  { id: 'openapp', group: 'dual', icon: 'external-link', fkey: 'F4', fkeyMode: 'split', run: () => S.openDefault() },
+  { id: 'otherpane', group: 'dual', icon: 'columns', run: () => S.focusPane(1 - S.tab().active) },
+  { id: 'split', group: 'view', icon: 'columns', keys: 'Ctrl+\\', run: () => S.toggleSplit() },
   // Space is handled as hold-to-preview in keys.ts; from the palette it stays open until Esc/Space.
-  { id: 'quicklook', title: 'Quick Look (hold Space)', group: 'View', icon: 'quicklook', keys: 'Space', fkey: 'F3', fkeyMode: 'split', run: () => (S.state.quickLook = canQuickLook(S.visible(S.pane())[S.pane().cursor])) },
-  { id: 'cleanup', title: 'Clean up this drive…', group: 'View', icon: 'broom', run: () => openCleanup(mountRoot(S.pane().path)) },
-  { id: 'settings', title: 'Settings', group: 'View', icon: 'settings', keys: 'Ctrl+,', run: () => openSettings() },
-  { id: 'preview', title: 'Toggle info panel', group: 'View', icon: 'panel-right', keys: 'Ctrl+I', run: () => (S.state.preview = !S.state.preview) },
-  { id: 'hidden', title: 'Show / hide hidden files', group: 'View', icon: 'eye', keys: 'Ctrl+H', run: () => (S.state.showHidden = !S.state.showHidden) },
-  { id: 'sizes', title: 'Calculate folder sizes (find what eats space)', group: 'View', icon: 'gauge', keys: 'Ctrl+Shift+S', run: () => S.calcFolderSizes() },
-  { id: 'newtab', title: 'New tab', group: 'Tabs', icon: 'plus', keys: 'Ctrl+T', run: () => S.newTab() },
-  { id: 'closetab', title: 'Close tab', group: 'Tabs', icon: 'x', keys: 'Ctrl+W', run: () => S.closeTab() },
-  { id: 'bookmark', title: 'Add / remove folder from Favorites', group: 'Folder', icon: 'star', keys: 'Ctrl+D', run: () => S.toggleBookmark() },
-  { id: 'terminal', title: 'Open terminal here', group: 'Folder', icon: 'terminal', keys: 'Ctrl+`', run: () => S.openTerminal() },
-]
+  { id: 'quicklook', group: 'view', icon: 'quicklook', keys: 'Space', fkey: 'F3', fkeyMode: 'split', run: () => (S.state.quickLook = canQuickLook(S.visible(S.pane())[S.pane().cursor])) },
+  { id: 'cleanup', group: 'view', icon: 'broom', run: () => openCleanup(mountRoot(S.pane().path)) },
+  { id: 'settings', group: 'view', icon: 'settings', keys: 'Ctrl+,', run: () => openSettings() },
+  { id: 'preview', group: 'view', icon: 'panel-right', keys: 'Ctrl+I', run: () => (S.state.preview = !S.state.preview) },
+  { id: 'hidden', group: 'view', icon: 'eye', keys: 'Ctrl+H', run: () => (S.state.showHidden = !S.state.showHidden) },
+  { id: 'sizes', group: 'view', icon: 'gauge', keys: 'Ctrl+Shift+S', run: () => S.calcFolderSizes() },
+  { id: 'newtab', group: 'tabs', icon: 'plus', keys: 'Ctrl+T', run: () => S.newTab() },
+  { id: 'closetab', group: 'tabs', icon: 'x', keys: 'Ctrl+W', run: () => S.closeTab() },
+  { id: 'bookmark', group: 'folder', icon: 'star', keys: 'Ctrl+D', run: () => S.toggleBookmark() },
+  { id: 'terminal', group: 'folder', icon: 'terminal', keys: 'Ctrl+`', run: () => S.openTerminal() },
+] as Omit<Cmd, 'title' | 'groupLabel'>[]) as Cmd[]
+
+for (const c of commands) {
+  Object.defineProperty(c, 'title', { get: () => t(`cmd.${c.id}` as MsgKey), enumerable: true })
+  Object.defineProperty(c, 'groupLabel', { get: () => t(`group.${c.group}` as MsgKey), enumerable: true })
+}
 
 // These act on the folder shown in the pane, so they do nothing on pseudo-locations like the Drives view.
 const NEEDS_FOLDER = new Set(['cleanup', 'search', 'refresh', 'newdir', 'newfile', 'paste', 'selectall', 'sizes', 'bookmark', 'terminal'])
@@ -131,5 +140,5 @@ function mountRoot(path: string) {
 function convertTargets() {
   const paths = S.targets().filter((e) => !e.isDir && isImage(e.path)).map((e) => e.path)
   if (paths.length) openConvert(paths)
-  else S.toast({ title: 'Select one or more images to convert', tone: 'info' }, 2500)
+  else S.toast({ title: t('cmd.convertNone'), tone: 'info' }, 2500)
 }

@@ -5,6 +5,7 @@ import { pane, state } from './state'
 import { targets, visible } from './view'
 import { fail, toast } from './toast'
 import type { Pane } from './types'
+import { t } from '../i18n'
 
 // Size walks are tagged with a generation; cancelSizes() stops every walk started before it.
 let gen = Date.now() // monotonic across webview reloads (backend keeps the last cancelled gen)
@@ -50,7 +51,7 @@ export function calcFolderSizes(p: Pane = pane()) {
     if (!done) return
     p.sort = { key: 'size', asc: false }
     const total = dirs.reduce((s, d) => s + ((state.sizes[d] as number) || 0), 0)
-    toast({ title: 'Folder sizes ready', desc: `Sorted biggest first · ${fmtSize(total)} in folders`, tone: 'ok' })
+    toast({ title: t('sizes.ready'), desc: t('sizes.readyDesc', { size: fmtSize(total) }), tone: 'ok' })
   })
 }
 
@@ -58,18 +59,18 @@ export function toggleBookmark(path = pane().path) {
   const i = state.bookmarks.indexOf(path)
   if (i >= 0) {
     state.bookmarks.splice(i, 1)
-    toast({ title: `Removed “${basename(path)}” from Favorites`, tone: 'info' }, 2000)
+    toast({ title: t('fav.removed', { name: basename(path) }), tone: 'info' }, 2000)
   } else {
     state.bookmarks.push(path)
-    toast({ title: `Added “${basename(path)}” to Favorites`, tone: 'ok' }, 2000)
+    toast({ title: t('fav.added', { name: basename(path) }), tone: 'ok' }, 2000)
   }
 }
 
 export const openTerminal = (path = pane().path) => invoke('open_terminal', { path }).catch(fail)
 
 export async function copyPath(p: Pane = pane()) {
-  const t = targets(p)
-  const text = (t.length ? t.map((e) => e.path) : [p.path]).join('\n')
+  const sel = targets(p)
+  const text = (sel.length ? sel.map((e) => e.path) : [p.path]).join('\n')
   await navigator.clipboard.writeText(text)
-  toast({ title: 'Path copied', desc: text.length > 80 ? text.slice(0, 80) + '…' : text, tone: 'info' }, 2000)
+  toast({ title: t('path.copied'), desc: text.length > 80 ? text.slice(0, 80) + '…' : text, tone: 'info' }, 2000)
 }

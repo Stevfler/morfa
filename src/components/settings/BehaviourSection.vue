@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { settings } from '../../lib/settings'
 import { state } from '../../lib/store'
+import { t } from '../../lib/i18n'
 import Row from './Row.vue'
 import Toggle from './Toggle.vue'
 </script>
 
 <template>
   <section class="flex flex-col gap-1">
-    <Row title="Show hidden files" desc="Dotfiles and hidden entries">
-      <Toggle v-model="state.showHidden" label="Show hidden files" />
+    <Row :title="t('settings.showHidden')" :desc="t('settings.showHiddenDesc')">
+      <Toggle v-model="state.showHidden" :label="t('settings.showHidden')" />
     </Row>
-    <Row title="Respect .gitignore in search" desc="Skip ignored files when searching">
-      <Toggle v-model="settings.respectGitignore" label="Respect .gitignore in search" />
+    <Row :title="t('settings.gitignore')" :desc="t('settings.gitignoreDesc')">
+      <Toggle v-model="settings.respectGitignore" :label="t('settings.gitignore')" />
     </Row>
-    <Row title="Warn before Clean up" desc="Show the experienced-users warning when opening the Clean up tool">
-      <Toggle :model-value="!settings.cleanupWarned" label="Warn before Clean up" @update:model-value="settings.cleanupWarned = !$event" />
+    <Row :title="t('settings.cleanupWarn')" :desc="t('settings.cleanupWarnDesc')">
+      <Toggle :model-value="!settings.cleanupWarned" :label="t('settings.cleanupWarn')" @update:model-value="settings.cleanupWarned = !$event" />
     </Row>
   </section>
 </template>

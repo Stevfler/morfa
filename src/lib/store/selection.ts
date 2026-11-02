@@ -2,6 +2,7 @@ import { pane } from './state'
 import { visible } from './view'
 import { toast } from './toast'
 import type { Pane } from './types'
+import { t } from '../i18n'
 
 export function setCursor(p: Pane, i: number, mode: 'move' | 'extend' | 'toggle' = 'move') {
   const n = visible(p).length
@@ -39,5 +40,5 @@ export function selectPattern(p: Pane, pattern: string) {
       n++
     }
   }
-  toast({ title: `Selected ${n} item${n === 1 ? '' : 's'}`, desc: `matching “${pattern}”`, tone: 'info' }, 2500)
+  toast({ title: t('selection.selected', { count: n }), desc: t('selection.matching', { pattern }), tone: 'info' }, 2500)
 }

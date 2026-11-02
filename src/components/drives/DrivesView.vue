@@ -6,6 +6,7 @@ import { state } from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { fmtSize } from '../../lib/util'
 import { drives, clickDrive, refreshDrives } from '../sidebar/drives'
+import { t } from '../../lib/i18n'
 
 defineProps<{ pane: Pane }>()
 const disks = computed(() => state.places.filter((p) => ['disk', 'removable'].includes(p.kind)))
@@ -36,7 +37,7 @@ function onKey(e: KeyboardEvent) {
 
 <template>
   <div class="min-h-0 flex-1 overflow-y-auto p-5">
-    <h2 class="mb-4 text-[13px] font-medium text-dim">Drives</h2>
+    <h2 class="mb-4 text-[13px] font-medium text-dim">{{ t('drive.title') }}</h2>
     <div ref="grid" class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3" @keydown="onKey">
       <DriveTile v-for="d in disks" :key="d.path" :place="d" :pane="pane" />
       <div v-for="d in drives.list" :key="d.device" class="relative rounded-xl border border-dashed border-line/60 opacity-60 transition hover:opacity-100">
@@ -45,21 +46,21 @@ function onKey(e: KeyboardEvent) {
           <span class="flex items-start gap-3">
             <Icon :name="d.removable ? 'usb' : 'hard-drive'" class="size-9 shrink-0 text-faint" />
             <span class="min-w-0">
-              <span class="block truncate text-[14px] font-medium text-fg">{{ d.name || `${fmtSize(d.size)} Volume` }}</span>
+              <span class="block truncate text-[14px] font-medium text-fg">{{ d.name || t('drive.volume', { size: fmtSize(d.size) }) }}</span>
               <span class="block truncate font-mono text-[11.5px] text-faint">{{ d.device }}</span>
             </span>
           </span>
           <span class="flex items-center gap-2 text-[12px] text-dim">
-            {{ fmtSize(d.size) }} · not mounted
+            {{ fmtSize(d.size) }} · {{ t('drive.notMounted') }}
             <span v-if="d.fstype" class="rounded bg-raised px-1.5 py-0.5 font-mono text-[10.5px] uppercase text-faint">{{ d.fstype }}</span>
             <span class="ml-auto flex items-center gap-1 rounded-md bg-raised px-2 py-1 text-fg">
               <Icon :name="drives.busy.has(d.device) ? 'loader' : d.encrypted ? 'lock' : 'hard-drive'" class="size-3.5" :class="drives.busy.has(d.device) && 'animate-spin'" />
-              {{ d.encrypted ? 'Unlock' : 'Mount' }}
+              {{ d.encrypted ? t('unlock.unlock') : t('drive.mount') }}
             </span>
           </span>
         </button>
       </div>
     </div>
-    <p v-if="!disks.length && !drives.list.length" class="text-[12.5px] text-faint">No drives found.</p>
+    <p v-if="!disks.length && !drives.list.length" class="text-[12.5px] text-faint">{{ t('drive.none') }}</p>
   </div>
 </template>

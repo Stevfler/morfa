@@ -2,11 +2,12 @@
 import { computed } from 'vue'
 import Icon from '../Icon.vue'
 import type { Pane, SortKey } from '../../lib/store'
+import { t } from '../../lib/i18n'
 
 const props = defineProps<{ pane: Pane }>()
 const p = props.pane
 const searching = computed(() => !!p.search)
-const cols = computed(() => [['name', searching.value ? 'Name · location' : 'Name'], ['size', 'Size'], ['modified', 'Modified'], ['ext', 'Kind']] as [SortKey, string][])
+const cols = computed(() => [['name', searching.value ? t('pane.col.nameLocation') : t('pane.col.name')], ['size', t('pane.col.size')], ['modified', t('pane.col.modified')], ['ext', t('pane.col.kind')]] as [SortKey, string][])
 
 function sortBy(key: SortKey) {
   p.sort = p.sort.key === key ? { key, asc: !p.sort.asc } : { key, asc: key === 'name' || key === 'ext' }

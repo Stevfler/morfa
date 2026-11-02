@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { FORMATS, caps } from '../../lib/convert'
+import { t } from '../../lib/i18n'
 
 const model = defineModel<string>({ required: true })
 const list = computed(() => {
@@ -10,7 +11,7 @@ const list = computed(() => {
 </script>
 
 <template>
-  <div class="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-2" role="radiogroup" aria-label="Output format">
+  <div class="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-2" role="radiogroup" :aria-label="t('convert.outputFormat')">
     <button
       v-for="f in list" :key="f.ext" type="button" role="radio" :aria-checked="model === f.ext" :disabled="!caps"
       class="flex flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left transition outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-40"

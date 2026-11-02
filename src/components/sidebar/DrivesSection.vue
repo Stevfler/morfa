@@ -9,6 +9,7 @@ import { copyMod, fmtSize } from '../../lib/util'
 import { drives, ejectable, clickDrive, unmountPlace, refreshDrives } from './drives'
 import { openCleanup } from '../cleanup/cleanup'
 import { DRIVES } from '../../lib/store'
+import { t } from '../../lib/i18n'
 
 const disks = computed(() => state.places.filter((p) => ['disk', 'removable'].includes(p.kind)))
 const current = computed(() => pane().path)
@@ -31,8 +32,8 @@ onUnmounted(() => window.removeEventListener('focus', refreshDrives))
   <section>
     <button
       class="flex w-full items-center rounded px-2 pb-1 text-left text-[11px] font-medium uppercase tracking-wider transition hover:text-fg"
-      :class="current === DRIVES ? 'text-fg' : 'text-faint'" title="Show all drives" @click="go(pane(), DRIVES)"
-    >Drives</button>
+      :class="current === DRIVES ? 'text-fg' : 'text-faint'" :title="t('drive.showAll')" @click="go(pane(), DRIVES)"
+    >{{ t('drive.title') }}</button>
     <ContextMenuRoot v-for="d in disks" :key="d.path">
     <ContextMenuTrigger as-child>
     <div class="group relative">
@@ -48,12 +49,12 @@ onUnmounted(() => window.removeEventListener('focus', refreshDrives))
             :class="d.free / d.total < 0.1 ? 'bg-danger' : 'bg-accent'"
             :style="{ width: `${100 - (d.free / d.total) * 100}%` }" />
         </span>
-        <span v-if="d.total" class="text-[11px] text-faint">{{ fmtSize(d.free) }} free of {{ fmtSize(d.total) }}</span>
+        <span v-if="d.total" class="text-[11px] text-faint">{{ t('drive.freeOf', { free: fmtSize(d.free), total: fmtSize(d.total) }) }}</span>
       </button>
       <button
         v-if="ejectable(d)" class="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded text-dim hover:bg-line hover:text-fg"
         :class="drives.busy.has(d.path) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'"
-        :title="d.kind === 'removable' ? 'Eject' : 'Unmount'" :disabled="drives.busy.has(d.path)" @click="unmountPlace(d)"
+        :title="d.kind === 'removable' ? t('drive.eject') : t('drive.unmount')" :disabled="drives.busy.has(d.path)" @click="unmountPlace(d)"
       >
         <Icon :name="drives.busy.has(d.path) ? 'loader' : 'eject'" class="size-3.5" :class="drives.busy.has(d.path) && 'animate-spin'" />
       </button>
@@ -61,18 +62,18 @@ onUnmounted(() => window.removeEventListener('focus', refreshDrives))
     </ContextMenuTrigger>
     <ContextMenuPortal>
       <ContextMenuContent class="menu">
-        <ContextMenuItem class="mi" @select="go(pane(), d.path)"><Icon name="folder-open" />Open</ContextMenuItem>
-        <ContextMenuItem class="mi" @select="openCleanup(d.path)"><Icon name="zap" />Clean up…</ContextMenuItem>
-        <ContextMenuItem v-if="ejectable(d)" class="mi" @select="unmountPlace(d)"><Icon name="eject" />{{ d.kind === 'removable' ? 'Eject' : 'Unmount' }}</ContextMenuItem>
+        <ContextMenuItem class="mi" @select="go(pane(), d.path)"><Icon name="folder-open" />{{ t('shell.open') }}</ContextMenuItem>
+        <ContextMenuItem class="mi" @select="openCleanup(d.path)"><Icon name="zap" />{{ t('drive.cleanup') }}</ContextMenuItem>
+        <ContextMenuItem v-if="ejectable(d)" class="mi" @select="unmountPlace(d)"><Icon name="eject" />{{ d.kind === 'removable' ? t('drive.eject') : t('drive.unmount') }}</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenuPortal>
     </ContextMenuRoot>
     <button
       v-for="d in drives.list" :key="d.device" class="item opacity-60 hover:opacity-100"
-      :title="`${d.device} · ${d.fstype} — click to ${d.encrypted ? 'unlock' : 'mount'}`" @click="clickDrive(d)"
+      :title="`${d.device} · ${d.fstype} — ${t(d.encrypted ? 'drive.clickUnlock' : 'drive.clickMount')}`" @click="clickDrive(d)"
     >
       <Icon :name="icon(d.removable)" class="size-4 shrink-0" />
-      <span class="truncate">{{ d.name || `${fmtSize(d.size)} Volume` }}</span>
+      <span class="truncate">{{ d.name || t('drive.volume', { size: fmtSize(d.size) }) }}</span>
       <span class="ml-auto flex shrink-0 items-center gap-1 text-[11px] text-faint">
         <template v-if="d.name">{{ fmtSize(d.size) }}</template>
         <Icon v-if="drives.busy.has(d.device)" name="loader" class="size-3.5 animate-spin" />

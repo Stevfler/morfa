@@ -1,3 +1,5 @@
+import { t, type MsgKey } from '../i18n'
+
 export type ConvertOpts = {
   format: string
   quality: number
@@ -10,25 +12,29 @@ export type ConvertOpts = {
 
 export type Caps = { engine: 'vips' | 'magick' | null; formats: string[] }
 
-export const FORMATS: { ext: string; label: string; lossy: boolean; hint: string }[] = [
-  { ext: 'webp', label: 'WebP', lossy: true, hint: 'Best for web' },
-  { ext: 'avif', label: 'AVIF', lossy: true, hint: 'Smallest files, newer apps' },
-  { ext: 'jpg', label: 'JPEG', lossy: true, hint: 'Photos, works everywhere' },
-  { ext: 'png', label: 'PNG', lossy: false, hint: 'Lossless, keeps transparency' },
-  { ext: 'heic', label: 'HEIC', lossy: true, hint: 'Apple photos' },
-  { ext: 'jxl', label: 'JPEG XL', lossy: true, hint: 'Modern, high quality' },
-  { ext: 'tiff', label: 'TIFF', lossy: false, hint: 'Print and archiving' },
-  { ext: 'gif', label: 'GIF', lossy: false, hint: 'Simple graphics, 256 colours' },
-  { ext: 'bmp', label: 'BMP', lossy: false, hint: 'Uncompressed, legacy apps' },
-]
+export const FORMATS = ([
+  { ext: 'webp', label: 'WebP', lossy: true },
+  { ext: 'avif', label: 'AVIF', lossy: true },
+  { ext: 'jpg', label: 'JPEG', lossy: true },
+  { ext: 'png', label: 'PNG', lossy: false },
+  { ext: 'heic', label: 'HEIC', lossy: true },
+  { ext: 'jxl', label: 'JPEG XL', lossy: true },
+  { ext: 'tiff', label: 'TIFF', lossy: false },
+  { ext: 'gif', label: 'GIF', lossy: false },
+  { ext: 'bmp', label: 'BMP', lossy: false },
+] as { ext: string; label: string; lossy: boolean; hint: string }[]).map((f) =>
+  Object.defineProperty(f, 'hint', { get: () => t(`format.${f.ext}` as MsgKey), enumerable: true }),
+)
 
 export const QUICK_FORMATS = ['webp', 'png', 'jpg', 'avif']
 
-export const PRESETS: { key: 'max' | 'balanced' | 'compact'; label: string; quality: number }[] = [
-  { key: 'max', label: 'Maximum quality', quality: 95 },
-  { key: 'balanced', label: 'Balanced', quality: 82 },
-  { key: 'compact', label: 'Smallest size', quality: 65 },
-]
+export const PRESETS = ([
+  { key: 'max', quality: 95 },
+  { key: 'balanced', quality: 82 },
+  { key: 'compact', quality: 65 },
+] as { key: 'max' | 'balanced' | 'compact'; label: string; quality: number }[]).map((p) =>
+  Object.defineProperty(p, 'label', { get: () => t(`preset.${p.key}`), enumerable: true }),
+)
 
 /** Raster formats vips/magick can read. */
 const READABLE = new Set(['jpg', 'jpeg', 'png', 'webp', 'avif', 'heic', 'heif', 'tif', 'tiff', 'gif', 'bmp', 'jxl'])

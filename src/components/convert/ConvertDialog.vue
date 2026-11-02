@@ -12,6 +12,7 @@ import EngineBanner from './EngineBanner.vue'
 import * as S from '../../lib/store'
 import { caps, loadCaps, defaultOpts, runConvert, PRESETS, type ConvertOpts } from '../../lib/convert'
 import { basename, load, save } from '../../lib/util'
+import { t } from '../../lib/i18n'
 
 type Remembered = { format: string; preset: string; quality: number; stripMetadata: boolean }
 const KEY = 'orbit.convert.last'
@@ -43,7 +44,7 @@ watch(open, async (v) => {
 
 const lossless = computed(() => LOSSLESS.has(opts.format))
 const noEngine = computed(() => !loading.value && (!caps.value || caps.value.engine === null))
-const title = computed(() => (paths.value.length === 1 ? `Convert ${basename(paths.value[0])}` : `Convert ${paths.value.length} images`))
+const title = computed(() => (paths.value.length === 1 ? t('convert.titleOne', { name: basename(paths.value[0]) }) : t('convert.titleMany', { count: paths.value.length })))
 const thumbs = computed(() => paths.value.slice(0, 6).map((p) => ({ p, src: convertFileSrc(p) })))
 const example = computed(() => {
   const n = basename(paths.value[0] ?? 'image.jpg')
@@ -84,10 +85,10 @@ function onKey(e: KeyboardEvent) {
           <div class="min-w-0 flex-1">
             <DialogTitle class="truncate text-[16px] font-medium">{{ title }}</DialogTitle>
             <DialogDescription class="mt-1 text-[12px] text-faint">
-              Originals are never changed — new files are written alongside{{ thumbs.length < paths.length ? ` · ${paths.length - thumbs.length} more not shown` : '' }}.
+              {{ t('convert.desc') }}{{ thumbs.length < paths.length ? ` · ${t('convert.moreHidden', { n: paths.length - thumbs.length })}` : '' }}.
             </DialogDescription>
           </div>
-          <DialogClose class="grid size-7 place-items-center rounded-md text-dim outline-none hover:bg-raised hover:text-fg focus-visible:ring-2 focus-visible:ring-accent/60" aria-label="Close">
+          <DialogClose class="grid size-7 place-items-center rounded-md text-dim outline-none hover:bg-raised hover:text-fg focus-visible:ring-2 focus-visible:ring-accent/60" :aria-label="t('common.close')">
             <Icon name="x" class="size-4" />
           </DialogClose>
         </header>
@@ -95,41 +96,41 @@ function onKey(e: KeyboardEvent) {
         <div class="min-h-0 flex-1 space-y-7 overflow-y-auto px-7 pb-6">
           <EngineBanner v-if="noEngine" />
           <section>
-            <h3 class="sec">Format</h3>
+            <h3 class="sec">{{ t('convert.format') }}</h3>
             <FormatPicker v-model="opts.format" />
           </section>
           <section>
-            <h3 class="sec">Quality</h3>
+            <h3 class="sec">{{ t('convert.quality') }}</h3>
             <QualityPicker v-model:quality="opts.quality" v-model:preset="preset" :lossless="lossless" />
           </section>
           <section>
-            <h3 class="sec">Size</h3>
+            <h3 class="sec">{{ t('convert.size') }}</h3>
             <ResizePicker v-model="opts.resize" />
           </section>
           <section>
             <label class="flex cursor-pointer items-center justify-between gap-4 rounded-lg px-1 py-1">
               <span>
-                <span class="block text-[13px] text-fg">Strip metadata</span>
-                <span class="block text-[11.5px] text-faint">Removes EXIF, camera details and GPS location</span>
+                <span class="block text-[13px] text-fg">{{ t('convert.strip') }}</span>
+                <span class="block text-[11.5px] text-faint">{{ t('convert.stripDesc') }}</span>
               </span>
               <input v-model="opts.stripMetadata" type="checkbox" role="switch" class="size-4 accent-accent" />
             </label>
           </section>
           <section>
-            <h3 class="sec">Save to</h3>
+            <h3 class="sec">{{ t('convert.saveTo') }}</h3>
             <OutputPicker v-model:out-dir="opts.outDir" v-model:name-template="opts.nameTemplate" :example="example" />
           </section>
         </div>
 
         <footer class="flex items-center gap-3 border-t border-line/60 px-7 py-4">
           <SizeEstimate :source="paths[0] ?? null" :opts="opts" :disabled="noEngine || loading" />
-          <DialogClose class="ml-auto h-9 rounded-lg px-4 text-[12.5px] text-dim transition hover:bg-raised hover:text-fg">Cancel</DialogClose>
+          <DialogClose class="ml-auto h-9 rounded-lg px-4 text-[12.5px] text-dim transition hover:bg-raised hover:text-fg">{{ t('common.cancel') }}</DialogClose>
           <button
             class="flex h-9 items-center gap-2 rounded-lg bg-accent px-5 text-[12.5px] font-medium text-on-accent transition hover:brightness-110 disabled:opacity-40"
             :disabled="!canConvert" @click="submit"
           >
             <Icon v-if="loading" name="loader" class="size-3.5 animate-spin" />
-            Convert
+            {{ t('convert.convert') }}
           </button>
         </footer>
       </DialogContent>

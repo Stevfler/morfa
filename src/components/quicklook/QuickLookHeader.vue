@@ -4,6 +4,7 @@ import { DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
 import Icon from '../Icon.vue'
 import type { Entry } from '../../lib/store'
 import { fmtDateFull, fmtSize, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL } from '../../lib/util'
+import { t } from '../../lib/i18n'
 
 const props = defineProps<{ entry: Entry; pos: string }>()
 defineEmits<{ open: [] }>()
@@ -27,9 +28,9 @@ const meta = computed(() => {
       class="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-raised px-3 text-[12.5px] text-dim transition hover:bg-accent-soft hover:text-fg"
       @click="$emit('open')"
     >
-      <Icon name="external-link" class="size-3.5" /> Open <kbd>Enter</kbd>
+      <Icon name="external-link" class="size-3.5" /> {{ t('ql.open') }} <kbd>Enter</kbd>
     </button>
-    <DialogClose class="grid size-8 shrink-0 place-items-center rounded-md text-dim transition hover:bg-raised hover:text-fg" aria-label="Close">
+    <DialogClose class="grid size-8 shrink-0 place-items-center rounded-md text-dim transition hover:bg-raised hover:text-fg" :aria-label="t('common.close')">
       <Icon name="x" class="size-4" />
     </DialogClose>
   </div>

@@ -6,6 +6,7 @@ import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
 import { crumbs, keyLabel, parent } from '../../lib/util'
 import type { DragDrop } from '../../composables/useDragDrop'
+import { t as tr } from '../../lib/i18n'
 
 const props = defineProps<{ pane: Pane; active: boolean; dnd: DragDrop }>()
 const p = props.pane
@@ -33,7 +34,7 @@ async function commitPath(target = pathText.value) {
     state.editPath = false
     e.isDir ? S.go(p, e.path) : S.go(p, parent(e.path)!, { focus: e.path })
   } catch {
-    S.toast({ title: 'Folder not found', desc: t, tone: 'error' })
+    S.toast({ title: tr('pane.folderNotFound'), desc: t, tone: 'error' })
   }
 }
 function pathKey(ev: KeyboardEvent) {
@@ -69,12 +70,12 @@ function pathKey(ev: KeyboardEvent) {
     </template>
     <div v-else-if="S.isSpecial(p.path)" class="flex h-7 cursor-text items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium hover:bg-raised"
       @click="state.editPath = true; S.focusPane(S.tab().panes.indexOf(p))">
-      <Icon name="hard-drive" class="size-3.5 text-dim" />Drives
+      <Icon name="hard-drive" class="size-3.5 text-dim" />{{ tr('pane.drives') }}
     </div>
     <div
       v-else
       class="flex h-7 cursor-text items-center overflow-hidden rounded-md px-1 hover:bg-raised"
-      :title="`Click empty space or press ${keyLabel('Ctrl+L')} to type a path`"
+      :title="tr('pane.pathTitle', { key: keyLabel('Ctrl+L') })"
       @click.self="state.editPath = true; S.focusPane(S.tab().panes.indexOf(p))"
     >
       <template v-for="(c, k) in crumbs(p.path)" :key="c.path">

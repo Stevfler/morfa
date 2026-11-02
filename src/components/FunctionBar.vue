@@ -6,27 +6,28 @@ import { TooltipRoot, TooltipTrigger, TooltipPortal, TooltipContent } from 'reka
 import * as S from '../lib/store'
 import { cmd, prettyKeys } from '../lib/commands'
 import { canQuickLook, keyLabel } from '../lib/util'
+import { t } from '../lib/i18n'
 
 // Total Commander-style function-key bar, shown while the tab is split.
 type Btn = { id: string; fkey: string; text: string; icon: IconName; tip: string; disabled: string | null }
 
 const sel = computed(() => S.targets().length)
-const none = computed(() => (sel.value ? null : 'Nothing selected'))
+const none = computed(() => (sel.value ? null : t('fbar.nothingSelected')))
 const buttons = computed<Btn[]>(() => {
   const p = S.pane()
   const other = S.otherPane()
   const n = sel.value
-  const what = n === 1 ? `“${S.targets()[0].name}”` : `${n} items`
+  const what = n === 1 ? t('shell.quoted', { name: S.targets()[0].name }) : t('shell.items', { count: n })
   const dest = other ? other.path.split(/[\\/]/).filter(Boolean).pop() || other.path : ''
   const xfer = S.toOtherBlocked()
   return [
-    { id: 'rename', fkey: 'F2', text: 'Rename', icon: 'pencil', tip: 'Rename', disabled: none.value },
-    { id: 'quicklook', fkey: 'F3', text: 'View', icon: 'quicklook', tip: 'Quick Look (or hold Space)', disabled: canQuickLook(S.visible(p)[p.cursor]) ? null : 'Nothing to preview' },
-    { id: 'openapp', fkey: 'F4', text: 'Open', icon: 'external-link', tip: 'Open with default app', disabled: none.value },
-    { id: 'copyother', fkey: 'F5', text: 'Copy', icon: 'copy', tip: `Copy ${what} → ${dest}`, disabled: xfer },
-    { id: 'moveother', fkey: 'F6', text: 'Move', icon: 'arrow-swap', tip: `Move ${what} → ${dest}`, disabled: xfer },
-    { id: 'newdir', fkey: 'F7', text: 'New folder', icon: 'folder-plus', tip: 'New folder', disabled: null },
-    { id: 'trash', fkey: 'F8', text: 'Trash', icon: 'trash', tip: `Move to Trash · ${keyLabel('Shift+F8')} deletes forever`, disabled: none.value },
+    { id: 'rename', fkey: 'F2', text: t('fbar.rename'), icon: 'pencil', tip: t('fbar.rename'), disabled: none.value },
+    { id: 'quicklook', fkey: 'F3', text: t('fbar.view'), icon: 'quicklook', tip: t('fbar.quickLookTip'), disabled: canQuickLook(S.visible(p)[p.cursor]) ? null : t('fbar.nothingToPreview') },
+    { id: 'openapp', fkey: 'F4', text: t('shell.open'), icon: 'external-link', tip: t('shell.openDefault'), disabled: none.value },
+    { id: 'copyother', fkey: 'F5', text: t('fbar.copy'), icon: 'copy', tip: t('fbar.copyTip', { what, dest }), disabled: xfer },
+    { id: 'moveother', fkey: 'F6', text: t('fbar.move'), icon: 'arrow-swap', tip: t('fbar.moveTip', { what, dest }), disabled: xfer },
+    { id: 'newdir', fkey: 'F7', text: t('shell.newFolder'), icon: 'folder-plus', tip: t('shell.newFolder'), disabled: null },
+    { id: 'trash', fkey: 'F8', text: t('fbar.trash'), icon: 'trash', tip: t('fbar.trashTip', { key: keyLabel('Shift+F8') }), disabled: none.value },
   ]
 })
 

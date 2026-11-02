@@ -5,6 +5,7 @@ import * as S from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { navKey } from '../../lib/keys'
 import { basename, keyLabel } from '../../lib/util'
+import { t } from '../../lib/i18n'
 
 const props = defineProps<{ pane: Pane }>()
 const p = props.pane
@@ -55,11 +56,11 @@ function filterKey(ev: KeyboardEvent) {
     <input
       v-model="query" :data-filter="p.id"
       class="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-faint"
-      :placeholder="searching ? `Search inside ${basename(p.path) || '/'}… (*.pdf works)` : 'Filter — just start typing'"
+      :placeholder="searching ? t('pane.searchPlaceholder', { name: basename(p.path) || '/' }) : t('pane.filterPlaceholder')"
       spellcheck="false" @keydown="filterKey"
     />
     <Icon name="loader" v-if="p.search && !p.search.done" class="size-3.5 shrink-0 animate-spin text-accent" />
-    <button v-if="query || searching" class="text-faint hover:text-fg" @click="searching ? S.stopSearch(p) : (p.filter = '')"><Icon name="x" class="size-3.5" /></button>
-    <button v-else class="hidden text-faint hover:text-accent @2xl:block" :title="`Search subfolders too (${keyLabel('Ctrl+F')})`" @click="S.openSearch(p)"><kbd>{{ keyLabel('Ctrl+F') }}</kbd></button>
+    <button v-if="query || searching" class="text-faint hover:text-fg" :aria-label="t('pane.clear')" @click="searching ? S.stopSearch(p) : (p.filter = '')"><Icon name="x" class="size-3.5" /></button>
+    <button v-else class="hidden text-faint hover:text-accent @2xl:block" :title="t('pane.searchSubTitle', { key: keyLabel('Ctrl+F') })" @click="S.openSearch(p)"><kbd>{{ keyLabel('Ctrl+F') }}</kbd></button>
   </div>
 </template>

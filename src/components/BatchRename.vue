@@ -4,6 +4,8 @@ import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, Di
 import Icon from './Icon.vue'
 import * as S from '../lib/store'
 import { basename, join, keyLabel, parent } from '../lib/util'
+import { t } from '../lib/i18n'
+import RenameStatus from './batch/RenameStatus.vue'
 
 const state = S.state
 const open = computed({ get: () => !!state.batchRename, set: (v) => !v && (state.batchRename = null) })
@@ -71,7 +73,7 @@ function apply() {
   const tmp = pairs.map(([from]) => [from, from + `.orbit-tmp-${Date.now()}`] as [string, string])
   const steps: [string, string][] = [...tmp, ...tmp.map(([, t], i) => [t, pairs[i][1]] as [string, string])]
   state.batchRename = null
-  S.movePairs(steps, `Renamed ${pairs.length} items`)
+  S.movePairs(steps, t('batch.done', { count: pairs.length }))
 }
 </script>
 
@@ -81,36 +83,36 @@ function apply() {
       <DialogOverlay class="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px]" />
       <DialogContent class="fixed top-1/2 left-1/2 z-50 flex max-h-[86vh] w-[min(760px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl bg-panel ring-1 ring-fg/5 shadow-2xl outline-none">
         <div class="px-5 pt-5 pb-3">
-          <DialogTitle class="text-[15px] font-medium">Rename {{ state.batchRename?.length }} items</DialogTitle>
-          <DialogDescription class="mt-0.5 text-[12px] text-faint">Every change is previewed live. Extensions are kept. You can undo with {{ keyLabel('Ctrl+Z') }}.</DialogDescription>
+          <DialogTitle class="text-[15px] font-medium">{{ t('batch.title', { count: state.batchRename?.length ?? 0 }) }}</DialogTitle>
+          <DialogDescription class="mt-0.5 text-[12px] text-faint">{{ t('batch.desc', { key: keyLabel('Ctrl+Z') }) }}</DialogDescription>
         </div>
 
         <div class="grid grid-cols-2 gap-4 px-5 py-4">
           <label class="field">
-            <span>Find</span>
-            <input v-model="find" placeholder="text to replace" spellcheck="false" autofocus />
+            <span>{{ t('batch.find') }}</span>
+            <input v-model="find" :placeholder="t('batch.findPh')" spellcheck="false" autofocus />
           </label>
           <label class="field">
-            <span>Replace with</span>
-            <input v-model="replace" placeholder="(leave empty to remove)" spellcheck="false" />
+            <span>{{ t('batch.replace') }}</span>
+            <input v-model="replace" :placeholder="t('batch.replacePh')" spellcheck="false" />
           </label>
           <label class="field">
-            <span>New name pattern <em class="text-faint not-italic">— optional</em></span>
-            <input v-model="template" placeholder="e.g. Trip {n} or {name}-final" spellcheck="false" />
+            <span>{{ t('batch.pattern') }} <em class="text-faint not-italic">{{ t('batch.optional') }}</em></span>
+            <input v-model="template" :placeholder="t('batch.patternPh')" spellcheck="false" />
           </label>
           <div class="flex items-end gap-3">
-            <label class="field w-20"><span>{n} from</span><input v-model.number="startAt" type="number" min="0" /></label>
+            <label class="field w-20"><span>{{ t('batch.from') }}</span><input v-model.number="startAt" type="number" min="0" /></label>
             <label class="field flex-1">
-              <span>Letter case</span>
+              <span>{{ t('batch.case') }}</span>
               <select v-model="caseMode">
-                <option value="keep">Keep</option><option value="lower">lowercase</option>
-                <option value="upper">UPPERCASE</option><option value="title">Title Case</option>
+                <option value="keep">{{ t('batch.keep') }}</option><option value="lower">{{ t('batch.lower') }}</option>
+                <option value="upper">{{ t('batch.upper') }}</option><option value="title">{{ t('batch.titleCase') }}</option>
               </select>
             </label>
           </div>
           <div class="col-span-2 flex gap-4 text-[12px] text-dim">
-            <label class="flex items-center gap-1.5"><input v-model="regex" type="checkbox" class="accent-accent" />Regular expression</label>
-            <label class="flex items-center gap-1.5"><input v-model="matchCase" type="checkbox" class="accent-accent" />Match case</label>
+            <label class="flex items-center gap-1.5"><input v-model="regex" type="checkbox" class="accent-accent" />{{ t('batch.regex') }}</label>
+            <label class="flex items-center gap-1.5"><input v-model="matchCase" type="checkbox" class="accent-accent" />{{ t('batch.matchCase') }}</label>
           </div>
         </div>
 
@@ -123,15 +125,12 @@ function apply() {
         </div>
 
         <div class="flex items-center gap-3 px-5 py-4">
-          <p v-if="preview.err" class="flex items-center gap-1.5 text-[12px] text-danger"><Icon name="warning" class="size-4" />Invalid pattern</p>
-          <p v-else-if="preview.dupes" class="flex items-center gap-1.5 text-[12px] text-warn"><Icon name="warning" class="size-4" />Some names would be the same — add {n}</p>
-          <p v-else-if="preview.invalid" class="flex items-center gap-1.5 text-[12px] text-warn"><Icon name="warning" class="size-4" />Names can’t be empty or contain / \</p>
-          <p v-else class="text-[12px] text-faint">{{ preview.count }} of {{ preview.rows.length }} will change</p>
-          <DialogClose class="ml-auto h-8 rounded-md px-3 text-[12.5px] text-dim hover:bg-raised">Cancel</DialogClose>
+          <RenameStatus :err="preview.err" :dupes="preview.dupes" :invalid="preview.invalid" :count="preview.count" :total="preview.rows.length" />
+          <DialogClose class="ml-auto h-8 rounded-md px-3 text-[12.5px] text-dim hover:bg-raised">{{ t('common.cancel') }}</DialogClose>
           <button
             class="h-8 rounded-md bg-accent px-4 text-[12.5px] font-medium text-on-accent transition hover:brightness-110 disabled:opacity-40"
             :disabled="!!preview.err || preview.dupes || preview.invalid || !preview.count" @click="apply"
-          >Rename {{ preview.count || '' }}</button>
+          >{{ t('batch.apply', { count: preview.count || '' }) }}</button>
         </div>
       </DialogContent>
     </DialogPortal>

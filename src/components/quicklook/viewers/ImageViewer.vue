@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useImageUrl } from '../../../composables/useImageUrl'
 import Icon from '../../Icon.vue'
 import type { Entry } from '../../../lib/store'
+import { t } from '../../../lib/i18n'
 
 const props = defineProps<{ entry: Entry }>()
 const box = ref<HTMLDivElement>()
@@ -103,7 +104,7 @@ onBeforeUnmount(() => ro?.disconnect())
       <Icon name="loader" class="size-6 animate-spin text-faint" />
     </div>
     <div v-else-if="status === 'error'" class="absolute inset-0 grid place-items-center text-center text-[13px] text-dim">
-      <div><Icon name="image-off" class="mx-auto mb-2 size-10 text-faint" :stroke-width="1.25" />This image can't be displayed</div>
+      <div><Icon name="image-off" class="mx-auto mb-2 size-10 text-faint" :stroke-width="1.25" />{{ t('ql.imageError') }}</div>
     </div>
     <div v-else class="pointer-events-none absolute right-3 bottom-3 rounded-md bg-black/60 px-2 py-1 font-mono text-[11px] text-white/85 backdrop-blur">
       {{ nat.w }} × {{ nat.h }} · {{ Math.round(scale * 100) }}%

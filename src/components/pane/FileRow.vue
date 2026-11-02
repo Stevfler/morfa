@@ -4,6 +4,7 @@ import Icon from '../Icon.vue'
 import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
 import { fmtDate, fmtDateFull, fmtSize, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL, parent } from '../../lib/util'
+import { t } from '../../lib/i18n'
 
 const props = defineProps<{ pane: Pane; e: Entry; i: number; row: number; active: boolean; dropTarget: string | null }>()
 const p = props.pane
@@ -61,6 +62,6 @@ function sizeCell(e: Entry) {
     </div>
     <span class="text-right tabular-nums text-dim">{{ sizeCell(e) }}</span>
     <span class="truncate text-right text-dim" :title="fmtDateFull(e.modified)">{{ fmtDate(e.modified) }}</span>
-    <span class="truncate text-right text-faint">{{ e.isDir ? 'Folder' : e.ext ? e.ext.toUpperCase() : KIND_LABEL[kindOf(e)] }}</span>
+    <span class="truncate text-right text-faint">{{ e.isDir ? t('pane.kindFolder') : e.ext ? e.ext.toUpperCase() : KIND_LABEL[kindOf(e)] }}</span>
   </div>
 </template>

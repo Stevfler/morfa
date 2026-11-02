@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import * as S from '../../lib/store'
 import { basename } from '../../lib/util'
+import { t } from '../../lib/i18n'
 
 const props = defineProps<{ example: string }>()
 const outDir = defineModel<string | null>('outDir', { required: true })
@@ -20,21 +21,21 @@ const chip = (on: boolean) => (on ? 'bg-accent-soft text-accent' : 'bg-raised/60
 <template>
   <div class="space-y-3">
     <div class="flex flex-wrap gap-2">
-      <button type="button" class="pill" :class="chip(mode === 'next')" @click="set('next')">Next to originals</button>
+      <button type="button" class="pill" :class="chip(mode === 'next')" @click="set('next')">{{ t('convert.nextTo') }}</button>
       <button v-if="other" type="button" class="pill max-w-64 truncate" :class="chip(mode === 'other')" :title="other" @click="set('other')">
-        Other pane: {{ basename(other) || other }}
+        {{ t('convert.otherPane', { name: basename(other) || other }) }}
       </button>
-      <button type="button" class="pill" :class="chip(mode === 'custom')" @click="set('custom')">Another folder…</button>
+      <button type="button" class="pill" :class="chip(mode === 'custom')" @click="set('custom')">{{ t('convert.another') }}</button>
     </div>
     <input
-      v-if="mode === 'custom'" v-model="customDir" placeholder="/path/to/folder" spellcheck="false" aria-label="Output folder"
+      v-if="mode === 'custom'" v-model="customDir" :placeholder="t('convert.pathPlaceholder')" spellcheck="false" :aria-label="t('convert.outFolder')"
       class="inp w-full" @input="set('custom')"
     />
     <label class="flex flex-col gap-1 text-[11.5px] text-dim">
-      <span>File name <em class="text-faint not-italic">— {name} is the original name</em></span>
+      <span>{{ t('convert.fileName') }} <em class="text-faint not-italic">{{ t('convert.fileNameHint') }}</em></span>
       <input v-model="nameTemplate" spellcheck="false" class="inp" />
     </label>
-    <p class="truncate text-[11.5px] text-faint">e.g. <span class="text-dim">{{ props.example }}</span></p>
+    <p class="truncate text-[11.5px] text-faint">{{ t('convert.example') }} <span class="text-dim">{{ props.example }}</span></p>
   </div>
 </template>
 

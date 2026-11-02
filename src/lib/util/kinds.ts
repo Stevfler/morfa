@@ -1,4 +1,5 @@
 import type { IconName } from '../icons'
+import { t } from '../i18n'
 
 const IMG = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp', 'svg', 'ico', 'heic']
 const VID = ['mp4', 'webm', 'mkv', 'mov', 'avi', 'm4v', 'ogv']
@@ -43,14 +44,5 @@ export const KIND_ICON: Record<Kind, IconName> = {
 export const KINDS: Kind[] = ['folder', 'image', 'video', 'audio', 'archive', 'code', 'text', 'pdf', 'file']
 export const KIND_COLOR = Object.fromEntries(KINDS.map((k) => [k, `var(--kind-${k})`])) as Record<Kind, string>
 
-export const KIND_LABEL: Record<Kind, string> = {
-  folder: 'Folder',
-  image: 'Image',
-  video: 'Video',
-  audio: 'Audio',
-  archive: 'Archive',
-  code: 'Code',
-  text: 'Text',
-  pdf: 'PDF',
-  file: 'File',
-}
+/** Translated kind names (reactive getters). */
+export const KIND_LABEL = Object.defineProperties({} as Record<Kind, string>, Object.fromEntries(KINDS.map((k) => [k, { get: () => t(`kind.${k}`), enumerable: true }])))

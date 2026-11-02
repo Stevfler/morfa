@@ -6,6 +6,7 @@ import DrivesSection from './sidebar/DrivesSection.vue'
 import { state, pane, go, frecencyScore, transfer } from '../lib/store'
 import { basename, copyMod, keyLabel } from '../lib/util'
 import { DIRS_MIME } from '../composables/useDragDrop'
+import { t } from '../lib/i18n'
 
 const ICONS: Record<string, IconName> = {
   home: 'home', desktop: 'monitor', downloads: 'download', documents: 'file-text',
@@ -37,7 +38,7 @@ function onDropFav(e: DragEvent) {
 <template>
   <aside class="flex w-56 shrink-0 flex-col gap-5 overflow-y-auto px-2 py-2">
     <section>
-      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Places</h3>
+      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">{{ t('sidebar.places') }}</h3>
       <button
         v-for="p in folders" :key="p.path"
         class="item" :class="current === p.path && 'on'"
@@ -48,9 +49,9 @@ function onDropFav(e: DragEvent) {
     </section>
 
     <section @dragover.prevent @drop.prevent="onDropFav">
-      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Favorites</h3>
+      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">{{ t('sidebar.favorites') }}</h3>
       <p v-if="!state.bookmarks.length" class="mx-2 rounded-lg bg-raised/50 px-3 py-2.5 text-[11.5px] leading-snug text-faint">
-        Drag folders here or press <kbd>{{ keyLabel('Ctrl+D') }}</kbd>
+        {{ t('sidebar.favEmpty') }} <kbd>{{ keyLabel('Ctrl+D') }}</kbd>
       </p>
       <button
         v-for="b in state.bookmarks" :key="b"
@@ -64,7 +65,7 @@ function onDropFav(e: DragEvent) {
     </section>
 
     <section v-if="recent.length">
-      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Frequent</h3>
+      <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">{{ t('sidebar.frequent') }}</h3>
       <button v-for="r in recent" :key="r" class="item" :class="current === r && 'on'" :title="r" @click="go(pane(), r)">
         <Icon name="clock" class="size-4 shrink-0" /><span class="truncate">{{ basename(r) || r }}</span>
       </button>

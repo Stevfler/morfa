@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ConvertOpts } from '../../lib/convert'
+import { t } from '../../lib/i18n'
 
 const model = defineModel<ConvertOpts['resize']>({ required: true })
 const CHOICES = [
@@ -35,16 +36,16 @@ function setCustom() {
       class="h-8 rounded-full px-3.5 text-[12.5px] transition outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
       :class="active === c.key ? 'bg-accent-soft text-accent' : 'bg-raised/60 text-dim hover:bg-raised hover:text-fg'"
       @click="pick(c)"
-    >{{ c.label }}</button>
+    >{{ c.key === 'orig' ? t('convert.original') : c.label }}</button>
     <button
       type="button" class="h-8 rounded-full px-3.5 text-[12.5px] transition outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
       :class="active === 'custom' ? 'bg-accent-soft text-accent' : 'bg-raised/60 text-dim hover:bg-raised hover:text-fg'"
       @click="setCustom"
-    >Custom</button>
+    >{{ t('convert.custom') }}</button>
     <label v-if="active === 'custom'" class="flex items-center gap-1.5 text-[12px] text-dim">
-      max
+      {{ t('convert.max') }}
       <input
-        v-model.number="px" type="number" min="16" max="65535" aria-label="Maximum side in pixels"
+        v-model.number="px" type="number" min="16" max="65535" :aria-label="t('convert.maxSide')"
         class="h-8 w-20 rounded-md border border-line bg-bg px-2 text-[12.5px] text-fg outline-none focus:border-accent/60"
         @input="setCustom"
       />

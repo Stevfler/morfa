@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import Icon from '../Icon.vue'
 import { fmtSize } from '../../lib/util'
+import { t } from '../../lib/i18n'
 import { cleanup, drill, type SpaceNode } from './cleanup'
 
 const parent = computed(() => cleanup.crumbs[cleanup.crumbs.length - 1])
@@ -11,8 +12,8 @@ const icon = (n: SpaceNode) => (n.kind === 'dir' ? 'folder' : n.kind === 'file' 
 </script>
 
 <template>
-  <section class="flex min-h-0 flex-col" aria-label="Space map">
-    <nav class="flex min-h-9 flex-wrap items-center gap-0.5 px-3 py-1 text-[12px]" aria-label="Folder path">
+  <section class="flex min-h-0 flex-col" :aria-label="t('cleanup.spaceMap')">
+    <nav class="flex min-h-9 flex-wrap items-center gap-0.5 px-3 py-1 text-[12px]" :aria-label="t('cleanup.folderPath')">
       <template v-for="(c, i) in cleanup.crumbs" :key="c.path">
         <Icon v-if="i" name="chevron-right" class="size-3 text-dim" />
         <button
@@ -34,12 +35,12 @@ const icon = (n: SpaceNode) => (n.kind === 'dir' ? 'folder' : n.kind === 'file' 
         >
           <span class="absolute inset-y-1 left-0 rounded-r bg-accent-soft transition-[width]" :style="{ width: (n.size / max) * 100 + '%' }" aria-hidden="true" />
           <Icon :name="icon(n)" class="relative size-4 shrink-0" :class="n.kind === 'dir' ? 'text-[var(--kind-folder)]' : 'text-dim'" />
-          <span class="relative min-w-0 flex-1 truncate" :class="n.kind === 'rest' && 'text-dim italic'">{{ n.name }}</span>
+          <span class="relative min-w-0 flex-1 truncate" :class="n.kind === 'rest' && 'text-dim italic'">{{ n.kind === 'rest' ? t('cleanup.rest', { count: n.files }) : n.name }}</span>
           <span class="relative w-12 text-right text-[11px] text-dim tabular-nums">{{ pct(n).toFixed(pct(n) < 10 ? 1 : 0) }}%</span>
           <span class="relative w-16 text-right tabular-nums">{{ fmtSize(n.size) }}</span>
         </button>
       </li>
-      <li v-if="!cleanup.children.length" class="p-6 text-center text-[12.5px] text-dim">Empty</li>
+      <li v-if="!cleanup.children.length" class="p-6 text-center text-[12.5px] text-dim">{{ t('cleanup.empty') }}</li>
     </ul>
   </section>
 </template>

@@ -4,6 +4,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { settings } from '../../lib/settings'
 import { toast, fail } from '../../lib/store'
 import { basename, fmtSize } from '../../lib/util'
+import { t } from '../../lib/i18n'
 
 /** Mirrors `cleanup::index::Node` / `categories::{Item, Category}` in Rust. */
 export type SpaceNode = { path: string; name: string; size: number; files: number; kind: 'dir' | 'file' | 'rest' }
@@ -62,7 +63,7 @@ export async function scan() {
     if (cleanup.id !== id) return
     Object.assign(cleanup, { report: r, crumbs: [r.root], children: r.children, bytes: r.root.size, files: r.root.files })
   } catch (e) {
-    if (cleanup.id === id) cleanup.error = String(e) === 'cancelled' ? 'Scan cancelled.' : String(e)
+    if (cleanup.id === id) cleanup.error = String(e) === 'cancelled' ? t('cleanup.scanCancelled') : String(e)
   } finally {
     if (cleanup.id === id) cleanup.scanning = false
   }
@@ -115,8 +116,8 @@ export async function removeSelected(permanent: boolean) {
   try {
     const r = await invoke<DeleteReport>('cleanup_delete', { paths, permanent })
     prune(r.removed)
-    if (r.removed.length) toast({ title: `Freed ${fmtSize(r.freed)}`, desc: `${r.removed.length} item(s) ${permanent ? 'deleted' : 'moved to Trash'}`, tone: 'ok' })
-    if (r.rejected.length) toast({ title: `${r.rejected.length} item(s) not removed`, desc: r.rejected.slice(0, 4).map(([p, why]) => `${basename(p)}: ${why}`).join('\n'), tone: 'error' }, 9000)
+    if (r.removed.length) toast({ title: t('cleanup.freed', { size: fmtSize(r.freed) }), desc: t(permanent ? 'cleanup.deletedN' : 'cleanup.trashedN', { count: r.removed.length }), tone: 'ok' })
+    if (r.rejected.length) toast({ title: t('cleanup.notRemoved', { count: r.rejected.length }), desc: r.rejected.slice(0, 4).map(([p, why]) => `${basename(p)}: ${why}`).join('\n'), tone: 'error' }, 9000)
   } catch (e) {
     fail(e)
   } finally {
@@ -128,12 +129,12 @@ export async function emptyTrash() {
   cleanup.busy = true
   try {
     await invoke('cleanup_empty_trash')
-    const t = cleanup.report?.categories.find((c) => c.id === 'trash')
-    toast({ title: `Trash emptied`, desc: t ? `Freed ${fmtSize(t.total)}` : undefined, tone: 'ok' })
-    if (t) prune(t.items.map((i) => i.path))
+    const tr = cleanup.report?.categories.find((c) => c.id === 'trash')
+    toast({ title: t('cleanup.trashEmptied'), desc: tr ? t('cleanup.freed', { size: fmtSize(tr.total) }) : undefined, tone: 'ok' })
+    if (tr) prune(tr.items.map((i) => i.path))
   } catch (e) {
     if (String(e).startsWith('UNSUPPORTED_EMPTY_TRASH:')) {
-      toast({ title: "Can't empty Trash here", desc: 'Empty it from Finder instead.', tone: 'info', action: { label: 'Show Trash', run: () => void invoke('reveal_trash').catch(fail) } })
+      toast({ title: t('cleanup.cantEmpty'), desc: t('cleanup.cantEmptyDesc'), tone: 'info', action: { label: t('history.showTrash'), run: () => void invoke('reveal_trash').catch(fail) } })
     } else fail(e)
   } finally {
     cleanup.busy = false

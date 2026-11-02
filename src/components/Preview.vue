@@ -6,6 +6,7 @@ import Icon from './Icon.vue'
 import * as S from '../lib/store'
 import type { Entry } from '../lib/store'
 import { fmtDateFull, fmtSize, keyLabel, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL } from '../lib/util'
+import { t } from '../lib/i18n'
 
 const state = S.state
 const entry = computed<Entry | undefined>(() => {
@@ -21,16 +22,16 @@ const loading = ref(false)
 let seq = 0
 
 // Debounced so holding ↓ through a folder doesn't hammer the disk.
-let t: ReturnType<typeof setTimeout> | undefined
+let timer: ReturnType<typeof setTimeout> | undefined
 watch(
   entry,
   (e) => {
-    clearTimeout(t)
+    clearTimeout(timer)
     text.value = null
     children.value = null
     if (!e) return
     const my = ++seq
-    t = setTimeout(async () => {
+    timer = setTimeout(async () => {
       loading.value = true
       try {
         if (e.isDir) {
@@ -60,14 +61,14 @@ const size = computed(() => {
   if (!e) return ''
   if (!e.isDir) return fmtSize(e.size)
   const s = state.sizes[e.path]
-  return s === 'pending' ? 'calculating…' : typeof s === 'number' ? fmtSize(s) : null
+  return s === 'pending' ? t('preview.calculating') : typeof s === 'number' ? fmtSize(s) : null
 })
 </script>
 
 <template>
   <aside class="card flex w-80 shrink-0 flex-col overflow-hidden rounded-xl bg-panel">
     <div v-if="!entry" class="grid flex-1 place-items-center p-6 text-center text-[12px] text-faint">
-      Select something to preview it here.<br />Press <kbd>{{ keyLabel('Ctrl+I') }}</kbd> to hide this panel.
+      {{ t('preview.empty') }}<br />{{ t('preview.press') }} <kbd>{{ keyLabel('Ctrl+I') }}</kbd> {{ t('preview.toHide') }}
     </div>
     <template v-else>
       <div class="grid min-h-48 shrink-0 place-items-center overflow-hidden m-3 mb-0 rounded-lg bg-bg/50 p-3" :class="text != null && 'hidden'">
@@ -75,28 +76,28 @@ const size = computed(() => {
         <Icon v-else :name="KIND_ICON[kind]" class="size-20" :style="{ color: KIND_COLOR[kind] }" :stroke-width="1" :tint="entry.isDir ? 0.15 : 0" />
       </div>
 
-      <pre v-if="text != null" class="min-h-0 flex-1 overflow-auto bg-bg/50 p-3 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-words text-dim select-text">{{ text || '(empty file)' }}</pre>
+      <pre v-if="text != null" class="min-h-0 flex-1 overflow-auto bg-bg/50 p-3 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-words text-dim select-text">{{ text || t('preview.emptyFile') }}</pre>
 
       <div class="shrink-0 space-y-3 p-4" :class="text == null && 'flex-1 overflow-y-auto'">
         <div>
           <h2 class="text-[14px] font-medium break-all text-fg">{{ entry.name }}</h2>
-          <p class="mt-0.5 text-[11.5px] text-faint">{{ entry.isDir ? 'Folder' : `${KIND_LABEL[kind]}${entry.ext ? ` · .${entry.ext}` : ''}` }}</p>
+          <p class="mt-0.5 text-[11.5px] text-faint">{{ entry.isDir ? t('preview.folder') : `${KIND_LABEL[kind]}${entry.ext ? ` · .${entry.ext}` : ''}` }}</p>
         </div>
         <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[12px]">
-          <dt class="text-faint">Size</dt>
+          <dt class="text-faint">{{ t('preview.size') }}</dt>
           <dd class="text-fg">
             <template v-if="size">{{ size }}</template>
             <button v-else class="inline-flex items-center gap-1 text-accent hover:underline" @click="S.computeSizes([entry.path])">
-              <Icon name="gauge" class="size-3.5" />Calculate
+              <Icon name="gauge" class="size-3.5" />{{ t('preview.calculate') }}
             </button>
           </dd>
           <template v-if="childStats">
-            <dt class="text-faint">Contains</dt>
-            <dd class="text-fg">{{ childStats.dirs }} folders, {{ childStats.files }} files</dd>
+            <dt class="text-faint">{{ t('preview.contains') }}</dt>
+            <dd class="text-fg">{{ t('preview.folders', { count: childStats.dirs }) }}, {{ t('preview.files', { count: childStats.files }) }}</dd>
           </template>
-          <dt class="text-faint">Modified</dt>
+          <dt class="text-faint">{{ t('preview.modified') }}</dt>
           <dd class="text-fg">{{ fmtDateFull(entry.modified) }}</dd>
-          <dt class="text-faint">Where</dt>
+          <dt class="text-faint">{{ t('preview.where') }}</dt>
           <dd class="font-mono text-[11px] break-all text-dim select-text">{{ entry.path }}</dd>
         </dl>
 
@@ -105,12 +106,12 @@ const size = computed(() => {
             <Icon :name="KIND_ICON[kindOf(c)]" class="size-3.5 shrink-0" :style="{ color: KIND_COLOR[kindOf(c)] }" />
             <span class="truncate">{{ c.name }}</span>
           </li>
-          <li v-if="children.length > 14" class="text-[11.5px] text-faint">+ {{ children.length - 14 }} more</li>
+          <li v-if="children.length > 14" class="text-[11.5px] text-faint">{{ t('preview.more', { count: children.length - 14 }) }}</li>
         </ul>
 
         <div class="flex gap-2 pt-1">
           <button class="btn" @click="S.open(S.pane(), entry)">
-            <Icon :name="entry.isDir ? 'folder-open' : 'external-link'" class="size-3.5" />{{ entry.isDir ? 'Open' : 'Open with default app' }}
+            <Icon :name="entry.isDir ? 'folder-open' : 'external-link'" class="size-3.5" />{{ entry.isDir ? t('shell.open') : t('shell.openDefault') }}
           </button>
         </div>
         <Icon name="loader" v-if="loading" class="size-4 animate-spin text-faint" />

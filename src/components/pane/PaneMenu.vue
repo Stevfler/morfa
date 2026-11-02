@@ -9,6 +9,7 @@ import * as S from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { keyLabel, parent } from '../../lib/util'
 import { cmd } from '../../lib/commands'
+import { t as tr } from '../../lib/i18n'
 import { FORMATS, QUICK_FORMATS, caps, isImage, loadCaps, openConvert, quickConvert } from '../../lib/convert'
 
 const props = defineProps<{ pane: Pane }>()
@@ -50,45 +51,45 @@ function openIn(where: 'tab' | 'other') {
     <ContextMenuPortal>
       <ContextMenuContent class="menu">
         <template v-if="onItem && cursorEntry">
-          <ContextMenuItem class="mi" @select="S.open(p, cursorEntry)"><Icon name="folder-open" />Open<span>Enter</span></ContextMenuItem>
-          <ContextMenuItem v-if="p.search" class="mi" @select="S.open(p, cursorEntry, { reveal: true })"><Icon name="locate" />Show in folder<span>{{ keyLabel('Ctrl+Enter') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="openIn('tab')"><Icon name="plus" />Open in new tab</ContextMenuItem>
-          <ContextMenuItem class="mi" @select="openIn('other')"><Icon name="columns" />Open in other pane</ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.open(p, cursorEntry)"><Icon name="folder-open" />{{ tr('pane.menu.open') }}<span>Enter</span></ContextMenuItem>
+          <ContextMenuItem v-if="p.search" class="mi" @select="S.open(p, cursorEntry, { reveal: true })"><Icon name="locate" />{{ tr('pane.menu.showInFolder') }}<span>{{ keyLabel('Ctrl+Enter') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="openIn('tab')"><Icon name="plus" />{{ tr('pane.menu.openNewTab') }}</ContextMenuItem>
+          <ContextMenuItem class="mi" @select="openIn('other')"><Icon name="columns" />{{ tr('pane.menu.openOtherPane') }}</ContextMenuItem>
           <ContextMenuSeparator class="sep" />
-          <ContextMenuItem class="mi" @select="S.copyToClipboard('copy', p)"><Icon name="copy" />Copy<span>{{ keyLabel('Ctrl+C') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="S.copyToClipboard('move', p)"><Icon name="scissors" />Cut<span>{{ keyLabel('Ctrl+X') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="S.startRename(p)"><Icon name="pencil" />{{ S.targets(p).length > 1 ? `Rename ${S.targets(p).length} items…` : 'Rename' }}<span>F2</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.copyToClipboard('copy', p)"><Icon name="copy" />{{ tr('pane.menu.copy') }}<span>{{ keyLabel('Ctrl+C') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.copyToClipboard('move', p)"><Icon name="scissors" />{{ tr('pane.menu.cut') }}<span>{{ keyLabel('Ctrl+X') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.startRename(p)"><Icon name="pencil" />{{ S.targets(p).length > 1 ? tr('pane.menu.renameN', { count: S.targets(p).length }) : tr('pane.menu.rename') }}<span>F2</span></ContextMenuItem>
           <ContextMenuSub v-if="images">
-            <ContextMenuSubTrigger class="mi"><Icon name="image" />Convert {{ images.length > 1 ? `${images.length} images ` : '' }}to<Icon name="chevron-right" class="ml-auto" /></ContextMenuSubTrigger>
+            <ContextMenuSubTrigger class="mi"><Icon name="image" />{{ images.length > 1 ? tr('pane.menu.convertNTo', { count: images.length }) : tr('pane.menu.convertTo') }}<Icon name="chevron-right" class="ml-auto" /></ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent class="menu min-w-40" :side-offset="4">
                 <ContextMenuItem v-for="f in quick" :key="f" class="mi" @select="quickConvert(images, f)">{{ label(f) }}</ContextMenuItem>
                 <ContextMenuSeparator class="sep" />
-                <ContextMenuItem class="mi" @select="openConvert(images)">More options…</ContextMenuItem>
+                <ContextMenuItem class="mi" @select="openConvert(images)">{{ tr('pane.menu.moreOptions') }}</ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuPortal>
           </ContextMenuSub>
-          <ContextMenuItem class="mi" @select="S.copyPath(p)"><Icon name="link" />Copy path<span>{{ keyLabel('Ctrl+Shift+C') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.copyPath(p)"><Icon name="link" />{{ tr('pane.menu.copyPath') }}<span>{{ keyLabel('Ctrl+Shift+C') }}</span></ContextMenuItem>
           <template v-if="cursorEntry.isDir">
-            <ContextMenuItem class="mi" @select="S.toggleBookmark(cursorEntry.path)"><Icon name="star" />{{ state.bookmarks.includes(cursorEntry.path) ? 'Remove from Favorites' : 'Add to Favorites' }}</ContextMenuItem>
-            <ContextMenuItem class="mi" @select="S.computeSizes(S.targets(p).filter((x) => x.isDir).map((x) => x.path))"><Icon name="gauge" />Calculate size</ContextMenuItem>
-            <ContextMenuItem class="mi" @select="S.openTerminal(cursorEntry.path)"><Icon name="terminal" />Open terminal here</ContextMenuItem>
+            <ContextMenuItem class="mi" @select="S.toggleBookmark(cursorEntry.path)"><Icon name="star" />{{ state.bookmarks.includes(cursorEntry.path) ? tr('pane.menu.removeFav') : tr('pane.menu.addFav') }}</ContextMenuItem>
+            <ContextMenuItem class="mi" @select="S.computeSizes(S.targets(p).filter((x) => x.isDir).map((x) => x.path))"><Icon name="gauge" />{{ tr('pane.menu.calcSize') }}</ContextMenuItem>
+            <ContextMenuItem class="mi" @select="S.openTerminal(cursorEntry.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}</ContextMenuItem>
           </template>
-          <ContextMenuItem v-else class="mi" @select="S.reveal(cursorEntry.path)"><Icon name="eye" />Show in system file manager</ContextMenuItem>
+          <ContextMenuItem v-else class="mi" @select="S.reveal(cursorEntry.path)"><Icon name="eye" />{{ tr('pane.menu.showInSystem') }}</ContextMenuItem>
           <ContextMenuSeparator class="sep" />
-          <ContextMenuItem class="mi" @select="S.trash(paths())"><Icon name="trash" />Move to Trash<span>{{ keyLabel(cmd('trash').keys!) }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi danger" @select="S.deleteForever(paths())"><Icon name="x" />Delete forever…<span>{{ keyLabel(cmd('delete').keys!) }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.trash(paths())"><Icon name="trash" />{{ tr('pane.menu.trash') }}<span>{{ keyLabel(cmd('trash').keys!) }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi danger" @select="S.deleteForever(paths())"><Icon name="x" />{{ tr('pane.menu.deleteForever') }}<span>{{ keyLabel(cmd('delete').keys!) }}</span></ContextMenuItem>
         </template>
         <template v-else>
-          <ContextMenuItem class="mi" @select="S.create('dir', p)"><Icon name="folder-plus" />New folder<span>{{ keyLabel('Ctrl+Shift+N') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="S.create('file', p)"><Icon name="file-plus" />New empty file<span>{{ keyLabel('Ctrl+Alt+N') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" :disabled="!state.clipboard" @select="S.paste(p)"><Icon name="paste" />Paste{{ state.clipboard ? ` ${state.clipboard.paths.length} item(s)` : '' }}<span>{{ keyLabel('Ctrl+V') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.create('dir', p)"><Icon name="folder-plus" />{{ tr('pane.menu.newFolder') }}<span>{{ keyLabel('Ctrl+Shift+N') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.create('file', p)"><Icon name="file-plus" />{{ tr('pane.menu.newFile') }}<span>{{ keyLabel('Ctrl+Alt+N') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" :disabled="!state.clipboard" @select="S.paste(p)"><Icon name="paste" />{{ state.clipboard ? tr('pane.menu.pasteN', { count: state.clipboard.paths.length }) : tr('pane.menu.paste') }}<span>{{ keyLabel('Ctrl+V') }}</span></ContextMenuItem>
           <ContextMenuSeparator class="sep" />
-          <ContextMenuItem class="mi" @select="S.selectAll(p)"><Icon name="check-all" />Select all<span>{{ keyLabel('Ctrl+A') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="state.showHidden = !state.showHidden"><Icon name="eye" />{{ state.showHidden ? 'Hide' : 'Show' }} hidden files<span>{{ keyLabel('Ctrl+H') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="S.calcFolderSizes(p)"><Icon name="gauge" />Show folder sizes<span>{{ keyLabel('Ctrl+Shift+S') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="S.toggleBookmark(p.path)"><Icon name="star" />{{ state.bookmarks.includes(p.path) ? 'Remove from Favorites' : 'Add to Favorites' }}<span>{{ keyLabel('Ctrl+D') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="S.openTerminal(p.path)"><Icon name="terminal" />Open terminal here<span>{{ keyLabel('Ctrl+`') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.selectAll(p)"><Icon name="check-all" />{{ tr('pane.menu.selectAll') }}<span>{{ keyLabel('Ctrl+A') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="state.showHidden = !state.showHidden"><Icon name="eye" />{{ state.showHidden ? tr('pane.menu.hideHidden') : tr('pane.menu.showHidden') }}<span>{{ keyLabel('Ctrl+H') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.calcFolderSizes(p)"><Icon name="gauge" />{{ tr('pane.menu.folderSizes') }}<span>{{ keyLabel('Ctrl+Shift+S') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.toggleBookmark(p.path)"><Icon name="star" />{{ state.bookmarks.includes(p.path) ? tr('pane.menu.removeFav') : tr('pane.menu.addFav') }}<span>{{ keyLabel('Ctrl+D') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.openTerminal(p.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}<span>{{ keyLabel('Ctrl+`') }}</span></ContextMenuItem>
         </template>
       </ContextMenuContent>
     </ContextMenuPortal>

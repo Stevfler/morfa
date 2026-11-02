@@ -4,6 +4,7 @@ import * as S from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { fmtSize } from '../../lib/util'
 import HintList from './HintList.vue'
+import { t } from '../../lib/i18n'
 
 const props = defineProps<{ pane: Pane; split: boolean }>()
 const p = props.pane
@@ -17,9 +18,9 @@ const selectedBytes = computed(() =>
 
 <template>
   <footer class="flex h-8 shrink-0 items-center gap-3 px-4 text-[11.5px] text-faint">
-    <span v-if="p.search">{{ p.search.results.length.toLocaleString() }}{{ p.search.results.length >= 5000 ? '+' : '' }} found</span>
-    <span v-else>{{ list.length.toLocaleString() }} items</span>
-    <span v-if="p.selected.size" class="text-accent">{{ p.selected.size }} selected<template v-if="selectedBytes"> · {{ fmtSize(selectedBytes) }}</template></span>
+    <span v-if="p.search">{{ t('pane.found', { count: p.search.results.length, n: p.search.results.length.toLocaleString() + (p.search.results.length >= 5000 ? '+' : '') }) }}</span>
+    <span v-else>{{ t('pane.items', { count: list.length, n: list.length.toLocaleString() }) }}</span>
+    <span v-if="p.selected.size" class="text-accent">{{ t('pane.selected', { count: p.selected.size, n: p.selected.size }) }}<template v-if="selectedBytes"> · {{ fmtSize(selectedBytes) }}</template></span>
     <!-- In split view the hints live once in the shared bar at the bottom (App.vue). -->
     <HintList v-if="!split" :pane="p" :split="false" class="ml-auto" />
   </footer>

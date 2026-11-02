@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { state, pane, go, toast } from '../../lib/store'
 import type { Drive, Place } from '../../lib/store/types'
+import { t } from '../../lib/i18n'
 
 export const drives = reactive({
   list: [] as Drive[],
@@ -38,7 +39,7 @@ export async function mountDrive(d: Drive, passphrase?: string) {
 export function clickDrive(d: Drive) {
   if (drives.busy.has(d.device)) return
   if (d.encrypted) drives.unlock = d
-  else mountDrive(d).catch((e) => toast({ title: `Couldn't mount ${d.name || 'drive'}`, desc: String(e), tone: 'error' }))
+  else mountDrive(d).catch((e) => toast({ title: t('drives.mountFail', { name: d.name || t('drives.drive') }), desc: String(e), tone: 'error' }))
 }
 
 export async function unmountPlace(p: Place) {
@@ -54,7 +55,7 @@ export async function unmountPlace(p: Place) {
     toast({ title: eject ? `${p.name} can be safely removed` : `${p.name} unmounted`, tone: 'ok' }, 3000)
   } catch (e) {
     for (const { pn, from } of moved) go(pn, from, { history: false })
-    toast({ title: `Couldn't unmount ${p.name}`, desc: String(e), tone: 'error' })
+    toast({ title: t('drives.unmountFail', { name: p.name }), desc: String(e), tone: 'error' })
   } finally {
     drives.busy.delete(p.path)
     refreshDrives()

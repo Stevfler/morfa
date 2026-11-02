@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import Icon from '../../Icon.vue'
 import type { Entry } from '../../../lib/store'
 import { fmtSize } from '../../../lib/util'
+import { t } from '../../../lib/i18n'
 
 const MAX = 512 * 1024
 const props = defineProps<{ entry: Entry }>()
@@ -40,15 +41,15 @@ const lines = computed(() => (text.value ?? '').split('\n'))
     <div v-else-if="status !== 'ok'" class="grid flex-1 place-items-center text-center text-[13px] text-dim">
       <div>
         <Icon name="file-warning" class="mx-auto mb-2 size-10 text-faint" :stroke-width="1.25" />
-        {{ status === 'binary' ? 'This looks like a binary file — no text preview' : "Couldn't read this file" }}
+        {{ status === 'binary' ? t('ql.binary') : t('ql.readError') }}
       </div>
     </div>
     <template v-else>
       <div class="flex h-8 shrink-0 items-center gap-2 px-3 text-[11.5px] text-faint">
-        <span v-if="truncated" class="text-warn">Truncated — showing first {{ fmtSize(MAX) }} of {{ fmtSize(entry.size) }}</span>
-        <span v-else>{{ lines.length }} lines</span>
+        <span v-if="truncated" class="text-warn">{{ t('ql.truncated', { max: fmtSize(MAX), size: fmtSize(entry.size) }) }}</span>
+        <span v-else>{{ t('ql.lines', { count: lines.length }) }}</span>
         <div class="flex-1" />
-        <button class="tb" :class="wrap && 'on'" @click="wrap = !wrap"><Icon name="wrap-text" class="size-3.5" />Wrap</button>
+        <button class="tb" :class="wrap && 'on'" @click="wrap = !wrap"><Icon name="wrap-text" class="size-3.5" />{{ t('ql.wrap') }}</button>
       </div>
       <div class="min-h-0 flex-1 overflow-auto font-mono text-[12px] leading-[1.6] select-text">
         <table class="border-collapse" :class="wrap ? 'w-full table-fixed' : 'min-w-full'">

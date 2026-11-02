@@ -13,6 +13,7 @@ import FileList from './pane/FileList.vue'
 import PaneMenu from './pane/PaneMenu.vue'
 import StatusBar from './pane/StatusBar.vue'
 import DrivesView from './drives/DrivesView.vue'
+import { t } from '../lib/i18n'
 
 const props = defineProps<{ pane: Pane; active: boolean; split: boolean }>()
 const p = props.pane
@@ -24,13 +25,13 @@ const menuOnItem = ref(false)
   <section class="@container flex min-h-0 flex-col" :class="split && active && 'ring-1 ring-accent/45'">
     <!-- toolbar -->
     <div class="flex h-12 shrink-0 items-center gap-1 px-3 transition" :class="split && active && 'bg-accent-soft/30'">
-      <IconButton icon="chevron-left" label="Back" keys="Alt+←" :disabled="!p.back.length" @click="S.back(p)" />
-      <IconButton icon="chevron-right" label="Forward" keys="Alt+→" :disabled="!p.fwd.length" @click="S.forward(p)" />
-      <IconButton icon="arrow-up" label="Parent folder" keys="Backspace" :disabled="S.isSpecial(p.path) || !parent(p.path)" @click="S.up(p)" />
+      <IconButton icon="chevron-left" :label="t('shell.back')" keys="Alt+←" :disabled="!p.back.length" @click="S.back(p)" />
+      <IconButton icon="chevron-right" :label="t('shell.forward')" keys="Alt+→" :disabled="!p.fwd.length" @click="S.forward(p)" />
+      <IconButton icon="arrow-up" :label="t('shell.parent')" keys="Backspace" :disabled="S.isSpecial(p.path) || !parent(p.path)" @click="S.up(p)" />
       <PathBar :pane="p" :active="active" :dnd="dnd" />
       <FilterBox :pane="p" />
-      <IconButton icon="folder-plus" label="New folder" keys="Ctrl+Shift+N" @click="S.create('dir', p)" />
-      <IconButton icon="gauge" label="Show folder sizes" keys="Ctrl+Shift+S" @click="S.calcFolderSizes(p)" />
+      <IconButton icon="folder-plus" :label="t('shell.newFolder')" keys="Ctrl+Shift+N" @click="S.create('dir', p)" />
+      <IconButton icon="gauge" :label="t('shell.folderSizes')" keys="Ctrl+Shift+S" @click="S.calcFolderSizes(p)" />
     </div>
 
     <DrivesView v-if="p.path === S.DRIVES" :pane="p" />

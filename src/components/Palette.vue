@@ -6,6 +6,7 @@ import Icon from './Icon.vue'
 import * as S from '../lib/store'
 import { commands, prettyKeys } from '../lib/commands'
 import { basename, fuzzy, keyLabel } from '../lib/util'
+import { t } from '../lib/i18n'
 
 type Item = { key: string; title: string; sub?: string; icon: IconName; keys?: string; group: string; run: () => unknown }
 
@@ -30,7 +31,7 @@ function folderItems(): Item[] {
     title: basename(p) || p,
     sub: p,
     icon: state.bookmarks.includes(p) ? 'star' : 'folder',
-    group: 'Folders',
+    group: t('palette.folders'),
     run: () => S.go(S.pane(), p),
   }))
 }
@@ -40,10 +41,10 @@ const items = computed<Item[]>(() => {
   const out: Item[] = []
   if (/^([~/]|[A-Za-z]:\\)/.test(query)) {
     const path = query.replace(/^~/, state.home)
-    out.push({ key: 'go', title: `Go to ${path}`, icon: 'enter', group: 'Path', run: () => S.go(S.pane(), path) })
+    out.push({ key: 'go', title: t('palette.goTo', { path }), icon: 'enter', group: t('palette.path'), run: () => S.go(S.pane(), path) })
   }
   if (query.includes('*') && state.palette === 'all') {
-    out.push({ key: 'sel', title: `Select all matching “${query}”`, icon: 'check-all', group: 'Select', run: () => S.selectPattern(S.pane(), query) })
+    out.push({ key: 'sel', title: t('palette.selectMatching', { query }), icon: 'check-all', group: t('palette.select'), run: () => S.selectPattern(S.pane(), query) })
   }
   const folders = folderItems()
   if (state.palette === 'folders') {
@@ -55,7 +56,7 @@ const items = computed<Item[]>(() => {
   }
   const cmds: Item[] = commands
     .filter((c) => c.id !== 'palette')
-    .map((c) => ({ key: c.id, title: c.title, icon: c.icon, keys: c.keys, group: c.group, run: c.run }))
+    .map((c) => ({ key: c.id, title: c.title, icon: c.icon, keys: c.keys, group: c.groupLabel, run: c.run }))
   if (!query) return [...out, ...cmds]
   const scoredCmds = cmds.map((c) => [fuzzy(query, c.title + ' ' + c.group), c] as const).filter(([s]) => s >= 0)
   const scoredFolders = folders.map((f) => [fuzzy(query, f.title) - 50 + S.frecencyScore(f.sub!), f] as const).filter(([s]) => s > -50)
@@ -90,15 +91,15 @@ function key(e: KeyboardEvent) {
         @open-auto-focus.prevent
       >
         <VisuallyHidden>
-          <DialogTitle>{{ state.palette === 'folders' ? 'Jump to folder' : 'Command palette' }}</DialogTitle>
-          <DialogDescription>Type to search, Enter to run</DialogDescription>
+          <DialogTitle>{{ state.palette === 'folders' ? t('palette.jumpTitle') : t('palette.cmdTitle') }}</DialogTitle>
+          <DialogDescription>{{ t('palette.desc') }}</DialogDescription>
         </VisuallyHidden>
         <div class="flex items-center gap-3 px-4 pt-1">
           <Icon :name="state.palette === 'folders' ? 'zap' : 'search'" class="size-4 text-accent" />
           <input
             ref="input" v-model="q"
             class="h-12 flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint"
-            :placeholder="state.palette === 'folders' ? 'Jump to a folder you’ve visited… or type a path' : 'What do you want to do? Try “rename”, “sizes”, a folder name, or *.jpg'"
+            :placeholder="state.palette === 'folders' ? t('palette.folderPh') : t('palette.cmdPh')"
             spellcheck="false" @keydown="key"
           />
         </div>
@@ -117,11 +118,11 @@ function key(e: KeyboardEvent) {
               <span v-if="it.keys" class="ml-auto flex shrink-0 gap-0.5"><kbd v-for="k in prettyKeys(it.keys)" :key="k">{{ k }}</kbd></span>
             </button>
           </template>
-          <p v-if="!items.length" class="px-3 py-6 text-center text-faint">No matches</p>
+          <p v-if="!items.length" class="px-3 py-6 text-center text-faint">{{ t('palette.noMatches') }}</p>
         </div>
         <div class="flex gap-4 bg-raised/50 px-4 py-2 text-[11px] text-faint">
-          <span><kbd>↑↓</kbd> choose</span><span><kbd>Enter</kbd> run</span><span><kbd>Esc</kbd> close</span>
-          <span class="ml-auto"><kbd>{{ keyLabel('Ctrl+P') }}</kbd> jump to folder</span>
+          <span><kbd>↑↓</kbd> {{ t('palette.choose') }}</span><span><kbd>Enter</kbd> {{ t('palette.run') }}</span><span><kbd>Esc</kbd> {{ t('palette.close') }}</span>
+          <span class="ml-auto"><kbd>{{ keyLabel('Ctrl+P') }}</kbd> {{ t('palette.jump') }}</span>
         </div>
       </DialogContent>
     </DialogPortal>

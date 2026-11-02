@@ -5,6 +5,7 @@ import {
   AlertDialogDescription, AlertDialogCancel, AlertDialogAction,
 } from 'reka-ui'
 import { state } from '../lib/store'
+import { t } from '../lib/i18n'
 
 const open = computed({ get: () => !!state.confirm, set: (v) => !v && (state.confirm = null) })
 function ok() {
@@ -22,7 +23,7 @@ function ok() {
         <AlertDialogTitle class="text-[15px] font-medium">{{ state.confirm?.title }}</AlertDialogTitle>
         <AlertDialogDescription class="mt-2 text-[12.5px] leading-relaxed text-dim">{{ state.confirm?.desc }}</AlertDialogDescription>
         <div class="mt-5 flex justify-end gap-2">
-          <AlertDialogCancel class="h-8 rounded-md px-3 text-[12.5px] text-dim hover:bg-raised">Cancel</AlertDialogCancel>
+          <AlertDialogCancel class="h-8 rounded-md px-3 text-[12.5px] text-dim hover:bg-raised">{{ t('common.cancel') }}</AlertDialogCancel>
           <AlertDialogAction
             class="h-8 rounded-md px-4 text-[12.5px] font-medium hover:brightness-110"
             :class="state.confirm?.danger ? 'bg-danger text-white' : 'bg-accent text-on-accent'" @click="ok"

@@ -21,6 +21,7 @@ import FunctionBar from './components/FunctionBar.vue'
 import HintList from './components/pane/HintList.vue'
 import SettingsDialog from './components/settings/SettingsDialog.vue'
 import { openSettings } from './lib/settings'
+import { t } from './lib/i18n'
 
 const ready = ref(false)
 // Capture phase: a component's stopPropagation can't let webview reload/print through. Commands still run in onGlobalKey.
@@ -42,8 +43,7 @@ onBeforeUnmount(() => {
 })
 
 const tabTitle = (i: number) => {
-  const t = state.tabs[i]
-  return t.panes.map((p) => basename(p.path) || '/').join(' ⇆ ')
+  return state.tabs[i].panes.map((p) => basename(p.path) || '/').join(' ⇆ ')
 }
 </script>
 
@@ -54,8 +54,8 @@ const tabTitle = (i: number) => {
       <div class="flex h-11 shrink-0 items-center gap-1 px-3">
         <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
           <button
-            v-for="(t, i) in state.tabs"
-            :key="t.id"
+            v-for="(tab, i) in state.tabs"
+            :key="tab.id"
             class="group flex h-7 max-w-56 shrink-0 items-center gap-2 rounded-md px-3 text-[12.5px] transition"
             :class="i === state.activeTab ? 'bg-raised text-fg shadow-sm' : 'text-dim hover:bg-raised/60 hover:text-fg'"
             @click="state.activeTab = i"
@@ -68,16 +68,16 @@ const tabTitle = (i: number) => {
               @click.stop="closeTab(i)"
             />
           </button>
-          <IconButton icon="plus" label="New tab" keys="Ctrl+T" @click="newTab()" />
+          <IconButton icon="plus" :label="t('shell.newTab')" keys="Ctrl+T" @click="newTab()" />
         </div>
-        <IconButton icon="columns" label="Dual pane" keys="Ctrl+\" :active="state.tabs[state.activeTab].panes.length > 1" @click="toggleSplit" />
-        <IconButton icon="eye" label="Info panel" keys="Ctrl+I" :active="state.preview" @click="state.preview = !state.preview" />
-        <IconButton icon="settings" label="Settings" keys="Ctrl+," @click="openSettings" />
+        <IconButton icon="columns" :label="t('shell.dualPane')" keys="Ctrl+\" :active="state.tabs[state.activeTab].panes.length > 1" @click="toggleSplit" />
+        <IconButton icon="eye" :label="t('shell.infoPanel')" keys="Ctrl+I" :active="state.preview" @click="state.preview = !state.preview" />
+        <IconButton icon="settings" :label="t('shell.settings')" keys="Ctrl+," @click="openSettings" />
         <button
           class="ml-1 flex h-7 items-center gap-2 rounded-full bg-raised px-3 text-[12px] text-dim transition hover:bg-raised/70 hover:text-fg focus-visible:ring-1 focus-visible:ring-accent/50"
           @click="state.palette = 'all'"
         >
-          <Icon name="command" class="size-3.5" /> Do anything… <kbd>{{ keyLabel('Ctrl+K') }}</kbd>
+          <Icon name="command" class="size-3.5" /> {{ t('shell.doAnything') }} <kbd>{{ keyLabel('Ctrl+K') }}</kbd>
         </button>
       </div>
 
