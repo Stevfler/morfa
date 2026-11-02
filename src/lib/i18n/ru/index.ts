@@ -5,6 +5,7 @@ import { core } from './core'
 import { shell } from './shell'
 import { pane } from './pane'
 import { tools } from './tools'
+import { media } from './media'
 
 export const ru: Dict = {
   ...common,
@@ -13,4 +14,5 @@ export const ru: Dict = {
   ...shell,
   ...pane,
   ...tools,
+  ...media,
 }

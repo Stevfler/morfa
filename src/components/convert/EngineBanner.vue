@@ -19,11 +19,14 @@ const cmds: Record<Engine, Record<typeof os, string>> = {
   image: { linux: 'sudo pacman -S libvips', mac: 'brew install vips', win: '' },
   office: { linux: 'sudo pacman -S libreoffice-fresh', mac: 'brew install --cask libreoffice', win: '' },
   pandoc: { linux: 'sudo pacman -S pandoc-cli', mac: 'brew install pandoc', win: 'winget install pandoc' },
+  // Bundled with the Windows installer, so no hint there.
+  ffmpeg: { linux: 'sudo pacman -S ffmpeg', mac: 'brew install ffmpeg', win: '' },
 }
 const msg = computed(() => ({
   image: { title: t('convert.noEngine'), desc: t('convert.noEngineDesc') },
   office: { title: t('convert.noOffice'), desc: t('convert.noOfficeDesc') },
   pandoc: { title: t('convert.noPandoc'), desc: t('convert.noPandocDesc') },
+  ffmpeg: { title: t('convert.noFfmpeg'), desc: t('convert.noFfmpegDesc') },
 })[props.engine])
 const cmd = computed(() => cmds[props.engine][os])
 </script>

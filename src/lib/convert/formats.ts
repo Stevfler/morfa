@@ -10,8 +10,8 @@ export type ConvertOpts = {
   nameTemplate: string
 }
 
-export type Caps = { engine: 'vips' | 'magick' | null; formats: string[]; office?: boolean; pandoc?: boolean }
-export type FormatGroup = 'image' | 'document'
+export type Caps = { engine: 'vips' | 'magick' | null; formats: string[]; office?: boolean; pandoc?: boolean; ffmpeg?: boolean }
+export type FormatGroup = 'image' | 'document' | 'video' | 'audio'
 
 export const FORMATS = ([
   { ext: 'webp', label: 'WebP', lossy: true },
@@ -23,6 +23,16 @@ export const FORMATS = ([
   { ext: 'tiff', label: 'TIFF', lossy: false },
   { ext: 'gif', label: 'GIF', lossy: false },
   { ext: 'bmp', label: 'BMP', lossy: false },
+  { ext: 'mp4', label: 'MP4', lossy: true, group: 'video' },
+  { ext: 'webm', label: 'WebM', lossy: true, group: 'video' },
+  { ext: 'mkv', label: 'MKV', lossy: true, group: 'video' },
+  { ext: 'mov', label: 'MOV', lossy: true, group: 'video' },
+  { ext: 'mp3', label: 'MP3', lossy: true, group: 'audio' },
+  { ext: 'm4a', label: 'M4A (AAC)', lossy: true, group: 'audio' },
+  { ext: 'ogg', label: 'OGG Vorbis', lossy: true, group: 'audio' },
+  { ext: 'opus', label: 'Opus', lossy: true, group: 'audio' },
+  { ext: 'flac', label: 'FLAC', lossy: false, group: 'audio' },
+  { ext: 'wav', label: 'WAV', lossy: false, group: 'audio' },
   { ext: 'pdf', label: 'PDF', lossy: false, group: 'document' },
   { ext: 'docx', label: 'Word', lossy: false, group: 'document' },
   { ext: 'odt', label: 'ODT', lossy: false, group: 'document' },
@@ -55,9 +65,19 @@ export const extOf = (path: string) => path.split(/[\\/]/).pop()!.split('.').pop
 export const isImage = (path: string) => READABLE.has(extOf(path))
 /** Documents, sheets, slides and PDFs the backend routes through LibreOffice / pandoc / pdf rasterizing. */
 const DOCS = new Set(['doc', 'docx', 'odt', 'rtf', 'txt', 'html', 'htm', 'md', 'xls', 'xlsx', 'ods', 'csv', 'ppt', 'pptx', 'odp', 'pdf'])
-export const isConvertible = (path: string) => isImage(path) || DOCS.has(extOf(path))
+const VIDEO = new Set(['mp4', 'mkv', 'webm', 'mov', 'avi', 'm4v', 'wmv', 'flv', 'mpg', 'mpeg', '3gp'])
+const AUDIO = new Set(['mp3', 'wav', 'flac', 'ogg', 'oga', 'm4a', 'aac', 'opus', 'wma'])
+/** Video / audio sources the backend routes through FFmpeg. */
+export const isVideo = (path: string) => VIDEO.has(extOf(path))
+export const isAudio = (path: string) => AUDIO.has(extOf(path))
+export const isMedia = (path: string) => isVideo(path) || isAudio(path)
+export const isConvertible = (path: string) => isImage(path) || DOCS.has(extOf(path)) || isMedia(path)
 /** True for raster outputs (quality/resize/metadata apply). */
 export const isImageFormat = (ext: string) => (FORMATS.find((f) => f.ext === ext)?.group ?? 'image') === 'image'
+export const formatGroup = (ext: string): FormatGroup => FORMATS.find((f) => f.ext === ext)?.group ?? 'image'
+/** Video/audio output; gif counts as video when made from a media source. */
+export const isMediaFormat = (ext: string, fromMedia = false) => ['video', 'audio'].includes(formatGroup(ext)) || (fromMedia && ext === 'gif')
+export const isLossless = (ext: string) => FORMATS.find((f) => f.ext === ext)?.lossy === false
 export const formatLabel = (ext: string) => FORMATS.find((f) => f.ext === ext)?.label ?? ext.toUpperCase()
 
 export const defaultOpts = (format: string): ConvertOpts => ({

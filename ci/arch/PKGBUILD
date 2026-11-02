@@ -9,7 +9,8 @@ license=('custom')
 depends=('webkit2gtk-4.1' 'gtk3' 'librsvg' 'openssl' 'hicolor-icon-theme' 'libvips' 'poppler-glib')
 optdepends=('libreoffice-fresh: document conversion (docx, xlsx, pptx, pdf)'
             'pandoc-cli: Markdown and other text formats'
-            'imagemagick: fallback image converter')
+            'imagemagick: fallback image converter'
+            'ffmpeg: video and audio conversion')
 options=('!strip' '!debug')
 
 package() {

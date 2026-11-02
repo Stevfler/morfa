@@ -56,6 +56,8 @@ export type Op = {
   done: number
   total: number
   current: string
+  /** Progress within the current file (0..1), sent for media conversions. */
+  part?: number | null
   /** What done/total count (default 'bytes'). */
   unit?: 'bytes' | 'files'
   kind?: 'transfer' | 'convert' | 'office'

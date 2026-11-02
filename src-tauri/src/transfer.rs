@@ -30,6 +30,7 @@ struct Progress {
     total: u64,
     current: String,
     finished: bool,
+    part: Option<f64>, // always None here; set by conversions
 }
 
 /// Completed (source, destination) pairs, plus the error that stopped the op (if any), so the
@@ -57,7 +58,7 @@ impl Ctx {
         if force || self.last.elapsed().as_millis() > 100 {
             self.last = Instant::now();
             let Some(app) = &self.app else { return };
-            let _ = app.emit("op-progress", Progress { id: self.id, done: self.done, total: self.total, current: current.to_string_lossy().into(), finished: false });
+            let _ = app.emit("op-progress", Progress { id: self.id, done: self.done, total: self.total, current: current.to_string_lossy().into(), finished: false, part: None });
         }
     }
 }
@@ -175,7 +176,7 @@ pub async fn transfer(app: AppHandle, state: State<'_, OpsState>, id: u64, sourc
         let mut cx = Ctx { app: Some(app), ops, id, done: 0, total: 0, last: Instant::now() };
         let mut pairs = vec![];
         let error = run(&mut cx, &sources, Path::new(&dest), mode == "move", &mut pairs).err();
-        let _ = cx.app.as_ref().map(|a| a.emit("op-progress", Progress { id, done: cx.total, total: cx.total, current: String::new(), finished: true }));
+        let _ = cx.app.as_ref().map(|a| a.emit("op-progress", Progress { id, done: cx.total, total: cx.total, current: String::new(), finished: true, part: None }));
         TransferResult { pairs, error }
     })
     .await;

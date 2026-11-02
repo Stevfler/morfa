@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
 import Icon from '../Icon.vue'
 import ConvertThumb from './ConvertThumb.vue'
-import { isImage } from '../../lib/convert'
+import { isAudio, isImage, isVideo } from '../../lib/convert'
 import { basename } from '../../lib/util'
 import { t } from '../../lib/i18n'
 
@@ -11,7 +11,10 @@ const props = defineProps<{ paths: string[] }>()
 const title = computed(() => {
   const n = props.paths.length
   if (n === 1) return t('convert.titleOne', { name: basename(props.paths[0]) })
-  return props.paths.every(isImage) ? t('convert.titleMany', { count: n }) : t('convert.titleManyFiles', { count: n })
+  if (props.paths.every(isImage)) return t('convert.titleMany', { count: n })
+  if (props.paths.every(isVideo)) return t('convert.titleManyVideos', { count: n })
+  if (props.paths.every(isAudio)) return t('convert.titleManyAudios', { count: n })
+  return t('convert.titleManyFiles', { count: n })
 })
 const thumbs = computed(() => props.paths.slice(0, 6))
 </script>

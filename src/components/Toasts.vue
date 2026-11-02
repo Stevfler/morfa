@@ -18,10 +18,10 @@ const ICON = { ok: 'check-circle', error: 'alert-circle', info: 'info' } as cons
           <button class="text-[12px] text-dim hover:text-danger" @click="cancelOp(op.id)">{{ t('common.cancel') }}</button>
         </div>
         <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
-          <div class="h-full rounded-full bg-accent transition-[width]" :style="{ width: op.total ? `${(op.done / op.total) * 100}%` : '8%' }" />
+          <div class="h-full rounded-full bg-accent transition-[width]" :style="{ width: op.total ? `${((op.done + Math.min(op.part ?? 0, 1)) / op.total) * 100}%` : '8%' }" />
         </div>
         <p class="mt-1.5 truncate text-[11px] text-faint">
-          <template v-if="op.total && op.unit === 'files'">{{ t('ops.files', { done: op.done, count: op.total }) }} · </template>
+          <template v-if="op.total && op.unit === 'files'">{{ t('ops.files', { done: op.done, count: op.total }) }}<template v-if="op.part != null"> · {{ Math.round(Math.min(op.part, 1) * 100) }}%</template> · </template>
           <template v-else-if="op.total">{{ t('ops.bytes', { done: fmtSize(op.done), total: fmtSize(op.total) }) }} · </template>{{ op.current ? basename(op.current) : t('ops.preparing') }}
         </p>
       </div>

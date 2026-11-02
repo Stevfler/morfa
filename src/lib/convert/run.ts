@@ -1,14 +1,20 @@
 import { invoke } from '@tauri-apps/api/core'
 import { go, nextId, pane, refreshAll, state, toast } from '../store'
 import { basename, fmtSize, parent } from '../util'
-import { defaultOpts, isImage, type ConvertOpts } from './formats'
+import { defaultOpts, isAudio, isImage, isVideo, type ConvertOpts } from './formats'
 import { t } from '../i18n'
 import { canDownload, installOffice, office, refreshOffice } from '../office'
 
 type Result = { pairs: [string, string][]; failed: [string, string][]; cancelled: boolean }
 
-/** "3 images" when every source is an image, else "3 files". */
-const what = (sources: string[]) => (sources.every(isImage) ? t('core.images', { count: sources.length }) : t('convert.files', { count: sources.length }))
+/** "3 images" / "3 videos" / "3 audio files" when every source is that kind, else "3 files". */
+function what(sources: string[]) {
+  const count = sources.length
+  if (sources.every(isImage)) return t('core.images', { count })
+  if (sources.every(isVideo)) return t('convert.videos', { count })
+  if (sources.every(isAudio)) return t('convert.audios', { count })
+  return t('convert.files', { count })
+}
 const call = (sources: string[], opts: ConvertOpts, id = nextId()) => invoke<Result>('convert_files', { id, sources, opts })
 
 /** Open the first output's folder in the active pane with the cursor on it. */
@@ -24,6 +30,8 @@ function show(path: string) {
 function failed(e: unknown) {
   const msg = String(e)
   if (msg.includes('NO_ENGINE:office')) return noOffice()
+  if (msg.includes('NO_ENGINE:ffmpeg'))
+    return toast({ title: t('convert.noFfmpeg'), desc: t('convert.noFfmpegDesc'), tone: 'error' }, 12000)
   if (msg.includes('NO_ENGINE:pandoc'))
     return toast({ title: t('convert.noPandoc'), desc: t('convert.noPandocDesc'), tone: 'error' }, 12000)
   if (msg.includes('NO_ENGINE:'))

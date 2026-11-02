@@ -26,7 +26,7 @@ fn s(v: &[&str]) -> Vec<String> {
 #[test]
 fn targets_intersect() {
     let img = s(&["jpg", "png", "webp", "avif"]);
-    let all = Avail { image: &img, pdf: true, office: true, pandoc: false };
+    let all = Avail { image: &img, pdf: true, office: true, pandoc: false, ffmpeg: false };
     assert_eq!(targets(&s(&["PNG"]), &all), s(&["webp", "jpg", "avif"]));
     assert_eq!(targets(&s(&["docx"]), &all), s(&["pdf", "odt", "rtf", "txt", "html", "epub"]));
     assert_eq!(targets(&s(&["docx", "xlsx"]), &all), s(&["pdf", "html"]));

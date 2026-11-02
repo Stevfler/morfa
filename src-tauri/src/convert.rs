@@ -1,4 +1,5 @@
-//! File conversion by shelling out: images via libvips/ImageMagick, documents via LibreOffice/pandoc.
+//! File conversion by shelling out: images via libvips/ImageMagick, documents via LibreOffice/pandoc,
+//! video/audio via ffmpeg.
 mod dispatch;
 pub(crate) mod doc;
 mod engine;
@@ -12,6 +13,9 @@ mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_doc;
+#[cfg(test)]
+mod tests_video;
+mod video;
 
 use crate::CmdResult;
 use serde::{Deserialize, Serialize};
@@ -45,6 +49,7 @@ pub struct Caps {
     formats: Vec<String>,
     office: bool,
     pandoc: bool,
+    ffmpeg: bool,
 }
 
 #[derive(Serialize)]
@@ -69,6 +74,7 @@ struct Progress {
     total: u64,
     current: String,
     finished: bool,
+    part: Option<f64>, // current file's progress 0..1 (ffmpeg only)
 }
 
 #[derive(Default)]
@@ -88,12 +94,12 @@ fn ready(o: &mut ConvertOpts) -> CmdResult<&'static engine::Engine> {
 
 #[tauri::command]
 pub async fn convert_caps() -> Caps {
-    let none = || Caps { engine: None, formats: vec![], office: false, pandoc: false };
+    let none = || Caps { engine: None, formats: vec![], office: false, pandoc: false, ffmpeg: false };
     tauri::async_runtime::spawn_blocking(move || {
-        let (office, pandoc) = (doc::office().is_some(), doc::pandoc());
+        let (office, pandoc, ffmpeg) = (doc::office().is_some(), doc::pandoc(), video::available());
         match engine::engine() {
-            Some(e) => Caps { engine: Some(e.name().into()), formats: e.formats.clone(), office, pandoc },
-            None => Caps { office, pandoc, ..none() },
+            Some(e) => Caps { engine: Some(e.name().into()), formats: e.formats.clone(), office, pandoc, ffmpeg },
+            None => Caps { office, pandoc, ffmpeg, ..none() },
         }
     })
     .await
@@ -113,9 +119,12 @@ pub async fn convert_images(app: AppHandle, state: State<'_, ConvertState>, id: 
         let mut opts = opts;
         opts.format = routes::norm(&opts.format);
         let emit = |done: u64, current: &str, finished: bool| {
-            let _ = app.emit("op-progress", Progress { id, done, total: sources.len() as u64, current: current.into(), finished });
+            let _ = app.emit("op-progress", Progress { id, done, total: sources.len() as u64, current: current.into(), finished, part: None });
         };
-        let r = dispatch::run_all(&sources, &opts, &|| cancels.lock().unwrap_or_else(|x| x.into_inner()).contains(&id), &emit);
+        let part = |done: u64, current: &str, f: f64| {
+            let _ = app.emit("op-progress", Progress { id, done, total: sources.len() as u64, current: current.into(), finished: false, part: Some(f) });
+        };
+        let r = dispatch::run_parts(&sources, &opts, &|| cancels.lock().unwrap_or_else(|x| x.into_inner()).contains(&id), &emit, &part);
         cancels.lock().unwrap_or_else(|x| x.into_inner()).remove(&id);
         Ok(r)
     })

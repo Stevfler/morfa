@@ -44,6 +44,6 @@ export const commands = {
   'cmd.closetab': 'Close tab',
   'cmd.bookmark': 'Add / remove folder from Favorites',
   'cmd.terminal': 'Open terminal here',
-  'cmd.convertNone': 'Select images or documents to convert',
+  'cmd.convertNone': 'Select images, documents, video or audio to convert',
   'cmd.properties': 'Properties',
 }

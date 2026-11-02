@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { PRESETS } from '../../lib/convert'
 import { t } from '../../lib/i18n'
 
-const props = defineProps<{ lossless: boolean }>()
+const props = defineProps<{ lossless: boolean; losslessDesc?: string }>()
 const quality = defineModel<number>('quality', { required: true })
 const preset = defineModel<string>('preset', { required: true })
 
@@ -18,7 +18,7 @@ function pick(key: string) {
 <template>
   <div v-if="props.lossless" class="flex items-center gap-2 rounded-lg bg-raised/60 px-3 py-2.5 text-[12px] text-dim">
     <span class="rounded bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-medium tracking-wide text-accent uppercase">{{ t('convert.lossless') }}</span>
-    {{ t('convert.losslessDesc') }}
+    {{ props.losslessDesc ?? t('convert.losslessDesc') }}
   </div>
   <div v-else class="space-y-3">
     <div class="inline-flex rounded-lg bg-raised/60 p-1" role="radiogroup" :aria-label="t('convert.quality')">

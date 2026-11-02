@@ -58,7 +58,8 @@
         "recommends": [
           "libreoffice-writer",
           "libreoffice-calc",
-          "libreoffice-impress"
+          "libreoffice-impress",
+          "ffmpeg"
         ]
       },
       "rpm": {
@@ -66,7 +67,8 @@
         "recommends": [
           "libreoffice-writer",
           "libreoffice-calc",
-          "libreoffice-impress"
+          "libreoffice-impress",
+          "ffmpeg-free"
         ]
       }
     }

@@ -135,6 +135,10 @@ windows:
     - key: xwin
       paths: [.xwin]
     - key:
+        files: [scripts/fetch-vips-win.ts, scripts/fetch-ffmpeg-win.ts]
+        prefix: vendor-win
+      paths: [src-tauri/vendor]
+    - key:
         files: [bun.lock]
       paths: [.bun-cache]
   script:

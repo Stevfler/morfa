@@ -36,9 +36,9 @@ export async function init() {
           p.search.scanned = payload.scanned
         }
   })
-  await listen<{ id: number; done: number; total: number; current: string }>('op-progress', ({ payload }) => {
+  await listen<{ id: number; done: number; total: number; current: string; part?: number | null }>('op-progress', ({ payload }) => {
     const op = state.ops.find((o) => o.id === payload.id)
-    if (op) Object.assign(op, { done: payload.done, total: payload.total, current: payload.current })
+    if (op) Object.assign(op, { done: payload.done, total: payload.total, current: payload.current, part: payload.part })
   })
   await listen<string[]>('fs-changed', ({ payload }) => {
     payload.forEach((d) => dirty.add(d))

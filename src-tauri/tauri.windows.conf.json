@@ -1,8 +1,8 @@
 {
   "build": {
-    "beforeBuildCommand": "bun scripts/fetch-vips-win.ts && bun run build"
+    "beforeBuildCommand": "bun scripts/fetch-vips-win.ts && bun scripts/fetch-ffmpeg-win.ts && bun run build"
   },
   "bundle": {
-    "resources": { "vendor/vips-win/*": "bin/" }
+    "resources": { "vendor/vips-win/*": "bin/", "vendor/ffmpeg-win/*": "bin/" }
   }
 }

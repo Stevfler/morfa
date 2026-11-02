@@ -3,14 +3,13 @@ import { computed, reactive, ref, watch } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogClose } from 'reka-ui'
 import Icon from '../Icon.vue'
 import FormatPicker from './FormatPicker.vue'
-import QualityPicker from './QualityPicker.vue'
-import ResizePicker from './ResizePicker.vue'
+import ConvertOptions from './ConvertOptions.vue'
 import OutputPicker from './OutputPicker.vue'
 import SizeEstimate from './SizeEstimate.vue'
 import EngineBanner from './EngineBanner.vue'
 import ConvertHeader from './ConvertHeader.vue'
 import * as S from '../../lib/store'
-import { caps, loadCaps, defaultOpts, runConvert, targetsFor, missingEngine, isImage, isImageFormat, PRESETS, type ConvertOpts } from '../../lib/convert'
+import { caps, loadCaps, defaultOpts, runConvert, targetsFor, missingEngine, isImage, isImageFormat, isMedia, isMediaFormat, isVideo, isLossless, formatGroup, extOf, PRESETS, type ConvertOpts } from '../../lib/convert'
 import { basename, load, save } from '../../lib/util'
 import { t } from '../../lib/i18n'
 import { officeEpoch } from '../../lib/office'
@@ -61,13 +60,19 @@ watch(officeEpoch, async () => {
   if (list.length && !list.includes(opts.format)) opts.format = list[0]
 })
 
-const lossless = computed(() => LOSSLESS.has(opts.format))
+const mediaIn = computed(() => paths.value.some(isMedia))
+// Video/audio output (gif counts as video when made from a media source).
+const mediaOut = computed(() => isMediaFormat(opts.format, mediaIn.value))
+const lossless = computed(() => LOSSLESS.has(opts.format) || (mediaOut.value && isLossless(opts.format)))
+const audioOut = computed(() => formatGroup(opts.format) === 'audio')
+const audioOnly = computed(() => audioOut.value && paths.value.some(isVideo))
+const videoResize = computed(() => mediaOut.value && !audioOut.value && paths.value.every((p) => isVideo(p) || extOf(p) === 'gif'))
 // A format the backend offers is convertible here; only explain a gap otherwise.
 const engine = computed(() => (loading.value || targets.value?.includes(opts.format) ? null : missingEngine(paths.value, opts.format, caps.value)))
 const noEngine = computed(() => !!engine.value)
 const allImages = computed(() => paths.value.every(isImage))
 // Raster output: quality applies (pdf→jpg too); resize/metadata/estimate only for image sources.
-const imageOut = computed(() => isImageFormat(opts.format))
+const imageOut = computed(() => isImageFormat(opts.format) && !mediaOut.value)
 const imageIn = computed(() => imageOut.value && allImages.value)
 const perPage = computed(() => imageOut.value && paths.value.some((p) => p.toLowerCase().endsWith('.pdf')))
 const example = computed(() => {
@@ -82,7 +87,8 @@ function submit() {
   if (!canConvert.value) return
   save(KEY, { format: opts.format, preset: preset.value, quality: opts.quality, stripMetadata: opts.stripMetadata } satisfies Remembered)
   const sources = [...paths.value]
-  const o: ConvertOpts = imageIn.value ? { ...opts, resize: opts.resize ? { ...opts.resize } : null } : { ...opts, resize: null, stripMetadata: false }
+  const resize = (imageIn.value || videoResize.value) && opts.resize ? { ...opts.resize } : null
+  const o: ConvertOpts = { ...opts, resize, stripMetadata: (imageIn.value || mediaOut.value) && opts.stripMetadata }
   state.convert = null
   void runConvert(sources, o)
 }
@@ -105,26 +111,14 @@ function onKey(e: KeyboardEvent) {
           <EngineBanner v-if="engine" :engine="engine" />
           <section>
             <h3 class="sec">{{ t('convert.format') }}</h3>
-            <FormatPicker v-model="opts.format" :formats="targets" />
+            <FormatPicker v-model="opts.format" :formats="targets" :paths="paths" />
             <p v-if="perPage" class="mt-2 text-[12px] text-faint">{{ t('convert.perPage') }}</p>
+            <p v-else-if="audioOnly" class="mt-2 text-[12px] text-faint">{{ t('convert.audioOnly') }}</p>
           </section>
-          <section v-if="imageOut">
-            <h3 class="sec">{{ t('convert.quality') }}</h3>
-            <QualityPicker v-model:quality="opts.quality" v-model:preset="preset" :lossless="lossless" />
-          </section>
-          <section v-if="imageIn">
-            <h3 class="sec">{{ t('convert.size') }}</h3>
-            <ResizePicker v-model="opts.resize" />
-          </section>
-          <section v-if="imageIn">
-            <label class="flex cursor-pointer items-center justify-between gap-4 rounded-lg px-1 py-1">
-              <span>
-                <span class="block text-[13px] text-fg">{{ t('convert.strip') }}</span>
-                <span class="block text-[11.5px] text-faint">{{ t('convert.stripDesc') }}</span>
-              </span>
-              <input v-model="opts.stripMetadata" type="checkbox" role="switch" class="size-4 accent-accent" />
-            </label>
-          </section>
+          <ConvertOptions
+            :opts="opts" v-model:preset="preset" :lossless="lossless" :audio="audioOut"
+            :quality="imageOut || mediaOut" :resize="imageIn || videoResize" :strip="imageIn || mediaOut"
+          />
           <section>
             <h3 class="sec">{{ t('convert.saveTo') }}</h3>
             <OutputPicker v-model:out-dir="opts.outDir" v-model:name-template="opts.nameTemplate" :example="example" />

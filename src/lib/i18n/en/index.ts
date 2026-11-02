@@ -4,6 +4,7 @@ import { core } from './core'
 import { shell } from './shell'
 import { pane } from './pane'
 import { tools } from './tools'
+import { media } from './media'
 
 /** English is the source of truth: every other dictionary must provide the same keys. */
 export const en = {
@@ -13,5 +14,6 @@ export const en = {
   ...shell,
   ...pane,
   ...tools,
+  ...media,
 }
 export type Messages = typeof en
