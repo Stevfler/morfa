@@ -11,6 +11,7 @@ import type { Pane } from '../../lib/store'
 import { keyLabel, parent } from '../../lib/util'
 import { cmd, openProperties } from '../../lib/commands'
 import { t as tr } from '../../lib/i18n'
+import { canDownload, refreshOffice } from '../../lib/office'
 import { formatLabel, isConvertible, isImage, openConvert, quickConvert, targetsFor } from '../../lib/convert'
 
 const props = defineProps<{ pane: Pane }>()
@@ -41,9 +42,15 @@ async function loadQuick() {
   const list = await targetsFor(c).catch(() => [])
   if (my === seq) quick.value = list.slice(0, 4)
 }
+// Documents with no formats because the Office module is missing: offer it instead of an empty list.
+const getOffice = computed(() => {
+  const c = convertible.value
+  return !!c && quick.value?.length === 0 && !c.every(isImage) && canDownload()
+})
 function onOpen(o: boolean) {
   if (!o) return (onItem.value = false)
   focusThis()
+  void refreshOffice()
   void loadQuick()
 }
 
@@ -78,8 +85,9 @@ function openIn(where: 'tab' | 'other') {
             <ContextMenuPortal>
               <ContextMenuSubContent class="menu min-w-40" :side-offset="4">
                 <ContextMenuItem v-if="!quick" class="mi" disabled>…</ContextMenuItem>
+                <ContextMenuItem v-if="getOffice" class="mi" @select="openConvert(convertible)"><Icon name="download" />{{ tr('office.getModule') }}</ContextMenuItem>
                 <ContextMenuItem v-for="f in quick ?? []" :key="f" class="mi" @select="quickConvert(convertible, f)">{{ formatLabel(f) }}</ContextMenuItem>
-                <ContextMenuSeparator v-if="quick?.length !== 0" class="sep" />
+                <ContextMenuSeparator v-if="quick?.length !== 0 || getOffice" class="sep" />
                 <ContextMenuItem class="mi" @select="openConvert(convertible)">{{ tr('pane.menu.moreOptions') }}</ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuPortal>

@@ -47,3 +47,21 @@ CC_aarch64_apple_darwin=clang cargo clippy --all-targets --target aarch64-apple-
 - Wayland: `src-tauri/src/main.rs` sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` to avoid blank windows or crashes with some GPU drivers. That is a runtime workaround and is unrelated to bundling.
 - Windows `embedBootstrapper` needs internet access on the first install if WebView2 is missing. Use `offlineInstaller` for fully offline installs, at a cost of about 127 MB.
 - `.deb`/`.rpm` installed with `dpkg -i`/`rpm -i` instead of apt/dnf will not pull dependencies automatically.
+
+## Bundled image/video tools (sidecars)
+
+Orbit looks for `vips`, `vipsheader`, `magick` (and later `ffmpeg`) in this order: next to the Orbit executable, `<exe dir>/bin`, `<resource_dir>/bin`, then `PATH` (`src-tauri/src/sidecar.rs`). Nothing is bundled yet. To bundle:
+
+- **Tauri `externalBin`** (single executables): put binaries in `src-tauri/binaries/` named with the target triple, e.g. `vips-x86_64-pc-windows-msvc.exe`, `vips-aarch64-apple-darwin`, and list `"externalBin": ["binaries/vips", "binaries/vipsheader", "binaries/ffmpeg"]` under `bundle` in `tauri.conf.json`. Tauri strips the triple and installs them next to the app executable.
+- **Resources** (tools that need their DLLs/dylibs, e.g. libvips' Windows build): add `"resources": { "vendor/vips/bin/": "bin/" }` so they land in `<resource_dir>/bin`. On Windows the DLLs must sit in the same folder as `vips.exe`.
+- Sources: libvips Windows builds from `github.com/libvips/build-win64-mxe` releases (use the `-static` variant to avoid DLL sprawl); on macOS build a relocatable vips with Homebrew deps or skip it (users can `brew install vips`). ffmpeg: static builds (gyan.dev / BtbN for Windows, evermeet.cx for macOS). Check licences (LGPL/GPL) before shipping.
+- macOS: every bundled binary must be signed with the app's identity (Tauri signs `externalBin` automatically when signing is configured).
+
+## Office module (document conversion on Windows/macOS)
+
+Not bundled: Orbit downloads a pinned LibreOffice on demand (`src-tauri/src/office/`), unpacks it without installing (Windows: `msiexec /a` administrative image; macOS: copy out of the dmg), prunes it (`office/prune.rs`) and keeps it in `<local data dir>/Orbit/office`. To bump the version, edit `office/manifest.rs` (version + four SHA-256 values from `<url>.sha256`) and run `cargo test office -- --ignored` (HEAD-checks the URLs). To re-validate the prune list on Linux:
+
+```sh
+cp -a /usr/lib/libreoffice /tmp/lo && ORBIT_PRUNE_DIR=/tmp/lo cargo test office::tests::prune_real_install -- --ignored
+/tmp/lo/program/soffice --headless --convert-to pdf some.docx   # plus xlsx/csv/pptx/html samples
+```

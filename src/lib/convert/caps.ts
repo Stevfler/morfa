@@ -23,6 +23,12 @@ export const openConvert = (paths: string[], format?: string) => (state.convert 
 export const estimate = (source: string, opts: ConvertOpts) => invoke<{ before: number; after: number }>('convert_estimate', { source, opts })
 
 const targets = new Map<string, Promise<string[]>>()
+/** Forget caps and per-extension targets (after an engine is installed or removed). */
+export function resetConvertCaches() {
+  pending = null
+  caps.value = null
+  targets.clear()
+}
 /** Output formats valid for every given file (backend intersection, most useful first); cached per extension set. */
 export function targetsFor(paths: string[]): Promise<string[]> {
   const exts = [...new Set(paths.map(extOf))].sort()

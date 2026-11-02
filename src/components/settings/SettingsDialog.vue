@@ -10,11 +10,13 @@ import { settingsOpen } from '../../lib/settings'
 import AppearanceSection from './AppearanceSection.vue'
 import IconsSection from './IconsSection.vue'
 import BehaviourSection from './BehaviourSection.vue'
+import DocumentsSection from './DocumentsSection.vue'
 
 const tabs = computed(() => ([
   { id: 'appearance', icon: 'palette' },
   { id: 'icons', icon: 'shapes' },
   { id: 'behaviour', icon: 'sliders' },
+  { id: 'documents', icon: 'file-text' },
 ] as const).map((x) => ({ ...x, label: t(`settings.tab.${x.id}`) })))
 </script>
 
@@ -43,6 +45,7 @@ const tabs = computed(() => ([
             <TabsContent value="appearance" class="outline-none"><AppearanceSection /></TabsContent>
             <TabsContent value="icons" class="outline-none"><IconsSection /></TabsContent>
             <TabsContent value="behaviour" class="outline-none"><BehaviourSection /></TabsContent>
+            <TabsContent value="documents" class="outline-none"><DocumentsSection /></TabsContent>
           </div>
         </TabsRoot>
       </DialogContent>

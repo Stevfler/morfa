@@ -13,6 +13,7 @@ import * as S from '../../lib/store'
 import { caps, loadCaps, defaultOpts, runConvert, targetsFor, missingEngine, isImage, isImageFormat, PRESETS, type ConvertOpts } from '../../lib/convert'
 import { basename, load, save } from '../../lib/util'
 import { t } from '../../lib/i18n'
+import { officeEpoch } from '../../lib/office'
 
 type Remembered = { format: string; preset: string; quality: number; stripMetadata: boolean }
 const KEY = 'orbit.convert.last'
@@ -47,6 +48,18 @@ watch(open, async (v) => {
   targets.value = list
   if (list.length && !list.includes(opts.format)) opts.format = list[0]
 }, { immediate: true })
+
+// Office module installed/removed while open: re-ask caps and targets, keep the user's choices.
+watch(officeEpoch, async () => {
+  if (!open.value) return
+  const forPaths = paths.value
+  loading.value = true
+  const [, list] = await Promise.all([loadCaps().catch(() => null), targetsFor(forPaths).catch(() => [] as string[])])
+  if (forPaths !== paths.value) return
+  loading.value = false
+  targets.value = list
+  if (list.length && !list.includes(opts.format)) opts.format = list[0]
+})
 
 const lossless = computed(() => LOSSLESS.has(opts.format))
 // A format the backend offers is convertible here; only explain a gap otherwise.

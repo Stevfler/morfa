@@ -1,8 +1,9 @@
 import { invoke } from '@tauri-apps/api/core'
 import { go, nextId, pane, refreshAll, state, toast } from '../store'
-import { basename, parent } from '../util'
+import { basename, fmtSize, parent } from '../util'
 import { defaultOpts, isImage, type ConvertOpts } from './formats'
 import { t } from '../i18n'
+import { canDownload, installOffice, office, refreshOffice } from '../office'
 
 type Result = { pairs: [string, string][]; failed: [string, string][]; cancelled: boolean }
 
@@ -22,13 +23,20 @@ function show(path: string) {
 
 function failed(e: unknown) {
   const msg = String(e)
-  if (msg.includes('NO_ENGINE:office'))
-    return toast({ title: t('convert.noOffice'), desc: t('convert.noOfficeDesc'), tone: 'error' }, 12000)
+  if (msg.includes('NO_ENGINE:office')) return noOffice()
   if (msg.includes('NO_ENGINE:pandoc'))
     return toast({ title: t('convert.noPandoc'), desc: t('convert.noPandocDesc'), tone: 'error' }, 12000)
   if (msg.includes('NO_ENGINE:'))
     return toast({ title: t('convert.noEngine'), desc: t('convert.noEngineDesc'), tone: 'error' }, 12000)
   toast({ title: t('convert.failed'), desc: msg, tone: 'error' }, 8000)
+}
+
+/** Offer the downloadable module where supported, else the install hint. */
+async function noOffice() {
+  await refreshOffice()
+  if (canDownload())
+    return toast({ title: t('office.needed'), desc: t('office.neededDesc', { size: fmtSize(office.value?.downloadSize) }), tone: 'error', action: { label: t('office.download'), run: () => void installOffice() } }, 12000)
+  toast({ title: t('convert.noOffice'), desc: t('convert.noOfficeDesc'), tone: 'error' }, 12000)
 }
 
 export async function runConvert(sources: string[], opts: ConvertOpts): Promise<void> {

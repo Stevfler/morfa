@@ -12,13 +12,13 @@ const DPI: u32 = 150;
 pub fn available() -> bool {
     static A: OnceLock<bool> = OnceLock::new();
     *A.get_or_init(|| {
-        let o = Command::new("vips").args(["-l", "foreign"]).stdin(Stdio::null()).stderr(Stdio::null()).output();
+        let o = Command::new(crate::sidecar::tool("vips")).args(["-l", "foreign"]).stdin(Stdio::null()).stderr(Stdio::null()).output();
         o.is_ok_and(|o| String::from_utf8_lossy(&o.stdout).contains("pdfload"))
     })
 }
 
 pub fn page_count(src: &Path) -> Option<u32> {
-    let o = Command::new("vipsheader").args(["-f", "n-pages"]).arg(src).stdin(Stdio::null()).stderr(Stdio::null()).output().ok()?;
+    let o = Command::new(crate::sidecar::tool("vipsheader")).args(["-f", "n-pages"]).arg(src).stdin(Stdio::null()).stderr(Stdio::null()).output().ok()?;
     if !o.status.success() {
         return None;
     }
@@ -45,7 +45,7 @@ pub fn convert(src: &Path, o: &ConvertOpts, cancelled: &dyn Fn() -> bool) -> Res
         } else {
             tmp.display().to_string()
         };
-        let mut cmd = Command::new("vips");
+        let mut cmd = Command::new(crate::sidecar::tool("vips"));
         cmd.arg("copy").arg(format!("{}[page={},dpi={DPI}]", src.display(), n - 1)).arg(save);
         let r = proc::run(cmd, cancelled, None).and_then(|_| {
             if !proc::nonempty(&tmp) {

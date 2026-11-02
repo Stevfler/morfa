@@ -1,3 +1,4 @@
+import { office } from './office'
 import { convert } from './tools2'
 
 export const tools = {
@@ -99,4 +100,5 @@ export const tools = {
   'cleanup.cat.downloads': 'Old downloads',
   'cleanup.cat.downloads.desc': 'Downloads over 50 MB untouched for 90+ days.',
   ...convert,
+  ...office,
 }

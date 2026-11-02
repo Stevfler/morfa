@@ -3,7 +3,7 @@ use super::{naming, proc, routes, ConvertOpts};
 use std::{
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    sync::OnceLock,
+    sync::{Mutex, OnceLock},
     time::Duration,
 };
 
@@ -13,10 +13,23 @@ fn works(cmd: &str) -> bool {
     Command::new(cmd).arg("--version").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok_and(|s| s.success())
 }
 
-/// LibreOffice binary, detected once.
-pub fn office() -> Option<&'static str> {
+/// LibreOffice on PATH, detected once.
+pub fn system_office() -> Option<&'static str> {
     static B: OnceLock<Option<&'static str>> = OnceLock::new();
     *B.get_or_init(|| ["soffice", "libreoffice"].into_iter().find(|b| works(b)))
+}
+
+static OFFICE: Mutex<Option<Option<PathBuf>>> = Mutex::new(None);
+
+/// LibreOffice to use: Orbit's Office module if installed, else PATH. Cached until `invalidate`.
+pub fn office() -> Option<PathBuf> {
+    let mut g = OFFICE.lock().unwrap_or_else(|e| e.into_inner());
+    g.get_or_insert_with(|| crate::office::soffice().or_else(|| system_office().map(PathBuf::from))).clone()
+}
+
+/// Re-detect on next use (after the Office module is installed or removed).
+pub fn invalidate() {
+    *OFFICE.lock().unwrap_or_else(|e| e.into_inner()) = None;
 }
 
 pub fn pandoc() -> bool {

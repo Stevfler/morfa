@@ -58,5 +58,5 @@ export type Op = {
   current: string
   /** What done/total count (default 'bytes'). */
   unit?: 'bytes' | 'files'
-  kind?: 'transfer' | 'convert'
+  kind?: 'transfer' | 'convert' | 'office'
 }

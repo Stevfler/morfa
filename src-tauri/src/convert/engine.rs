@@ -1,5 +1,6 @@
 //! Detects the external image tool (libvips CLI, else ImageMagick) and builds its command lines.
 use super::ConvertOpts;
+use crate::sidecar::tool;
 use std::{
     path::Path,
     process::{Command, Stdio},
@@ -28,7 +29,7 @@ impl Engine {
 }
 
 fn quiet(cmd: &str) -> Command {
-    let mut c = Command::new(cmd);
+    let mut c = Command::new(tool(cmd));
     c.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
     c
 }
@@ -107,7 +108,7 @@ fn lossy(fmt: &str) -> bool {
 /// Longest side (using page height for animations) via vipsheader.
 fn vips_long_side(src: &Path) -> Option<u32> {
     let field = |f: &str| -> Option<u32> {
-        let o = Command::new("vipsheader").args(["-f", f]).arg(src).stderr(Stdio::null()).output().ok()?;
+        let o = Command::new(tool("vipsheader")).args(["-f", f]).arg(src).stderr(Stdio::null()).output().ok()?;
         String::from_utf8_lossy(&o.stdout).trim().parse().ok()
     };
     let w = field("width")?;
@@ -140,11 +141,11 @@ pub fn command(e: &Engine, src: &Path, dst: &Path, o: &ConvertOpts) -> Result<Co
             opts.push("strip".into());
         }
         let out = if opts.is_empty() { dst.display().to_string() } else { format!("{}[{}]", dst.display(), opts.join(",")) };
-        let mut c = Command::new("vips");
+        let mut c = Command::new(tool("vips"));
         c.arg("thumbnail").arg(input).arg(out).arg(size.to_string()).args(["--height", &size.to_string(), "--size", "down"]);
         return Ok(c);
     }
-    let mut c = Command::new(cmd_name(e.kind));
+    let mut c = Command::new(tool(cmd_name(e.kind)));
     c.arg(if anim { src.display().to_string() } else { format!("{}[0]", src.display()) });
     if anim {
         c.arg("-coalesce");

@@ -1,12 +1,12 @@
 //! File conversion by shelling out: images via libvips/ImageMagick, documents via LibreOffice/pandoc.
 mod dispatch;
-mod doc;
+pub(crate) mod doc;
 mod engine;
 mod job;
 mod naming;
 mod pdf;
 pub mod preview;
-mod proc;
+pub(crate) mod proc;
 mod routes;
 #[cfg(test)]
 mod tests;
