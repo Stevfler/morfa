@@ -11,7 +11,13 @@ TAURI_BUNDLES="$BUNDLES"
 [ "$BUNDLES" = "arch" ] && TAURI_BUNDLES=deb
 
 bun install --frozen-lockfile
-bunx tauri build --bundles "$TAURI_BUNDLES"
+# AppImage обновляется встроенным апдейтером: собираем его с подписью (.sig рядом с файлом).
+# Нужны TAURI_SIGNING_PRIVATE_KEY и TAURI_SIGNING_PRIVATE_KEY_PASSWORD (переменные GitLab).
+if [ "$BUNDLES" = "appimage" ]; then
+  bunx tauri build --bundles "$TAURI_BUNDLES" --config ci/updater.conf.json
+else
+  bunx tauri build --bundles "$TAURI_BUNDLES"
+fi
 
 BUNDLE_DIR="$CARGO_TARGET_DIR/release/bundle"
 case "$BUNDLES" in
@@ -22,7 +28,10 @@ case "$BUNDLES" in
     cp "$(ls "$BUNDLE_DIR"/rpm/*-"$VERSION"-*.rpm | head -n1)" "$OUT/Morfa_${VERSION}_${DISTRO}.x86_64.rpm"
     ;;
   appimage)
-    cp "$(ls "$BUNDLE_DIR"/appimage/*_"$VERSION"_*.AppImage | head -n1)" "$OUT/Morfa_${VERSION}_amd64.AppImage"
+    APPIMAGE=$(ls "$BUNDLE_DIR"/appimage/*_"$VERSION"_*.AppImage | head -n1)
+    cp "$APPIMAGE" "$OUT/Morfa_${VERSION}_amd64.AppImage"
+    # Подпись не зависит от имени файла, поэтому переименовывать её вместе с AppImage безопасно.
+    cp "$APPIMAGE.sig" "$OUT/Morfa_${VERSION}_amd64.AppImage.sig"
     ;;
   arch)
     WORK=$(mktemp -d)

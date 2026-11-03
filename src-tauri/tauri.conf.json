@@ -22,11 +22,15 @@
     ],
     "security": {
       "csp": "default-src 'self' ipc: http://ipc.localhost; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data: blob:; media-src 'self' asset: http://asset.localhost blob:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost asset: http://asset.localhost ws://localhost:* http://localhost:*",
-      "dangerousDisableAssetCspModification": ["style-src"],
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ],
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["**"],
+          "allow": [
+            "**"
+          ],
           "requireLiteralLeadingDot": false
         }
       }
@@ -54,7 +58,9 @@
     },
     "linux": {
       "deb": {
-        "depends": ["libvips-tools"],
+        "depends": [
+          "libvips-tools"
+        ],
         "recommends": [
           "libreoffice-writer",
           "libreoffice-calc",
@@ -63,13 +69,26 @@
         ]
       },
       "rpm": {
-        "depends": ["vips-tools"],
+        "depends": [
+          "vips-tools"
+        ],
         "recommends": [
           "libreoffice-writer",
           "libreoffice-calc",
           "libreoffice-impress",
           "ffmpeg-free"
         ]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ3MzUzOEZCODRFRERENjEKUldSaDNlMkUremcxUjFZaU03VWd2UE5ibys2MDk5MS8rQS9BUm4wN3NYUUJubmxyMG5DMlFEYXEK",
+      "endpoints": [
+        "https://github.com/Stevfler/morfa/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

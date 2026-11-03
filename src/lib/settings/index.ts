@@ -25,6 +25,8 @@ export interface Settings {
   cleanupWarned: boolean
   /** 'system' follows the OS language. */
   language: string
+  /** Look for a new release on start. */
+  checkUpdates: boolean
 }
 
 const KEY = 'morfa.settings'
@@ -42,6 +44,7 @@ const defaults: Settings = {
   respectGitignore: false,
   cleanupWarned: false,
   language: 'system',
+  checkUpdates: true,
 }
 
 export const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
@@ -62,6 +65,7 @@ export function sanitize(raw: unknown): Settings {
     iconCustom: typeof r.iconCustom === 'string' && HEX.test(r.iconCustom) ? r.iconCustom.toLowerCase() : defaults.iconCustom,
     respectGitignore: typeof r.respectGitignore === 'boolean' ? r.respectGitignore : defaults.respectGitignore,
     cleanupWarned: typeof r.cleanupWarned === 'boolean' ? r.cleanupWarned : defaults.cleanupWarned,
+    checkUpdates: typeof r.checkUpdates === 'boolean' ? r.checkUpdates : defaults.checkUpdates,
     language: typeof r.language === 'string' && /^(system|[a-z]{2})$/.test(r.language) ? r.language : defaults.language,
   }
 }

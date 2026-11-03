@@ -69,3 +69,15 @@ fn spawn_terminal(dir: &Path) -> std::io::Result<Child> {
     }
     Err(last)
 }
+
+/// How this install gets updates: "auto" — the built-in updater can replace it (Windows
+/// installer, AppImage); "manual" — a package manager owns it (deb/rpm/Arch) or there's no
+/// signed build for the platform (macOS), so the app only points to the download page.
+#[tauri::command]
+pub fn update_mode() -> &'static str {
+    if cfg!(windows) || (cfg!(target_os = "linux") && std::env::var_os("APPIMAGE").is_some()) {
+        "auto"
+    } else {
+        "manual"
+    }
+}

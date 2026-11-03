@@ -6,6 +6,7 @@ import { pane } from './pane'
 import { tools } from './tools'
 import { media } from './media'
 import { cloud } from './cloud'
+import { update } from './update'
 
 /** English is the source of truth: every other dictionary must provide the same keys. */
 export const en = {
@@ -17,5 +18,6 @@ export const en = {
   ...tools,
   ...media,
   ...cloud,
+  ...update,
 }
 export type Messages = typeof en

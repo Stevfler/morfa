@@ -29,6 +29,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             use tauri::Manager;
             sidecar::init(app.path().resource_dir().ok());
@@ -57,6 +59,7 @@ pub fn run() {
             read_text,
             complete_path,
             home_dir,
+            update_mode,
             open_terminal,
             watch,
             fsops::create_dir,

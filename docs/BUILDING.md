@@ -100,3 +100,19 @@ MORFA_GDRIVE_CLIENT_ID=… MORFA_GDRIVE_CLIENT_SECRET=… bun run tauri build
 In GitLab, add both as CI/CD variables (*Masked*) and the release builds pick them up. For a Desktop client Google treats the secret as public, because every installed app ships it, so it can live inside the binary. The same variables at run time override the built-in ones, which is handy for `bun run tauri dev`.
 
 `drive` is a *restricted* scope. While the app is in *Testing*, only the listed test users can sign in, and each sign-in lasts 7 days before Google asks again. To let anyone sign in, the app must pass Google's verification, which includes a security assessment for restricted scopes.
+
+## Updates
+
+The app checks `https://github.com/Stevfler/morfa/releases/latest/download/latest.json` on start, 4 seconds after launch, and when you click *Settings → About → Check for updates*. It shows a card in the bottom-left corner. Nothing installs until the user clicks.
+
+- **Windows (NSIS installer) and AppImage** update in place: the app downloads the new build, checks its signature against `plugins.updater.pubkey` in `tauri.conf.json`, installs it and restarts.
+- **deb / rpm / Arch and macOS** only show the card with a link to the release. The package manager owns those installs. The `update_mode` command decides which mode applies.
+
+Release CI signs the Windows installer and the AppImage (`--config ci/updater.conf.json` turns on `createUpdaterArtifacts`). `ci/github.sh release` then builds `latest.json` from the `*.sig` files and uploads it to the GitHub release. This needs two GitLab CI/CD variables, both *Masked* and *Protected*:
+
+| Variable | Value |
+|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY` | contents of `~/.tauri/morfa.key` |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | contents of `~/.tauri/morfa.key.password` |
+
+**Keep the private key safe and backed up.** If it is lost, installed copies can no longer verify new releases and must be reinstalled by hand. Local and GitHub Actions builds don't sign anything and don't need the key.

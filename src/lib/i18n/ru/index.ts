@@ -7,6 +7,7 @@ import { pane } from './pane'
 import { tools } from './tools'
 import { media } from './media'
 import { cloud } from './cloud'
+import { update } from './update'
 
 export const ru: Dict = {
   ...common,
@@ -17,4 +18,5 @@ export const ru: Dict = {
   ...tools,
   ...media,
   ...cloud,
+  ...update,
 }

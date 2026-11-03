@@ -14,6 +14,8 @@ import BatchRename from './components/BatchRename.vue'
 import ConvertDialog from './components/convert/ConvertDialog.vue'
 import PropertiesDialog from './components/properties/PropertiesDialog.vue'
 import Toasts from './components/Toasts.vue'
+import UpdateCard from './components/UpdateCard.vue'
+import { scheduleUpdateCheck } from './lib/update'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import CleanupDialog from './components/cleanup/CleanupDialog.vue'
 import CleanupWarning from './components/cleanup/CleanupWarning.vue'
@@ -47,6 +49,7 @@ onMounted(async () => {
   if (!state.tabs.length) state.tabs = [{ id: nextId(), panes: [newPane(state.home)], active: 0 }]
   ready.value = true
   window.addEventListener('keydown', onGlobalKey)
+  scheduleUpdateCheck()
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKey)
@@ -137,6 +140,7 @@ const tabTitle = (i: number) => {
       <QuickLook />
       <SettingsDialog />
       <Toasts />
+      <UpdateCard />
     </template>
   </TooltipProvider>
 </template>

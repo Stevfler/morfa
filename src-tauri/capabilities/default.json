@@ -7,6 +7,8 @@
     "core:webview:allow-set-webview-zoom",
     "opener:default",
     "dialog:allow-open",
+    "updater:default",
+    "process:allow-restart",
     { "identifier": "opener:allow-open-path", "allow": [{ "path": "**" }] },
     { "identifier": "opener:allow-reveal-item-in-dir", "allow": [{ "path": "**" }] }
   ]

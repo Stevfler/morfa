@@ -145,9 +145,9 @@ windows:
       paths: [.bun-cache]
   script:
     - bun install --frozen-lockfile
-    - bunx tauri build --runner cargo-xwin --target "$WIN_TARGET" --bundles nsis --config src-tauri/tauri.windows.conf.json
+    - bunx tauri build --runner cargo-xwin --target "$WIN_TARGET" --bundles nsis --config src-tauri/tauri.windows.conf.json --config ci/updater.conf.json
     - mkdir -p release
-    - cp src-tauri/target/$WIN_TARGET/release/bundle/nsis/*-setup.exe release/
+    - cp src-tauri/target/$WIN_TARGET/release/bundle/nsis/*-setup.exe src-tauri/target/$WIN_TARGET/release/bundle/nsis/*-setup.exe.sig release/
 
 # ---------------------------------------------------------------------------
 # Публикация: файлы → Generic Package Registry, релиз → Deploy › Releases.

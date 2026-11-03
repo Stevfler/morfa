@@ -1,7 +1,8 @@
 #!/bin/sh
 # Публичное зеркало на GitHub.
 #   ci/github.sh mirror  — пушит текущую ветку (main) или тег в $GITHUB_REPO.
-#   ci/github.sh release — создаёт GitHub Release для $CI_COMMIT_TAG и загружает файлы из release/.
+#   ci/github.sh release — создаёт GitHub Release для $CI_COMMIT_TAG, загружает файлы из release/
+#                          и latest.json для встроенного апдейтера (по файлам *.sig).
 # Env: GITHUB_TOKEN — fine-grained PAT только на этот репозиторий, права Contents: Read and write
 #      (masked + protected переменная в GitLab); GITHUB_REPO — owner/name (по умолчанию Stevfler/morfa).
 set -eu
@@ -29,6 +30,24 @@ mirror)
 release)
   NOTES=$(mktemp)
   sh ci/notes.sh > "$NOTES"
+  # latest.json: апдейтер берёт его по releases/latest/download/latest.json.
+  # Обновляются только установщик Windows и AppImage; deb/rpm/Arch обновляет пакетный менеджер.
+  DL="https://github.com/$REPO/releases/download/$CI_COMMIT_TAG"
+  PLATFORMS="{}"
+  for sig in release/*.sig; do
+    [ -e "$sig" ] || continue
+    file=$(basename "${sig%.sig}")
+    case "$file" in
+      *-setup.exe) key=windows-x86_64 ;;
+      *.AppImage) key=linux-x86_64 ;;
+      *) continue ;;
+    esac
+    PLATFORMS=$(echo "$PLATFORMS" | jq --arg k "$key" --arg u "$DL/$file" --rawfile s "$sig" '. + {($k): {url: $u, signature: $s}}')
+  done
+  if [ "$PLATFORMS" != "{}" ]; then
+    jq -n --arg v "${CI_COMMIT_TAG#v}" --arg d "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --rawfile n "$NOTES" --argjson p "$PLATFORMS" \
+      '{version: $v, notes: $n, pub_date: $d, platforms: $p}' > release/latest.json
+  fi
   jq -n --arg tag "$CI_COMMIT_TAG" --arg name "Morfa $CI_COMMIT_TAG" --rawfile body "$NOTES" \
     '{tag_name: $tag, name: $name, body: $body, draft: false, prerelease: false}' > gh-release.json
   # Повторный запуск job'а: релиз уже есть — берём его, загружаем недостающие файлы.
