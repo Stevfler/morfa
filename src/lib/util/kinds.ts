@@ -6,6 +6,8 @@ const VID = ['mp4', 'webm', 'mkv', 'mov', 'avi', 'm4v', 'ogv']
 const AUD = ['mp3', 'flac', 'wav', 'ogg', 'm4a', 'aac', 'opus']
 const ARC = ['zip', 'tar', 'gz', 'xz', 'zst', '7z', 'rar', 'bz2', 'tgz', 'deb', 'rpm', 'dmg', 'iso']
 const CODE = ['js', 'ts', 'tsx', 'jsx', 'vue', 'rs', 'go', 'py', 'rb', 'java', 'kt', 'c', 'h', 'cpp', 'hpp', 'cs', 'swift', 'php', 'sh', 'zsh', 'fish', 'lua', 'json', 'toml', 'yaml', 'yml', 'xml', 'html', 'css', 'scss', 'sql', 'zig', 'nix', 'conf', 'ini', 'lock']
+/** Office files Quick Look reads natively (src-tauri/src/docview.rs). */
+export const OFFICE = ['docx', 'docm', 'odt', 'pptx', 'pptm', 'odp', 'xlsx', 'xlsm', 'xlsb', 'xls', 'ods']
 const TXT = ['txt', 'md', 'markdown', 'log', 'csv', 'tsv', 'rst', 'org', 'env', 'gitignore']
 
 export type Kind = 'folder' | 'image' | 'video' | 'audio' | 'archive' | 'code' | 'text' | 'pdf' | 'file'
@@ -25,7 +27,7 @@ export function kindOf(e: { isDir: boolean; ext: string; name: string }): Kind {
 
 /** Quick Look only handles images and plain text; everything else opens in its own app. */
 export function canQuickLook(e: { isDir: boolean; ext: string; name: string } | undefined) {
-  return !!e && ['image', 'text', 'code'].includes(kindOf(e))
+  return !!e && (['image', 'text', 'code'].includes(kindOf(e)) || (!e.isDir && OFFICE.includes(e.ext)))
 }
 
 export const KIND_ICON: Record<Kind, IconName> = {

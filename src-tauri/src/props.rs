@@ -77,7 +77,7 @@ fn read(p: &Path) -> Result<Props, String> {
 /// Width × height via `vipsheader`, falling back to ImageMagick `identify`.
 fn dimensions(p: &Path) -> Option<(u32, u32)> {
     let nums = |cmd: &str, args: &[&str]| -> Vec<u32> {
-        std::process::Command::new(crate::sidecar::tool(cmd))
+        crate::sidecar::command(cmd)
             .args(args)
             .arg(p)
             .output()

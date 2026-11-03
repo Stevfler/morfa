@@ -3,7 +3,7 @@
 # Env: DISTRO (метка в имени файла), BUNDLES (deb | rpm | appimage | arch), CARGO_TARGET_DIR.
 set -eu
 
-VERSION=$(jq -r .version src-tauri/tauri.conf.json)
+VERSION=$(jq -r .version package.json)
 OUT="$CI_PROJECT_DIR/release"
 mkdir -p "$OUT"
 

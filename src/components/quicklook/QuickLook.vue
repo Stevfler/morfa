@@ -3,7 +3,7 @@ import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, watch } fro
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent } from 'reka-ui'
 import * as S from '../../lib/store'
 import type { Entry } from '../../lib/store'
-import { canQuickLook, kindOf, type Kind } from '../../lib/util'
+import { canQuickLook, kindOf, OFFICE, type Kind } from '../../lib/util'
 import { scrollCursorIntoView } from '../../lib/keys'
 import { settings } from '../../lib/settings'
 import QuickLookHeader from './QuickLookHeader.vue'
@@ -13,6 +13,7 @@ import { imageUrl } from '../../composables/useImageUrl'
 
 import Image from './viewers/ImageViewer.vue'
 const Text = defineAsyncComponent(() => import('./viewers/TextViewer.vue'))
+const Office = defineAsyncComponent(() => import('./viewers/OfficeViewer.vue'))
 const VIEWERS: Partial<Record<Kind, unknown>> = { image: Image, text: Text, code: Text }
 
 const open = computed({
@@ -28,7 +29,7 @@ const entry = computed<Entry | undefined>(() => {
   const p = S.pane()
   return S.visible(p)[p.cursor]
 })
-const viewer = computed(() => (entry.value ? VIEWERS[kindOf(entry.value)] : null))
+const viewer = computed(() => (!entry.value ? null : OFFICE.includes(entry.value.ext) ? Office : VIEWERS[kindOf(entry.value)]))
 const pos = computed(() => `${S.pane().cursor + 1} / ${S.visible(S.pane()).length}`)
 
 // Folder emptied or navigated away under us: close rather than show nothing.

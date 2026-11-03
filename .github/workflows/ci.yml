@@ -46,6 +46,18 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
+      # tauri-build checks bundle resources at compile time, so vendor them before clippy/tests.
+      - name: Vendor vips + ffmpeg (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install vips
+          bun scripts/bundle-vips-mac.ts
+          bun scripts/fetch-ffmpeg-mac.ts
+
+      - name: Vendor vips + ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        run: bun scripts/fetch-vips-win.ts && bun scripts/fetch-ffmpeg-win.ts
+
       - name: Frontend (type-check + build)
         run: bun run build
 

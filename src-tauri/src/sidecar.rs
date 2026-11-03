@@ -1,5 +1,6 @@
 //! Finds bundled helper binaries (vips, vipsheader, magick, ffmpeg) before falling back to PATH.
 //! Tauri's `externalBin` puts sidecars next to the executable; resources go in `<resource_dir>/bin`.
+//! On macOS libvips ships as a relocatable tree in `<resource_dir>/vips` (bin/, lib/, lib/vips-modules-*).
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},
@@ -23,6 +24,7 @@ fn dirs() -> Vec<PathBuf> {
     }
     if let Some(r) = RESOURCE_DIR.get() {
         v.push(r.join("bin"));
+        v.push(r.join("vips").join("bin"));
     }
     // Apps launched from Finder don't get Homebrew's PATH.
     if cfg!(target_os = "macos") {
@@ -39,8 +41,12 @@ pub fn tool(name: &str) -> OsString {
 
 /// `Command` for a bundled tool; on Windows it runs without flashing a console window.
 pub fn command(name: &str) -> std::process::Command {
-    #[allow(unused_mut)]
-    let mut c = std::process::Command::new(tool(name));
+    let path = PathBuf::from(tool(name));
+    let mut c = std::process::Command::new(&path);
+    // Bundled vips tree: point libvips at its own prefix so it finds lib/vips-modules-* (heif, jxl, pdf).
+    if let Some(home) = path.parent().and_then(Path::parent).filter(|h| h.file_name() == Some("vips".as_ref())) {
+        c.env("VIPSHOME", home);
+    }
     #[cfg(windows)]
     std::os::windows::process::CommandExt::creation_flags(&mut c, 0x0800_0000); // CREATE_NO_WINDOW
     c

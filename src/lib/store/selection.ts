@@ -17,6 +17,8 @@ export function setCursor(p: Pane, i: number, mode: 'move' | 'extend' | 'toggle'
     const [a, b] = [Math.min(p.anchor, i), Math.max(p.anchor, i)]
     for (let k = a; k <= b; k++) p.selected.add(list[k].path)
   } else {
+    // After a plain click only the cursor row looks selected (selection is empty); keep it when toggling others.
+    if (!p.selected.size && p.cursor !== i && list[p.cursor]) p.selected.add(list[p.cursor].path)
     const path = list[i].path
     p.selected.has(path) ? p.selected.delete(path) : p.selected.add(path)
     p.anchor = i

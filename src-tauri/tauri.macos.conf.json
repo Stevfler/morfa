@@ -1,0 +1,9 @@
+{
+  "build": {
+    "beforeDevCommand": "bun scripts/bundle-vips-mac.ts && bun scripts/fetch-ffmpeg-mac.ts && bun run dev",
+    "beforeBuildCommand": "bun scripts/bundle-vips-mac.ts && bun scripts/fetch-ffmpeg-mac.ts && bun run build"
+  },
+  "bundle": {
+    "resources": { "vendor/vips-mac/": "vips/", "vendor/ffmpeg-mac/*": "bin/" }
+  }
+}

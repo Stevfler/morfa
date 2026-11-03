@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { settings } from '../../lib/settings'
+import { settings, SCALES } from '../../lib/settings'
 import { t } from '../../lib/i18n'
 import ThemePicker from './ThemePicker.vue'
 import Segmented from './Segmented.vue'
@@ -10,6 +10,7 @@ import LanguageRow from './LanguageRow.vue'
 const opts = <K extends string>(prefix: string, vals: K[]) => vals.map((value) => ({ value, label: t(`${prefix}.${value}` as Parameters<typeof t>[0]) }))
 const radii = computed(() => opts('settings.radius', ['sharp', 'default', 'round', 'extra']))
 const motions = computed(() => opts('settings.motion', ['full', 'reduced', 'off']))
+const scales = SCALES.map((s) => ({ value: String(s), label: `${Math.round(s * 100)}%` }))
 const densities = computed(() => opts('settings.density', ['comfortable', 'compact']))
 </script>
 
@@ -34,6 +35,9 @@ const densities = computed(() => opts('settings.density', ['comfortable', 'compa
       <h3 class="mb-2 text-[11px] font-medium uppercase tracking-wide text-faint">{{ t('settings.animations') }}</h3>
       <Segmented v-model="settings.motion" :options="motions" :label="t('settings.animations')" />
     </div>
+    <Row :title="t('settings.scale')" :desc="t('settings.scaleDesc')">
+      <Segmented :model-value="String(settings.scale)" :options="scales" :label="t('settings.scale')" class="w-72" @update:model-value="settings.scale = Number($event)" />
+    </Row>
     <Row :title="t('settings.density')" :desc="t('settings.densityDesc')">
       <Segmented :model-value="settings.density ?? 'comfortable'" :options="densities" :label="t('settings.density')" @update:model-value="settings.density = $event as 'compact' | 'comfortable'" />
     </Row>

@@ -2,6 +2,10 @@
 
 Goal: every bundle works out of the box, with no extra packages installed by the user.
 
+## Version
+
+The single source of the app version is `package.json` (`tauri.conf.json` points at it). Release CI overwrites it from the tag (`v1.2.3` → `1.2.3`), so tagging is all a release needs.
+
 ## Commands
 
 ```sh
@@ -35,7 +39,7 @@ CC_aarch64_apple_darwin=clang cargo clippy --all-targets --target aarch64-apple-
 |---|---|
 | AppImage / .deb / .rpm | WebKitGTK 4.1 (pulled in by apt/dnf for deb/rpm, bundled in the AppImage). No media framework needed: Morfa doesn't play audio/video. |
 | Windows (NSIS/MSI) | `webviewInstallMode: embedBootstrapper` (silent). The installer ships the WebView2 bootstrapper and installs WebView2 if it is missing. |
-| macOS (.app/.dmg) | Nothing extra. WKWebView is part of the OS. |
+| macOS (.app/.dmg) | WKWebView is part of the OS. vips and ffmpeg are bundled (see below). |
 
 ## Host packages needed to build on Linux
 
@@ -50,7 +54,14 @@ CC_aarch64_apple_darwin=clang cargo clippy --all-targets --target aarch64-apple-
 
 ## Bundled image/video tools (sidecars)
 
-Morfa looks for `vips`, `vipsheader`, `magick` (and later `ffmpeg`) in this order: next to the Morfa executable, `<exe dir>/bin`, `<resource_dir>/bin`, then `PATH` (`src-tauri/src/sidecar.rs`). Nothing is bundled yet. To bundle:
+Morfa looks for `vips`, `vipsheader`, `magick`, `ffmpeg` in this order: next to the Morfa executable, `<exe dir>/bin`, `<resource_dir>/bin`, `<resource_dir>/vips/bin`, then `PATH` (`src-tauri/src/sidecar.rs`).
+
+Bundled today:
+
+- **Windows** (`tauri.windows.conf.json`): `scripts/fetch-vips-win.ts`, `scripts/fetch-ffmpeg-win.ts` → `<resource_dir>/bin`.
+- **macOS** (`tauri.macos.conf.json`, merged automatically on a Mac): `scripts/bundle-vips-mac.ts` copies Homebrew's vips (`brew install vips` is required on the build machine) with all non-system dylibs and the heif/jxl/poppler modules into `src-tauri/vendor/vips-mac`, rewrites load paths to `@loader_path` and ad-hoc signs everything → `<resource_dir>/vips` (Morfa sets `VIPSHOME` so modules are found). The bundle's architecture is Homebrew's. `scripts/fetch-ffmpeg-mac.ts` downloads a static ffmpeg (ffmpeg.martin-riedl.de) for `TAURI_ENV_ARCH` → `<resource_dir>/bin`. Both run from `beforeDevCommand`/`beforeBuildCommand`; run them once by hand before a bare `cargo clippy`/`cargo test`, because tauri-build checks that resources exist.
+
+Notes on adding more:
 
 - **Tauri `externalBin`** (single executables): put binaries in `src-tauri/binaries/` named with the target triple, e.g. `vips-x86_64-pc-windows-msvc.exe`, `vips-aarch64-apple-darwin`, and list `"externalBin": ["binaries/vips", "binaries/vipsheader", "binaries/ffmpeg"]` under `bundle` in `tauri.conf.json`. Tauri strips the triple and installs them next to the app executable.
 - **Resources** (tools that need their DLLs/dylibs, e.g. libvips' Windows build): add `"resources": { "vendor/vips/bin/": "bin/" }` so they land in `<resource_dir>/bin`. On Windows the DLLs must sit in the same folder as `vips.exe`.

@@ -1,5 +1,6 @@
 mod cleanup;
 mod convert;
+mod docview;
 mod entry;
 mod fsinfo;
 mod fsops;
@@ -76,6 +77,7 @@ pub fn run() {
             convert::convert_estimate,
             convert::preview::convert_preview,
             convert::preview::image_bytes,
+            docview::office_preview,
             tags::tags_get,
             tags::tags_set,
             tags::tags_all,

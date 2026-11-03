@@ -54,10 +54,12 @@ fn filter(ext: &str, fmt: &str) -> String {
 }
 
 /// file:// URL for a local path (percent-encodes anything unusual, e.g. spaces).
+/// `C:\x` → `file:///C:/x`, `/x` → `file:///x`. A malformed URL makes LibreOffice report "bootstrap.ini is corrupt".
 fn file_url(p: &Path) -> String {
-    let mut s = String::from("file://");
-    for b in p.to_string_lossy().bytes() {
-        if b.is_ascii_alphanumeric() || b"/-_.~".contains(&b) {
+    let path = p.to_string_lossy().replace('\\', "/");
+    let mut s = String::from(if path.starts_with('/') { "file://" } else { "file:///" });
+    for b in path.bytes() {
+        if b.is_ascii_alphanumeric() || b"/-_.~:".contains(&b) {
             s.push(b as char);
         } else {
             s.push_str(&format!("%{b:02X}"));

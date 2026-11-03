@@ -59,7 +59,7 @@ build-image:
     - docker push "$IMAGE"
 
 # ---------------------------------------------------------------------------
-# Сборка релиза: только на теге vX.Y.Z, версия тега должна совпадать с tauri.conf.json.
+# Сборка релиза: только на теге vX.Y.Z; версия приложения проставляется из тега.
 # ---------------------------------------------------------------------------
 .release-build:
   stage: build
@@ -70,11 +70,9 @@ build-image:
     BUN_INSTALL_CACHE_DIR: $CI_PROJECT_DIR/.bun-cache
     CARGO_TARGET_DIR: $CI_PROJECT_DIR/src-tauri/target
   before_script:
+    # Версия приложения берётся из тега: tauri.conf.json ссылается на package.json, его и переписываем.
     - |
-      APP_VERSION=$(jq -r .version src-tauri/tauri.conf.json)
-      if [ "v$APP_VERSION" != "$CI_COMMIT_TAG" ]; then
-        echo "Tag $CI_COMMIT_TAG != tauri.conf.json version $APP_VERSION"; exit 1
-      fi
+      jq --arg v "${CI_COMMIT_TAG#v}" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
     # cargo/rustup-бинари лежат в образе, а реестр крейтов — в кэшируемом $CARGO_HOME
     - export PATH="/usr/local/cargo/bin:$PATH"
   artifacts:

@@ -1,4 +1,5 @@
 import { reactive, ref, watch } from 'vue'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { load, save } from '../util/storage'
 import { themeVars, isDark, ACCENTS, THEMES } from './themes'
 import { KINDS } from '../util/kinds'
@@ -7,12 +8,15 @@ export type IconPack = 'lucide' | 'phosphor' | 'solar' | 'fluent' | 'tabler'
 export type Radius = 'sharp' | 'default' | 'round' | 'extra'
 export type IconColor = 'type' | 'accent' | 'mono' | 'custom'
 export type Motion = 'full' | 'reduced' | 'off'
+export const SCALES = [0.9, 1, 1.1, 1.25, 1.5] as const
 export interface Settings {
   theme: string
   accent: string
   radius: Radius
   motion: Motion
   density?: 'compact' | 'comfortable'
+  /** Interface zoom factor (webview zoom), one of SCALES. */
+  scale: number
   iconPack: IconPack
   iconColor: IconColor
   iconCustom: string
@@ -31,6 +35,7 @@ const defaults: Settings = {
   radius: 'default',
   motion: prefersReduced ? 'reduced' : 'full',
   density: 'comfortable',
+  scale: 1,
   iconPack: 'lucide',
   iconColor: 'type',
   iconCustom: '#4c8dff',
@@ -51,6 +56,7 @@ export function sanitize(raw: unknown): Settings {
     radius: pick(r.radius, ['sharp', 'default', 'round', 'extra'] as const, defaults.radius),
     motion: pick(r.motion, ['full', 'reduced', 'off'] as const, defaults.motion),
     density: pick(r.density, ['compact', 'comfortable'] as const, defaults.density!),
+    scale: pick(r.scale, SCALES, 1),
     iconPack: pick(r.iconPack, ['lucide', 'phosphor', 'solar', 'fluent', 'tabler'] as const, defaults.iconPack),
     iconColor: pick(r.iconColor, ['type', 'accent', 'mono', 'custom'] as const, defaults.iconColor),
     iconCustom: typeof r.iconCustom === 'string' && HEX.test(r.iconCustom) ? r.iconCustom.toLowerCase() : defaults.iconCustom,
@@ -80,6 +86,15 @@ export function applySettings() {
   root.dataset.radius = settings.radius
   root.dataset.motion = settings.motion
   root.dataset.density = settings.density ?? 'comfortable'
+  applyScale(settings.scale)
+}
+
+let zoom = 1
+/** Webview zoom scales everything, px-sized text included; outside Tauri (plain vite) there's no webview. */
+function applyScale(f: number) {
+  if (f === zoom || !('__TAURI_INTERNALS__' in window)) return
+  zoom = f
+  getCurrentWebview().setZoom(f).catch(() => {})
 }
 
 const HAS_MIX = typeof CSS !== 'undefined' && CSS.supports('color', 'color-mix(in oklab, red, blue)')
