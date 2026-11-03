@@ -103,6 +103,14 @@ pub fn classify(path: &str, os: Os, home: &str) -> Protection {
     if os == Os::Linux && p.len() == 1 && p[0].starts_with("lib") {
         return Protection::Protected; // /lib, /lib32, /lib64, /libx32
     }
+    // macOS per-user temp and cache folders ($TMPDIR = /private/var/folders/xx/yyyy/T, and …/C):
+    // what's inside them is the point of the tool; the folders themselves stay protected.
+    if os == Os::Mac {
+        let q = if p.first().is_some_and(|x| x == "private") { &p[1..] } else { &p[..] };
+        if q.len() > 5 && q[0] == "var" && q[1] == "folders" && matches!(q[4].as_str(), "t" | "c") {
+            return Protection::Safe;
+        }
+    }
     if sys.iter().any(|s| under(&p, s) || under(s, &p)) {
         return Protection::Protected;
     }
@@ -142,6 +150,11 @@ mod tests {
         }
         assert_eq!(classify("/Applications/Xcode.app", Mac, h), Review);
         assert_eq!(classify("/Users/u/Library/Caches/com.x", Mac, h), Safe);
+        assert_eq!(classify("/private/var/folders/ab/xyz123/T/tmp.x", Mac, h), Safe);
+        assert_eq!(classify("/var/folders/ab/xyz123/C/com.app", Mac, h), Safe);
+        for p in ["/private/var/folders/ab/xyz123/T", "/private/var/folders/ab/xyz123/0/x", "/private/var/folders"] {
+            assert_eq!(classify(p, Mac, h), Protected, "{p}");
+        }
         assert_eq!(classify("/Users/u/Library/Application Support/x", Mac, h), Review);
         assert_eq!(classify("/Users/u/Movies/big.mov", Mac, h), Safe);
     }
