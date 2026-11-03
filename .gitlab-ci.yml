@@ -1,3 +1,6 @@
+default:
+  tags: [work_server]
+
 stages:
   - image
   - build
