@@ -4,7 +4,7 @@ import { DialogRoot, DialogPortal, DialogOverlay, DialogContent } from 'reka-ui'
 import * as S from '../../lib/store'
 import type { Entry } from '../../lib/store'
 import { canQuickLook, kindOf, OFFICE, type Kind } from '../../lib/util'
-import { scrollCursorIntoView } from '../../lib/keys'
+import { scrollCursorIntoView, spaceHeldOpen } from '../../lib/keys'
 import { settings } from '../../lib/settings'
 import QuickLookHeader from './QuickLookHeader.vue'
 import Icon from '../Icon.vue'
@@ -62,15 +62,16 @@ function openEntry() {
   S.open(p, entry.value)
 }
 
-// Space closes from anywhere, whatever holds focus inside the dialog (a header button, the viewer...).
-// Captured on window so a single press always works; auto-repeat of the opening press is ignored.
+// Quick Look lives while Space is held (closing on release is in lib/keys.ts). Swallow Space here so
+// auto-repeat or focus inside the dialog (a header button, the viewer...) never activates anything.
 function onSpace(e: KeyboardEvent) {
   if (!open.value || e.key !== ' ' || e.ctrlKey || e.metaKey || e.altKey) return
   const t = e.target as HTMLElement
   if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return
   e.preventDefault()
   e.stopPropagation()
-  if (!e.repeat) close()
+  // Opened another way (toolbar, palette): a Space press closes it.
+  if (!e.repeat && !spaceHeldOpen()) close()
 }
 onMounted(() => window.addEventListener('keydown', onSpace, true))
 onBeforeUnmount(() => window.removeEventListener('keydown', onSpace, true))

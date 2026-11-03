@@ -68,16 +68,31 @@ export const anyModalOpen = () =>
 // Space on these activates them; don't turn it into Quick Look.
 const SPACE_TARGETS = 'button,[role=button],[role=switch],[role=radio],[role=tab],[role=checkbox],select,a,[contenteditable]'
 
+// Quick Look shows only while Space is held (macOS Finder style): release or losing focus closes it.
+let spaceHeld = false
+export const spaceHeldOpen = () => spaceHeld
+function releaseSpace(e?: KeyboardEvent) {
+  if (e && e.key !== ' ') return
+  if (!spaceHeld) return
+  spaceHeld = false
+  S.state.quickLook = false
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('keyup', releaseSpace, true)
+  window.addEventListener('blur', () => releaseSpace())
+}
+
 function holdSpace(e: KeyboardEvent): boolean {
   if (e.key !== ' ' || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false
   if ((e.target as HTMLElement).closest?.(SPACE_TARGETS)) return false
   e.preventDefault()
   if (e.repeat) return true
+  spaceHeld = true
   const p = S.pane()
   const e2 = S.visible(p)[p.cursor]
   if (canQuickLook(e2)) {
     // Open once the image is decoded (or after a short cap) so it appears whole instead of popping in.
-    const show = () => (S.state.quickLook = true)
+    const show = () => spaceHeld && (S.state.quickLook = true)
     if (kindOf(e2) === 'image') Promise.race([imageUrl(e2.path), new Promise((r) => setTimeout(r, 300))]).then(show)
     else show()
   }

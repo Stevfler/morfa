@@ -81,7 +81,7 @@ function contextRow(i: number) {
 <template>
   <div
     ref="scroller" :data-pane="p.id"
-    class="relative min-h-0 flex-1 overflow-y-auto outline-none"
+    class="relative min-h-0 flex-1 overflow-y-auto outline-none select-none"
     :class="dropTarget === p.path && 'bg-accent-soft/30'"
     @scroll="scrollTop = ($event.target as HTMLElement).scrollTop"
     @click.self="p.selected.clear()"
