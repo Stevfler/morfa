@@ -1,0 +1,111 @@
+<p align="center">
+  <img src="docs/brand/logo.svg" width="112" alt="Morfa logo">
+</p>
+
+<h1 align="center">Morfa</h1>
+
+<p align="center">
+  A fast, keyboard-first file manager that also converts your files and keeps your cloud close.<br>
+  Linux · Windows · macOS
+</p>
+
+<p align="center">
+  <b>English</b> · <a href="README.ru.md">Русский</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Stevfler/morfa/releases/latest">Download</a> ·
+  <a href="docs/BUILDING.md">Build from source</a> ·
+  <a href="docs/ROADMAP.md">Roadmap</a>
+</p>
+
+---
+
+## Why Morfa
+
+The name comes from *morph*: changing form. A file manager moves files around, and Morfa can also change what they are.
+It turns a photo into WebP, a video into MP4 and a document into PDF without opening a separate app.
+
+It was built because the usual options each fall short somewhere:
+
+- **One app on every desktop.** The same interface, shortcuts and features on Arch, Ubuntu, Fedora, Windows and macOS, instead of learning Dolphin, Explorer and Finder separately.
+- **Fast.** The core is written in Rust (Tauri), with a small native window instead of a bundled browser. It starts quickly, stays light on memory and scrolls through huge folders without stalling.
+- **Made for the keyboard, friendly to the mouse.** You get a command palette, fuzzy jump-to-folder, a dual-pane mode with Total Commander-style F-keys, and undo for almost everything.
+- **Safe by default.** Deletes go to the Trash, copies never overwrite silently, and operations can be cancelled and undone. Cleanup refuses to touch system paths.
+- **Everyday tools built in.** Conversion, batch rename, disk cleanup, tags and Quick Look are all in the app, so you don't need five small utilities next to it.
+- **Open source.** GPL-3.0, no telemetry, no account required.
+
+## Features
+
+**Browsing**
+- Tabs, dual-pane mode, session restore
+- Command palette (`Ctrl+K`) and fuzzy "jump to folder" (`Ctrl+P`) ranked by how often and how recently you visit folders
+- Fast search with optional `.gitignore` support
+- Quick Look: hold `Space` to preview images, text and Office documents
+- Favorites, frequent folders, color tags (stored in file metadata)
+- Folder sizes on demand, a properties dialog, open a terminal here
+
+**File operations**
+- Copy and move run in the background with progress and cancel. Existing files are never silently overwritten.
+- Drag and drop of the whole selection
+- Undo and redo for create, rename, move, copy and trash
+- Batch rename with find and replace, regex, numbering templates and case changes
+- Trash with restore (Linux, Windows) or "Show in Trash" (macOS)
+
+**Conversion**
+- Images via libvips: JPEG, PNG, WebP, AVIF, HEIC and more, with quality and resize controls and a size estimate
+- Video and audio via ffmpeg
+- Office documents and PDF via an optional Office module, downloaded on demand
+- All engines ship with the app, so there is nothing extra to install
+
+**Drives and storage**
+- Drives view with usage bars, mount, unmount and eject
+- Unmounted and encrypted (LUKS) drives on Linux, unlocked with a passphrase
+- Disk cleanup for power users: a space map and cleanup categories, with system paths protected
+
+**Cloud**
+- Nextcloud and Google Drive: sign in through your browser, so Morfa never sees your password.
+- Browse the whole cloud without downloading anything
+- Pick files or folders to **keep on this device**. They download into a folder you choose and stay in two-way sync.
+- Sync marks on every item: in sync, waiting, partly on the device, cloud only
+- Conflicts keep both versions, and deletions go to the Trash on both sides
+- Google Drive: the same selective sync. Google Docs, Sheets and Slides open in the browser.
+- Yandex Disk and generic WebDAV are planned
+
+**Looks**
+- 6 themes (Midnight, Daylight, Nord, Mocha, OLED, Forest), 8 accent colors, adjustable corner rounding, animation level and row density
+- 5 icon packs (Lucide, Phosphor, Solar, Fluent, Tabler) and icon coloring by file type, by accent or in a custom color
+- English and Russian interface
+
+## Install
+
+Download a package for your system from [Releases](https://github.com/Stevfler/morfa/releases/latest):
+
+| System | File |
+|---|---|
+| Windows 10/11 | `*_x64-setup.exe` |
+| Ubuntu 22.04 / 24.04, Debian 12 | `*_<distro>_amd64.deb` |
+| Fedora | `*.x86_64.rpm` |
+| Arch Linux | `*.pkg.tar.zst` (`sudo pacman -U …`) |
+| Any Linux | `*.AppImage` |
+
+macOS builds aren't published yet. You can [build from source](docs/BUILDING.md).
+
+## Build from source
+
+```sh
+bun install
+bun run tauri dev     # run in development
+bun run tauri build   # make installers for your OS
+```
+
+You need [Bun](https://bun.sh), [Rust](https://rustup.rs) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/). [docs/BUILDING.md](docs/BUILDING.md) has the details.
+
+## Contributing
+
+Development happens in a private GitLab, and this repository is a read-only mirror: every push and release shows up here automatically.
+Bug reports and ideas are welcome in [Issues](https://github.com/Stevfler/morfa/issues). Pull requests aren't accepted: the mirror is overwritten on every push, so they are closed automatically.
+
+## License
+
+[GPL-3.0](LICENSE) © Stev

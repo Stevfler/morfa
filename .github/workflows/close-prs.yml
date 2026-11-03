@@ -1,0 +1,21 @@
+name: Close pull requests
+
+# This repository is a read-only mirror: GitLab overwrites main on every push, so PRs can't be merged here.
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr close "$PR" --comment "Thanks! This repository is a read-only mirror, so pull requests can't be merged here. Please open an issue describing the change instead.
+
+          Спасибо! Этот репозиторий — зеркало только для чтения, pull request'ы здесь не принимаются. Пожалуйста, опишите изменение в issue."

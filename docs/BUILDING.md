@@ -77,6 +77,12 @@ cp -a /usr/lib/libreoffice /tmp/lo && MORFA_PRUNE_DIR=/tmp/lo cargo test office:
 /tmp/lo/program/soffice --headless --convert-to pdf some.docx   # plus xlsx/csv/pptx/html samples
 ```
 
+## Public mirror on GitHub
+
+GitLab is the source of truth. `ci/github.sh` (jobs `github-mirror` and `github-release` in `.gitlab-ci.yml`) mirrors every push to `main` and every `vX.Y.Z` tag to [Stevfler/morfa](https://github.com/Stevfler/morfa). For a tag, it also publishes a GitHub Release with the same files and notes as the GitLab release (`ci/notes.sh`).
+
+The jobs only run when the GitLab CI/CD variable `GITHUB_TOKEN` is set. Use a fine-grained personal access token limited to that one repository, with **Contents: Read and write**, and mark the variable *Masked* and *Protected*. To mirror to a different repository, set `GITHUB_REPO=owner/name`.
+
 ## Google Drive
 
 Google Drive needs an OAuth client. Without one, the build still works but shows Drive as unavailable.
