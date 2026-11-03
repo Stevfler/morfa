@@ -1,4 +1,9 @@
 export const update = {
+  'support.title': 'Поддержать Morfa',
+  'support.desc': 'Morfa бесплатна и останется бесплатной. Если она экономит вам время, можно угостить автора кофе.',
+  'support.card': 'Чаевые картой',
+  'support.usdt': 'Скопировать адрес USDT (TRC-20)',
+  'support.copied': 'Адрес USDT (TRC-20) скопирован',
   'update.badge': 'Обновление',
   'update.title': 'Вышла Morfa {version}',
   'update.current': 'У вас {version}',

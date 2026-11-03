@@ -1,4 +1,9 @@
 export const update = {
+  'support.title': 'Support Morfa',
+  'support.desc': 'Morfa is free and will stay free. If it saves you time, you can buy the author a coffee.',
+  'support.card': 'Tip by card',
+  'support.usdt': 'Copy USDT (TRC-20) address',
+  'support.copied': 'USDT (TRC-20) address copied',
   'update.badge': 'Update',
   'update.title': 'Morfa {version} is out',
   'update.current': 'You have {version}',

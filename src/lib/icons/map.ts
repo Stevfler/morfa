@@ -76,6 +76,7 @@ const rows = [
   ['cloud',            'cloud',             'cloud',               'cloud',                     'cloud',                      'cloud'],
   ['cloud-check',      'cloud-check',       'cloud-check',         'cloud-check',               'cloud-checkmark',            'cloud-check'],
   ['cloud-download',   'cloud-download',    'cloud-arrow-down',    'cloud-download',            'cloud-arrow-down',           'cloud-download'],
+  ['heart',            'heart',             'heart',               'heart',                     'heart',                      'heart'],
   ['sliders',          'sliders-horizontal','sliders-horizontal',  'tuning-2',                  'options',                    'adjustments-horizontal'],
 ] as const
 

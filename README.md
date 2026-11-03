@@ -16,7 +16,8 @@
 <p align="center">
   <a href="https://github.com/Stevfler/morfa/releases/latest">Download</a> ·
   <a href="docs/BUILDING.md">Build from source</a> ·
-  <a href="docs/ROADMAP.md">Roadmap</a>
+  <a href="docs/ROADMAP.md">Roadmap</a> ·
+  <a href="#support">Support</a>
 </p>
 
 ---
@@ -105,6 +106,15 @@ You need [Bun](https://bun.sh), [Rust](https://rustup.rs) and the [Tauri prerequ
 Development happens in a private GitLab, and this repository is a read-only mirror: every push and release shows up here automatically.
 Bug reports and ideas are welcome in [Issues](https://github.com/Stevfler/morfa/issues). Pull requests aren't accepted: the mirror is overwritten on every push, so they are closed automatically.
 
+## Support
+
+Morfa is free and will stay free. If it saves you time, you can buy the author a coffee:
+
+- **Card (CloudTips):** [pay.cloudtips.ru/p/9208e282](https://pay.cloudtips.ru/p/9208e282)
+- **USDT (TRC-20):** `TMArKAucw4yNhx4wt8oHJ5Ke5VKL9SE9tH`
+
 ## License
 
 [GPL-3.0](LICENSE) © Stev
+
+The license covers the code, not the name or the logo. Forks must use a different name and logo.
