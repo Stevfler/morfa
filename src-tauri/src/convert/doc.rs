@@ -10,7 +10,10 @@ use std::{
 const OFFICE_TIMEOUT: Duration = Duration::from_secs(120);
 
 fn works(cmd: &str) -> bool {
-    Command::new(cmd).arg("--version").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok_and(|s| s.success())
+    let mut c = Command::new(cmd);
+    #[cfg(windows)]
+    std::os::windows::process::CommandExt::creation_flags(&mut c, 0x0800_0000); // CREATE_NO_WINDOW
+    c.arg("--version").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok_and(|s| s.success())
 }
 
 /// LibreOffice on PATH, detected once.

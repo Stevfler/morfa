@@ -11,6 +11,9 @@ pub fn run(mut cmd: Command, cancelled: &dyn Fn() -> bool, timeout: Option<Durat
     // Own process group so cancel/timeout also reaches forked helpers (soffice -> oosplash -> soffice.bin).
     #[cfg(unix)]
     std::os::unix::process::CommandExt::process_group(&mut cmd, 0);
+    // System tools (soffice, pandoc) are console apps: without this Windows opens a terminal window.
+    #[cfg(windows)]
+    std::os::windows::process::CommandExt::creation_flags(&mut cmd, 0x0800_0000); // CREATE_NO_WINDOW
     let mut child = cmd.spawn().map_err(|err| format!("can't start converter: {err}"))?;
     let mut stderr = child.stderr.take();
     // Drain stderr on a thread so a chatty tool can't block on a full pipe.
