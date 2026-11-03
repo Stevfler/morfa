@@ -30,7 +30,6 @@ zip = { version = "9.3.0", default-features = false, features = ["deflate"] }
 base64 = "0.22"
 percent-encoding = "2"
 tauri-plugin-dialog = "2"
-getrandom = "0.3"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 

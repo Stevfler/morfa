@@ -111,10 +111,7 @@ export async function showInCloud(path: string) {
 
 export function openWeb(id: string, rel = '') {
   const a = accountOf(id)
-  if (!a) return
-  // Drive URLs use folder IDs, which the frontend doesn't know: open the drive itself.
-  const url = a.kind === 'gdrive' ? 'https://drive.google.com/drive/my-drive' : `${a.server}/apps/files/?dir=/${encodeURI(rel)}`
-  openUrl(url).catch(fail)
+  if (a) openUrl(`${a.server}/apps/files/?dir=/${encodeURI(rel)}`).catch(fail)
 }
 
 export const syncNow = (id: string) => invoke('cloud_sync', { id }).catch(fail)

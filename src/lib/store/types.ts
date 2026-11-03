@@ -11,7 +11,7 @@ export type Entry = {
   cloud?: string
   /** Local mirror path of a cloud entry. */
   local?: string
-  /** Online-only cloud document (Google Docs…): opened in the browser, never synced. */
+  /** Online-only cloud document : opened in the browser, never synced. */
   link?: string
 }
 
@@ -56,7 +56,7 @@ export function parseCloud(path: string): { id: string; rel: string } | null {
 export type CloudStatus = { state: 'idle' | 'syncing' | 'error'; error: string | null; current: string | null; last: number }
 export type CloudAccount = {
   id: string
-  kind: 'nextcloud' | 'gdrive'
+  kind: 'nextcloud'
   name: string
   server: string
   login: string

@@ -4,17 +4,12 @@ import { invoke } from '@tauri-apps/api/core'
 import { open as pickFolder } from '@tauri-apps/plugin-dialog'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
 import Icon from '../Icon.vue'
-import Segmented from '../settings/Segmented.vue'
 import { state, pane, go, toast, cloudPath } from '../../lib/store'
 import type { CloudAccount } from '../../lib/store'
 import { refreshCloud } from '../../lib/cloud'
 import { join } from '../../lib/util'
 import { t } from '../../lib/i18n'
 
-const kind = ref<'nextcloud' | 'gdrive'>('nextcloud')
-const providers = ref<string[]>(['nextcloud'])
-const gdrive = computed(() => kind.value === 'gdrive')
-const PROVIDERS = [{ value: 'nextcloud', label: 'Nextcloud' }, { value: 'gdrive', label: 'Google Drive' }]
 const server = ref('')
 const folder = ref('')
 const error = ref('')
@@ -29,24 +24,15 @@ const open = computed({
 watch(open, (v) => {
   if (!v) return
   error.value = ''
-  invoke<string[]>('cloud_providers').then((p) => (providers.value = p), () => {})
-  folder.value = defaultFolder()
+  if (!folder.value) folder.value = defaultFolder()
 })
-// Keep a folder the user picked; swap only our own suggestion when the service changes.
-const suggested = new Set<string>()
 function defaultFolder() {
-  const base = gdrive.value ? 'Google Drive' : 'Nextcloud'
   const taken = new Set(state.cloud.map((a) => a.localRoot))
-  let path = join(state.home, base)
-  for (let i = 2; taken.has(path); i++) path = join(state.home, `${base} ${i}`)
-  suggested.add(path)
+  let path = join(state.home, 'Nextcloud')
+  for (let i = 2; taken.has(path); i++) path = join(state.home, `Nextcloud ${i}`)
   return path
 }
-watch(kind, () => {
-  error.value = ''
-  if (!folder.value || suggested.has(folder.value)) folder.value = defaultFolder()
-})
-const ready = computed(() => !!folder.value.trim() && (gdrive.value ? providers.value.includes('gdrive') : !!server.value.trim()))
+const ready = computed(() => !!folder.value.trim() && !!server.value.trim())
 
 async function choose() {
   const dir = await pickFolder({ directory: true, defaultPath: state.home }).catch(() => null)
@@ -58,7 +44,7 @@ async function submit() {
   waiting.value = true
   error.value = ''
   try {
-    const a = await invoke<CloudAccount>('cloud_connect', { kind: kind.value, server: server.value, localRoot: folder.value.trim() })
+    const a = await invoke<CloudAccount>('cloud_connect', { server: server.value, localRoot: folder.value.trim() })
     await refreshCloud()
     state.cloudConnect = false
     server.value = ''
@@ -81,11 +67,9 @@ async function submit() {
         <DialogTitle class="flex items-center gap-2 text-[15px] font-medium">
           <Icon name="cloud" class="size-4 text-dim" />{{ t('cloud.connectTitle') }}
         </DialogTitle>
-        <DialogDescription class="mt-1 text-[12px] text-faint">{{ gdrive ? t('cloud.gdriveDesc') : t('cloud.connectDesc') }}</DialogDescription>
+        <DialogDescription class="mt-1 text-[12px] text-faint">{{ t('cloud.connectDesc') }}</DialogDescription>
         <form class="mt-4 flex flex-col gap-3" @submit.prevent="submit">
-          <Segmented v-model="kind" :options="PROVIDERS" :label="t('cloud.provider')" />
-          <p v-if="gdrive && !providers.includes('gdrive')" class="flex items-center gap-1.5 text-[12px] text-warn"><Icon name="warning" class="size-4 shrink-0" />{{ t('cloud.gdriveMissing') }}</p>
-          <label v-if="!gdrive" class="flex flex-col gap-1 text-[12px] text-dim">
+          <label class="flex flex-col gap-1 text-[12px] text-dim">
             {{ t('cloud.server') }}
             <input
               v-model="server" autofocus autocomplete="url" spellcheck="false" :placeholder="t('cloud.serverPh')" :disabled="waiting"
@@ -110,7 +94,7 @@ async function submit() {
             <button
               type="submit" :disabled="!ready || waiting"
               class="flex h-8 items-center gap-1.5 rounded-md bg-accent px-4 text-[12.5px] font-medium text-on-accent hover:brightness-110 disabled:opacity-40"
-            ><Icon name="external-link" class="size-3.5" />{{ gdrive ? t('cloud.gdriveSignIn') : t('cloud.signIn') }}</button>
+            ><Icon name="external-link" class="size-3.5" />{{ t('cloud.signIn') }}</button>
           </div>
         </form>
       </DialogContent>

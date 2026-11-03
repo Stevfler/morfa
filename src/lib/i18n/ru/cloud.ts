@@ -1,7 +1,7 @@
 export const cloud = {
   'cloud.title': 'Облако',
   'cloud.add': 'Подключить облако',
-  'cloud.empty': 'Подключите Nextcloud или Google Drive, чтобы просматривать его здесь и держать выбранные папки на устройстве.',
+  'cloud.empty': 'Подключите Nextcloud, чтобы просматривать его здесь и держать выбранные папки на устройстве.',
   'cloud.downloading': 'Скачивается «{name}»…',
   'cloud.pinned': { one: '{count} объект будет храниться на устройстве', few: '{count} объекта будут храниться на устройстве', many: '{count} объектов будут храниться на устройстве', other: '{count} объекта будут храниться на устройстве' },
   'cloud.notOnDevice': 'Пока нет на этом устройстве',
@@ -28,7 +28,7 @@ export const cloud = {
   'cloud.removeTitle': 'Отключить {name}?',
   'cloud.removeDesc': 'Синхронизация остановится, устройство выйдет из аккаунта. Файлы в {path} останутся на месте.',
   'cloud.removeOk': 'Отключить',
-  'cloud.connectTitle': 'Подключить облако',
+  'cloud.connectTitle': 'Подключить Nextcloud',
   'cloud.connectDesc': 'Вход выполняется в браузере: Morfa получает собственный пароль приложения и не видит ваш.',
   'cloud.server': 'Адрес сервера',
   'cloud.serverPh': 'cloud.example.ru',
@@ -38,9 +38,5 @@ export const cloud = {
   'cloud.signIn': 'Войти через браузер',
   'cloud.waiting': 'Ожидаем вход в браузере…',
   'cloud.connected': 'Подключено: {name}',
-  'cloud.onlineOnly': 'Документ Google: открывается в браузере, не синхронизируется',
-  'cloud.provider': 'Сервис',
-  'cloud.gdriveDesc': 'Вход через Google в браузере. Morfa получает доступ к файлам на Диске и больше ни к чему в аккаунте.',
-  'cloud.gdriveSignIn': 'Войти через Google',
-  'cloud.gdriveMissing': 'Google Drive недоступен в этой сборке: она собрана без OAuth client ID.',
+  'cloud.onlineOnly': 'Онлайн-документ: открывается в браузере, не синхронизируется',
 }

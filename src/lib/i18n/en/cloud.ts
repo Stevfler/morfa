@@ -1,7 +1,7 @@
 export const cloud = {
   'cloud.title': 'Cloud',
   'cloud.add': 'Connect a cloud',
-  'cloud.empty': 'Connect Nextcloud or Google Drive to browse it here and keep chosen folders on this device.',
+  'cloud.empty': 'Connect Nextcloud to browse it here and keep chosen folders on this device.',
   'cloud.downloading': 'Downloading “{name}”…',
   'cloud.pinned': { one: 'Will be kept on this device', other: '{count} items will be kept on this device' },
   'cloud.notOnDevice': 'Not on this device yet',
@@ -28,7 +28,7 @@ export const cloud = {
   'cloud.removeTitle': 'Disconnect {name}?',
   'cloud.removeDesc': 'Syncing stops and this device is signed out. Files already in {path} stay where they are.',
   'cloud.removeOk': 'Disconnect',
-  'cloud.connectTitle': 'Connect a cloud',
+  'cloud.connectTitle': 'Connect Nextcloud',
   'cloud.connectDesc': 'You sign in in your browser; Morfa gets its own app password and never sees yours.',
   'cloud.server': 'Server address',
   'cloud.serverPh': 'cloud.example.com',
@@ -38,9 +38,5 @@ export const cloud = {
   'cloud.signIn': 'Sign in in browser',
   'cloud.waiting': 'Waiting for you to sign in in the browser…',
   'cloud.connected': 'Connected to {name}',
-  'cloud.onlineOnly': 'Google document: opens in the browser, not synced',
-  'cloud.provider': 'Service',
-  'cloud.gdriveDesc': 'You sign in with Google in your browser. Morfa gets access to your Drive files and nothing else in your account.',
-  'cloud.gdriveSignIn': 'Sign in with Google',
-  'cloud.gdriveMissing': 'Google Drive isn’t available in this build: it was compiled without an OAuth client ID.',
+  'cloud.onlineOnly': 'Online document: opens in the browser, not synced',
 }

@@ -2,7 +2,6 @@
 //! `morfa://cloud/<id>/…` pseudo-path; only what the user pins is mirrored into the
 //! account's local folder and kept in two-way sync by a background worker.
 mod dav;
-mod gdrive;
 mod login;
 mod store;
 mod sync;
@@ -61,7 +60,7 @@ pub struct CloudEntry {
     cloud: String,
     /// Where the item lives (or will live) on this device.
     local: String,
-    /// Online-only document (Google Docs…): opened in the browser, never synced.
+    /// Online-only document: opened in the browser, never synced.
     link: String,
 }
 
@@ -121,16 +120,13 @@ impl Inner {
             eprintln!("cloud: can't save sync state for {id}: {e}");
         }
     }
-    /// One client per account, kept between calls (Drive's path → ID cache lives in it).
+    /// One client per account, kept between calls.
     fn remote(&self, a: &Account) -> CmdResult<Arc<dyn sync::Remote + Send + Sync>> {
         if let Some(r) = lock(&self.remotes).get(&a.id) {
             return Ok(r.clone());
         }
         let secret = store::secret(&a.id).ok_or("No saved credentials — reconnect the account")?;
-        let r: Arc<dyn sync::Remote + Send + Sync> = match a.kind.as_str() {
-            "gdrive" => Arc::new(gdrive::Drive::new(&a.id, &secret)),
-            _ => Arc::new(dav::Dav::new(&a.server, &a.login, &secret)),
-        };
+        let r: Arc<dyn sync::Remote + Send + Sync> = Arc::new(dav::Dav::new(&a.server, &a.login, &secret));
         lock(&self.remotes).insert(a.id.clone(), r.clone());
         Ok(r)
     }
@@ -272,20 +268,8 @@ fn check_root(inner: &Inner, root: &str) -> CmdResult<PathBuf> {
 }
 
 /// Sign in through the browser (Login Flow v2) and add the account.
-/// Providers this build can connect to (Google Drive needs an OAuth client compiled in).
 #[tauri::command]
-pub fn cloud_providers() -> Vec<&'static str> {
-    let mut v = vec!["nextcloud"];
-    if gdrive::available() {
-        v.push("gdrive");
-    }
-    v
-}
-
-/// Sign in through the browser and add the account.
-/// Nextcloud: Login Flow v2 → app password. Google Drive: OAuth (loopback + PKCE) → refresh token.
-#[tauri::command]
-pub async fn cloud_connect(app: AppHandle, state: State<'_, CloudState>, kind: String, server: String, local_root: String) -> CmdResult<AccountInfo> {
+pub async fn cloud_connect(app: AppHandle, state: State<'_, CloudState>, server: String, local_root: String) -> CmdResult<AccountInfo> {
     let inner = state.0.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let root = check_root(&inner, &local_root)?;
@@ -296,18 +280,7 @@ pub async fn cloud_connect(app: AppHandle, state: State<'_, CloudState>, kind: S
         };
         let cancelled = || inner.login_cancel.load(Ordering::SeqCst);
         let local_root = root.to_string_lossy().into_owned();
-        let (a, secret) = if kind == "gdrive" {
-            let l = gdrive::login(&open, &cancelled)?;
-            let a = Account {
-                id: format!("gd{:x}", now_ms()),
-                kind: "gdrive".into(),
-                name: "Google Drive".into(),
-                server: "https://drive.google.com".into(),
-                login: l.email,
-                local_root,
-            };
-            (a, l.refresh_token)
-        } else {
+        let (a, secret) = {
             let server = login::normalize_server(&server)?;
             let (url, poll) = login::start(&server)?;
             open(&url)?;
@@ -350,10 +323,7 @@ pub async fn cloud_remove(state: State<'_, CloudState>, id: String) -> CmdResult
         let run = inner.run_lock(&id);
         drop(lock(&run));
         if let Some(secret) = store::secret(&id) {
-            match a.kind.as_str() {
-                "gdrive" => gdrive::revoke(&secret),
-                _ => login::revoke(&a.server, &a.login, &secret),
-            }
+            login::revoke(&a.server, &a.login, &secret);
         }
         store::set_secret(&id, None)?;
         store::remove_db(&id);

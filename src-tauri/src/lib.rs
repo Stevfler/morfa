@@ -94,7 +94,6 @@ pub fn run() {
             office::office_cancel,
             office::office_remove,
             cloud::cloud_accounts,
-            cloud::cloud_providers,
             cloud::cloud_connect,
             cloud::cloud_connect_cancel,
             cloud::cloud_remove,

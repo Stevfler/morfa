@@ -64,12 +64,11 @@ It was built because the usual options each fall short somewhere:
 - Disk cleanup for power users: a space map and cleanup categories, with system paths protected
 
 **Cloud**
-- Nextcloud and Google Drive: sign in through your browser, so Morfa never sees your password.
+- Nextcloud: sign in through your browser. Morfa gets its own app password and never sees yours.
 - Browse the whole cloud without downloading anything
 - Pick files or folders to **keep on this device**. They download into a folder you choose and stay in two-way sync.
 - Sync marks on every item: in sync, waiting, partly on the device, cloud only
 - Conflicts keep both versions, and deletions go to the Trash on both sides
-- Google Drive: the same selective sync. Google Docs, Sheets and Slides open in the browser.
 - Yandex Disk and generic WebDAV are planned
 
 **Looks**

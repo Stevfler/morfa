@@ -26,7 +26,7 @@ pub struct RemoteItem {
     /// Unix milliseconds.
     pub modified: u64,
     pub etag: String,
-    /// Web link for items that exist only online (Google Docs/Sheets/…): shown, never synced.
+    /// Web link for items that exist only online (e.g. office documents that live only in the web app): shown, never synced.
     pub link: String,
 }
 

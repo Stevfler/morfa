@@ -2323,7 +2323,6 @@ dependencies = [
  "base64 0.22.1",
  "calamine",
  "dirs 6.0.0",
- "getrandom 0.3.4",
  "ignore",
  "libc",
  "notify",
