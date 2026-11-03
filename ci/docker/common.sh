@@ -1,5 +1,6 @@
 #!/bin/sh
 # Общая часть Linux-образов: rustup (stable) + bun (он же node для скриптов).
+# Образы собираются на раннере work_server.
 set -eu
 BUN_VERSION="$1"
 curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable --no-modify-path
