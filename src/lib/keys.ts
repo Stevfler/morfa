@@ -61,7 +61,7 @@ export const isReloadOrPrint = (e: KeyboardEvent) => {
 
 /** Any dialog that owns the keyboard: global shortcuts stay off while one is open. */
 export const anyModalOpen = () =>
-  !!(S.state.palette || S.state.batchRename || S.state.properties || S.state.confirm || S.state.quickLook || settingsOpen.value || drives.unlock) ||
+  !!(S.state.palette || S.state.batchRename || S.state.properties || S.state.confirm || S.state.quickLook || settingsOpen.value || drives.unlock || S.state.cloudConnect) ||
   // Any open reka dialog (covers future ones automatically).
   !!document.querySelector('[role=dialog][data-state=open],[role=alertdialog][data-state=open]')
 

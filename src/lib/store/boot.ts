@@ -8,12 +8,15 @@ import { persist, syncWatch } from './tabs'
 import { startSearch } from './search'
 import type { Entry, Place } from './types'
 import { settings } from '../settings'
+import { initCloud } from '../cloud'
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
 const dirty = new Set<string>()
 
 export async function init() {
   state.home = await invoke<string>('home_dir').catch(() => '/')
+  // Accounts first: mirrored folders get their sync marks on the very first load.
+  await initCloud().catch(() => {})
   const session = load<{ tabs: { paths: string[]; active: number }[]; activeTab: number } | null>('morfa.session', null)
   if (session?.tabs.length) {
     state.tabs = session.tabs.map((t) => ({ id: nextId(), panes: t.paths.map(newPane), active: t.active }))

@@ -73,6 +73,9 @@ const rows = [
   ['wrap-text',        'wrap-text',         'text-align-left',     'text-field',                'text-wrap',                  'text-wrap'],
   ['palette',          'palette',           'palette',             'pallete-2',                 'color',                      'palette'],
   ['shapes',           'shapes',            'shapes',              'widget-2',                  'shapes',                     'triangle-square-circle'],
+  ['cloud',            'cloud',             'cloud',               'cloud',                     'cloud',                      'cloud'],
+  ['cloud-check',      'cloud-check',       'cloud-check',         'cloud-check',               'cloud-checkmark',            'cloud-check'],
+  ['cloud-download',   'cloud-download',    'cloud-arrow-down',    'cloud-download',            'cloud-arrow-down',           'cloud-download'],
   ['sliders',          'sliders-horizontal','sliders-horizontal',  'tuning-2',                  'options',                    'adjustments-horizontal'],
 ] as const
 

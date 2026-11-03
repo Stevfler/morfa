@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import Icon from './Icon.vue'
 import * as S from '../lib/store'
 import type { Pane } from '../lib/store'
-import { parent } from '../lib/util'
 import { useDragDrop } from '../composables/useDragDrop'
 import IconButton from './IconButton.vue'
 import PathBar from './pane/PathBar.vue'
@@ -27,7 +26,7 @@ const menuOnItem = ref(false)
     <div class="flex h-12 shrink-0 items-center gap-1 px-3 transition" :class="split && active && 'bg-accent-soft/30'">
       <IconButton icon="chevron-left" :label="t('shell.back')" keys="Alt+←" :disabled="!p.back.length" @click="S.back(p)" />
       <IconButton icon="chevron-right" :label="t('shell.forward')" keys="Alt+→" :disabled="!p.fwd.length" @click="S.forward(p)" />
-      <IconButton icon="arrow-up" :label="t('shell.parent')" keys="Backspace" :disabled="S.isSpecial(p.path) || !parent(p.path)" @click="S.up(p)" />
+      <IconButton icon="arrow-up" :label="t('shell.parent')" keys="Backspace" :disabled="!S.canUp(p)" @click="S.up(p)" />
       <PathBar :pane="p" :active="active" :dnd="dnd" />
       <FilterBox :pane="p" />
       <IconButton icon="folder-plus" :label="t('shell.newFolder')" keys="Ctrl+Shift+N" @click="S.create('dir', p)" />

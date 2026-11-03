@@ -7,6 +7,12 @@ export type Entry = {
   modified: number
   ext: string
   hidden: boolean
+  /** Cloud sync mark: 'synced' | 'pending' | 'partial' | '' (server only). Set for cloud views and mirrored folders. */
+  cloud?: string
+  /** Local mirror path of a cloud entry. */
+  local?: string
+  /** Online-only cloud document (Google Docs…): opened in the browser, never synced. */
+  link?: string
 }
 
 export type SortKey = 'name' | 'size' | 'modified' | 'ext'
@@ -36,6 +42,28 @@ export type Place = { name: string; path: string; kind: string; total: number; f
 /** Pseudo-path for the "This PC"-style Drives overview; never sent to the backend. */
 export const DRIVES = 'morfa://drives'
 export const isSpecial = (path: string) => path.startsWith('morfa://')
+
+/** Remote folders of a cloud account: `morfa://cloud/<id>/<rel>`. Listed via `cloud_list`. */
+const CLOUD = 'morfa://cloud/'
+export const cloudPath = (id: string, rel = '') => `${CLOUD}${id}${rel ? '/' + rel : ''}`
+export function parseCloud(path: string): { id: string; rel: string } | null {
+  if (!path.startsWith(CLOUD)) return null
+  const rest = path.slice(CLOUD.length)
+  const i = rest.indexOf('/')
+  return i < 0 ? { id: rest, rel: '' } : { id: rest.slice(0, i), rel: rest.slice(i + 1) }
+}
+
+export type CloudStatus = { state: 'idle' | 'syncing' | 'error'; error: string | null; current: string | null; last: number }
+export type CloudAccount = {
+  id: string
+  kind: 'nextcloud' | 'gdrive'
+  name: string
+  server: string
+  login: string
+  localRoot: string
+  status: CloudStatus
+  pins: string[]
+}
 
 /** A volume that is not mounted yet (from `list_drives`). */
 export type Drive = { name: string; device: string; fstype: string; size: number; encrypted: boolean; removable: boolean }

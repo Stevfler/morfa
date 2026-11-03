@@ -1,12 +1,13 @@
 import { invoke } from '@tauri-apps/api/core'
-import { openPath, revealItemInDir } from '@tauri-apps/plugin-opener'
+import { openPath, openUrl, revealItemInDir } from '@tauri-apps/plugin-opener'
 import { parent, save } from '../util'
 import { pane, state } from './state'
 import { visible } from './view'
-import { fail } from './toast'
+import { fail, toast } from './toast'
 import { stopSearch } from './search'
 import { persist, syncWatch } from './tabs'
-import { isSpecial, type Entry, type Pane, type Place } from './types'
+import { cloudPath, isSpecial, parseCloud, type Entry, type Pane, type Place } from './types'
+import { t } from '../i18n'
 
 // Per-pane load token: only the latest load_ for a pane may apply its result.
 const loadSeq = new WeakMap<Pane, number>()
@@ -15,14 +16,19 @@ export async function load_(p: Pane) {
   const seq = (loadSeq.get(p) ?? 0) + 1
   loadSeq.set(p, seq)
   const stale = () => loadSeq.get(p) !== seq
-  if (isSpecial(p.path)) {
+  const cloud = parseCloud(p.path)
+  if (isSpecial(p.path) && !cloud) {
     // Special views (Drives overview) render their own content; nothing to list.
     Object.assign(p, { entries: [], error: null, loading: false })
     return
   }
   p.loading = true
   try {
-    const entries = await invoke<Entry[]>('list_dir', { path: p.path })
+    const entries = cloud
+      ? await invoke<Entry[]>('cloud_list', { id: cloud.id, rel: cloud.rel })
+      : await invoke<Entry[]>('list_dir', { path: p.path })
+    if (stale()) return
+    if (!cloud) await markMirrored(p.path, entries)
     if (stale()) return
     p.entries = entries
     p.error = null
@@ -44,6 +50,15 @@ export async function load_(p: Pane) {
   }
 }
 
+/** Inside a cloud account's local folder: attach sync marks to the entries. */
+async function markMirrored(dir: string, entries: Entry[]) {
+  if (!state.cloud.some((a) => within(dir, a.localRoot))) return
+  const marks = await invoke<Record<string, string>>('cloud_marks', { dir, names: entries.map((e) => e.name) }).catch(() => ({}) as Record<string, string>)
+  for (const e of entries) e.cloud = marks[e.name] ?? ''
+}
+export const within = (path: string, root: string) =>
+  path === root || path.startsWith(root.replace(/[\\/]+$/, '') + (root.includes('\\') && !root.includes('/') ? '\\' : '/'))
+
 export async function go(p: Pane, path: string, opts: { history?: boolean; focus?: string } = {}) {
   if (p.search) stopSearch(p)
   if (path !== p.path && opts.history !== false) {
@@ -61,8 +76,14 @@ export async function go(p: Pane, path: string, opts: { history?: boolean; focus
   persist()
 }
 
+function parentOf(path: string) {
+  const c = parseCloud(path)
+  if (c) return c.rel ? cloudPath(c.id, c.rel.split('/').slice(0, -1).join('/')) : null
+  return isSpecial(path) ? null : parent(path)
+}
+export const canUp = (p: Pane) => !!parentOf(p.path)
 export function up(p: Pane = pane()) {
-  const par = isSpecial(p.path) ? null : parent(p.path)
+  const par = parentOf(p.path)
   if (par) go(p, par, { focus: p.path })
 }
 export function back(p: Pane = pane()) {
@@ -81,6 +102,8 @@ export function forward(p: Pane = pane()) {
 export async function open(p: Pane, e: Entry | undefined, opts: { reveal?: boolean } = {}) {
   if (!e) return
   if (e.isDir && !opts.reveal) return go(p, e.path)
+  const cloud = parseCloud(e.path)
+  if (cloud) return openCloudFile(cloud.id, cloud.rel, e)
   if (p.search || opts.reveal) {
     // From search results: jump into the containing folder with the item focused.
     const dir = parent(e.path)
@@ -88,6 +111,21 @@ export async function open(p: Pane, e: Entry | undefined, opts: { reveal?: boole
   }
   try {
     await openPath(e.path)
+  } catch (err) {
+    fail(err)
+  }
+}
+
+/** Open a file from the cloud view: synced → local copy; otherwise download (and keep syncing) first. */
+async function openCloudFile(id: string, rel: string, e: Entry) {
+  try {
+    if (e.link) return await openUrl(e.link)
+    let local = e.local
+    if (e.cloud !== 'synced' || !local) {
+      toast({ title: t('cloud.downloading', { name: e.name }), tone: 'info' }, 2500)
+      local = await invoke<string>('cloud_fetch', { id, rel })
+    }
+    await openPath(local)
   } catch (err) {
     fail(err)
   }

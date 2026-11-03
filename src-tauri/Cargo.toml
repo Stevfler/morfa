@@ -25,6 +25,10 @@ sha2 = "0.10"
 calamine = "0.38.0"
 quick-xml = "0.42.0"
 zip = { version = "9.3.0", default-features = false, features = ["deflate"] }
+base64 = "0.22"
+percent-encoding = "2"
+tauri-plugin-dialog = "2"
+getrandom = "0.3"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

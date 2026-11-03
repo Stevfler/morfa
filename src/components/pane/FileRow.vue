@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import Icon from '../Icon.vue'
+import type { IconName } from '../../lib/icons'
 import TagDots from '../tags/TagDots.vue'
 import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
@@ -25,6 +26,11 @@ function renameKey(ev: KeyboardEvent) {
   else if (ev.key === 'Escape') state.renaming = null
   ev.stopPropagation()
 }
+
+const CLOUD_ICON: Record<string, IconName> = { synced: 'cloud-check', pending: 'refresh', partial: 'cloud-download' }
+const CLOUD_CLASS: Record<string, string> = { synced: 'text-ok', pending: 'text-accent', partial: 'text-dim' }
+const cloudTitle = (m: string) =>
+  t(m === 'synced' ? 'cloud.markSynced' : m === 'pending' ? 'cloud.markPending' : 'cloud.markPartial')
 
 const rel = (e: Entry) => {
   const dir = parent(e.path) ?? ''
@@ -59,6 +65,9 @@ function sizeCell(e: Entry) {
       />
       <span v-else class="truncate">{{ e.name }}</span>
       <TagDots :path="e.path" />
+      <Icon v-if="e.cloud" :name="CLOUD_ICON[e.cloud] ?? 'cloud'" class="size-3.5 shrink-0" :class="CLOUD_CLASS[e.cloud]" :title="cloudTitle(e.cloud)" />
+      <Icon v-else-if="e.link" name="external-link" class="size-3.5 shrink-0 text-faint" :title="t('cloud.onlineOnly')" />
+      <Icon v-else-if="e.cloud === '' && S.isSpecial(e.path)" name="cloud" class="size-3.5 shrink-0 text-faint/60" :title="t('cloud.markRemote')" />
       <Icon name="link" v-if="e.isSymlink" class="size-3 shrink-0 text-faint" />
       <span v-if="p.search" class="truncate text-[11.5px] text-faint">{{ rel(e) }}</span>
     </div>

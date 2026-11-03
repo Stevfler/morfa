@@ -16,6 +16,14 @@ const { dropTarget, dragOver, dragLeave, drop } = props.dnd
 const pathInput = ref<HTMLInputElement>()
 const pathText = ref('')
 const completions = ref<string[]>([])
+const cloud = computed(() => S.parseCloud(p.path))
+const cloudCrumbs = computed(() => {
+  const c = cloud.value
+  if (!c) return []
+  const name = state.cloud.find((a) => a.id === c.id)?.name ?? tr('cloud.title')
+  const parts = c.rel ? c.rel.split('/') : []
+  return [{ label: name, path: S.cloudPath(c.id) }, ...parts.map((seg, i) => ({ label: seg, path: S.cloudPath(c.id, parts.slice(0, i + 1).join('/')) }))]
+})
 const editing = computed(() => state.editPath && props.active)
 watch(editing, async (v) => {
   if (!v) return
@@ -68,6 +76,15 @@ function pathKey(ev: KeyboardEvent) {
         </button>
       </div>
     </template>
+    <div v-else-if="cloud" class="flex h-7 items-center overflow-hidden rounded-md px-1">
+      <template v-for="(c, k) in cloudCrumbs" :key="c.path">
+        <Icon name="chevron-right" v-if="k > 0" class="size-3.5 shrink-0 text-faint" />
+        <button
+          class="flex shrink-0 items-center gap-1.5 truncate rounded px-1.5 py-0.5 text-[12.5px] transition hover:bg-raised"
+          :class="k === cloudCrumbs.length - 1 ? 'font-medium text-fg' : 'text-dim'" @click="S.go(p, c.path)"
+        ><Icon v-if="k === 0" name="cloud" class="size-3.5 text-dim" />{{ c.label }}</button>
+      </template>
+    </div>
     <div v-else-if="S.isSpecial(p.path)" class="flex h-7 cursor-text items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium hover:bg-raised"
       @click="state.editPath = true; S.focusPane(S.tab().panes.indexOf(p))">
       <Icon name="hard-drive" class="size-3.5 text-dim" />{{ tr('pane.drives') }}

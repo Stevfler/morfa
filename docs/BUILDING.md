@@ -76,3 +76,21 @@ Not bundled: Morfa downloads a pinned LibreOffice on demand (`src-tauri/src/offi
 cp -a /usr/lib/libreoffice /tmp/lo && MORFA_PRUNE_DIR=/tmp/lo cargo test office::tests::prune_real_install -- --ignored
 /tmp/lo/program/soffice --headless --convert-to pdf some.docx   # plus xlsx/csv/pptx/html samples
 ```
+
+## Google Drive
+
+Google Drive needs an OAuth client. Without one, the build still works but shows Drive as unavailable.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project, then enable the **Google Drive API** in it.
+2. Under **Google Auth Platform → Branding**, fill in the app name (Morfa), a support email and the logo. Under **Audience**, choose *External*. While the app is in *Testing*, add the Google accounts that may sign in (up to 100).
+3. Under **Data Access**, add the scope `https://www.googleapis.com/auth/drive`.
+4. Under **Clients → Create client**, choose type **Desktop app**. Copy the client ID and the client secret.
+5. Build with them in the environment:
+
+```sh
+MORFA_GDRIVE_CLIENT_ID=… MORFA_GDRIVE_CLIENT_SECRET=… bun run tauri build
+```
+
+In GitLab, add both as CI/CD variables (*Masked*) and the release builds pick them up. For a Desktop client Google treats the secret as public, because every installed app ships it, so it can live inside the binary. The same variables at run time override the built-in ones, which is handy for `bun run tauri dev`.
+
+`drive` is a *restricted* scope. While the app is in *Testing*, only the listed test users can sign in, and each sign-in lasts 7 days before Google asks again. To let anyone sign in, the app must pass Google's verification, which includes a security assessment for restricted scopes.

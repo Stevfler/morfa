@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import { load } from '../util'
-import type { Pane, Place, Tab, Toast, Op, UndoItem } from './types'
+import type { CloudAccount, Pane, Place, Tab, Toast, Op, UndoItem } from './types'
 
 let uid = 1
 export const nextId = () => uid++
@@ -34,6 +34,9 @@ export const state = reactive({
   bookmarks: load<string[]>('morfa.bookmarks', []),
   frecency: load<Record<string, { n: number; t: number }>>('morfa.frecency', {}),
   places: [] as Place[],
+  cloud: [] as CloudAccount[],
+  /** Connect-a-cloud dialog is open. */
+  cloudConnect: false,
   sizes: {} as Record<string, number | 'pending'>,
   toasts: [] as Toast[],
   ops: [] as Op[],

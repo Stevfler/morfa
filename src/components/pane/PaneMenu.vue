@@ -12,6 +12,8 @@ import { keyLabel, parent } from '../../lib/util'
 import { cmd, openProperties } from '../../lib/commands'
 import { t as tr } from '../../lib/i18n'
 import { canDownload, refreshOffice } from '../../lib/office'
+import { pin, unpin, showLocal, showInCloud, openWeb, syncNow } from '../../lib/cloud'
+import { within } from '../../lib/store/navigation'
 import { formatLabel, isConvertible, isImage, openConvert, quickConvert, targetsFor } from '../../lib/convert'
 
 const props = defineProps<{ pane: Pane }>()
@@ -54,6 +56,11 @@ function onOpen(o: boolean) {
   void loadQuick()
 }
 
+const cloud = computed(() => S.parseCloud(p.path))
+const mirrored = computed(() => !cloud.value && state.cloud.some((a) => within(p.path, a.localRoot)))
+const canPin = computed(() => S.targets(p).some((e) => !e.link && (!e.cloud || e.cloud === 'partial')))
+const canUnpin = computed(() => S.targets(p).some((e) => !!e.cloud))
+
 function openIn(where: 'tab' | 'other') {
   const e = cursorEntry.value
   if (!e) return
@@ -71,7 +78,24 @@ function openIn(where: 'tab' | 'other') {
     <ContextMenuTrigger as-child @contextmenu.capture="focusThis"><slot /></ContextMenuTrigger>
     <ContextMenuPortal>
       <ContextMenuContent class="menu">
-        <template v-if="onItem && cursorEntry">
+        <template v-if="cloud && onItem && cursorEntry">
+          <ContextMenuItem class="mi" @select="S.open(p, cursorEntry)"><Icon name="folder-open" />{{ tr('pane.menu.open') }}<span>Enter</span></ContextMenuItem>
+          <ContextMenuSeparator class="sep" />
+          <ContextMenuItem v-if="canPin" class="mi" @select="pin(S.targets(p))"><Icon name="cloud-download" />{{ tr('cloud.pin') }}</ContextMenuItem>
+          <template v-if="canUnpin">
+            <ContextMenuItem class="mi" @select="unpin(S.targets(p), false)"><Icon name="cloud" />{{ tr('cloud.unpin') }}</ContextMenuItem>
+            <ContextMenuItem class="mi" @select="unpin(S.targets(p), true)"><Icon name="broom" />{{ tr('cloud.unpinDelete') }}</ContextMenuItem>
+          </template>
+          <ContextMenuItem v-if="cursorEntry.cloud" class="mi" @select="showLocal(cursorEntry)"><Icon name="hard-drive" />{{ tr('cloud.showLocal') }}</ContextMenuItem>
+          <ContextMenuItem class="mi" @select="openWeb(cloud.id, cursorEntry.isDir ? S.parseCloud(cursorEntry.path)!.rel : cloud.rel)"><Icon name="external-link" />{{ tr('cloud.openWeb') }}</ContextMenuItem>
+        </template>
+        <template v-else-if="cloud">
+          <ContextMenuItem class="mi" @select="syncNow(cloud.id)"><Icon name="refresh" />{{ tr('cloud.syncNow') }}</ContextMenuItem>
+          <ContextMenuItem class="mi" @select="openWeb(cloud.id, cloud.rel)"><Icon name="external-link" />{{ tr('cloud.openWeb') }}</ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.selectAll(p)"><Icon name="check-all" />{{ tr('pane.menu.selectAll') }}<span>{{ keyLabel('Ctrl+A') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="state.showHidden = !state.showHidden"><Icon name="eye" />{{ state.showHidden ? tr('pane.menu.hideHidden') : tr('pane.menu.showHidden') }}<span>{{ keyLabel('Ctrl+H') }}</span></ContextMenuItem>
+        </template>
+        <template v-else-if="onItem && cursorEntry">
           <ContextMenuItem class="mi" @select="S.open(p, cursorEntry)"><Icon name="folder-open" />{{ tr('pane.menu.open') }}<span>Enter</span></ContextMenuItem>
           <ContextMenuItem v-if="p.search" class="mi" @select="S.open(p, cursorEntry, { reveal: true })"><Icon name="locate" />{{ tr('pane.menu.showInFolder') }}<span>{{ keyLabel('Ctrl+Enter') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="openIn('tab')"><Icon name="plus" />{{ tr('pane.menu.openNewTab') }}</ContextMenuItem>
@@ -100,6 +124,12 @@ function openIn(where: 'tab' | 'other') {
             <ContextMenuItem class="mi" @select="S.openTerminal(cursorEntry.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}</ContextMenuItem>
           </template>
           <ContextMenuItem v-else class="mi" @select="S.reveal(cursorEntry.path)"><Icon name="eye" />{{ tr('pane.menu.showInSystem') }}</ContextMenuItem>
+          <template v-if="mirrored">
+            <ContextMenuSeparator class="sep" />
+            <ContextMenuItem class="mi" @select="showInCloud(cursorEntry.path)"><Icon name="cloud" />{{ tr('cloud.showInCloud') }}</ContextMenuItem>
+            <ContextMenuItem v-if="canPin" class="mi" @select="pin(S.targets(p))"><Icon name="cloud-check" />{{ tr('cloud.pin') }}</ContextMenuItem>
+            <ContextMenuItem v-if="canUnpin" class="mi" @select="unpin(S.targets(p), false)"><Icon name="cloud" />{{ tr('cloud.unpin') }}</ContextMenuItem>
+          </template>
           <ContextMenuSeparator class="sep" />
           <TagsMenuItems :paths="paths()" />
           <ContextMenuSeparator class="sep" />
