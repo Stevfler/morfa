@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from '../Icon.vue'
-import type { Pane } from '../../lib/store'
+import { isNotResponding, load_, parseHostKeyChange, type Pane } from '../../lib/store'
 import { basename, keyLabel } from '../../lib/util'
 import { t } from '../../lib/i18n'
 
@@ -12,8 +12,11 @@ defineProps<{ pane: Pane }>()
   <div class="pointer-events-none absolute inset-0 grid place-items-center text-center">
     <div class="max-w-72 text-dim">
       <template v-if="pane.error">
-        <p class="text-danger">{{ t('pane.cantOpen') }}</p>
-        <p class="mt-1 text-[12px] text-faint">{{ pane.error }}</p>
+        <p class="text-danger">{{ isNotResponding(pane.error) ? t('pane.notResponding') : t('pane.cantOpen') }}</p>
+        <p class="mt-1 text-[12px] text-faint">{{ isNotResponding(pane.error) ? t('pane.notRespondingHint') : parseHostKeyChange(pane.error) ? t('cloud.hostKeyChanged', parseHostKeyChange(pane.error)!) : pane.error }}</p>
+        <button class="pointer-events-auto mt-3 inline-flex h-7 items-center gap-1.5 rounded-md bg-raised px-2.5 text-[12px] text-fg transition hover:bg-accent-soft/40" @click="load_(pane)">
+          <Icon name="refresh" class="size-3.5" />{{ t('pane.retry') }}
+        </button>
       </template>
       <template v-else-if="pane.search && !pane.search.query">
         <Icon name="search" class="mx-auto mb-2 size-8 text-accent/60" />

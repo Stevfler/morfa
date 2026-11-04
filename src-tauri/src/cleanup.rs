@@ -56,6 +56,7 @@ pub struct DeleteReport {
 /// `Err("cancelled")` if `cleanup_cancel` or a newer scan superseded it.
 #[tauri::command]
 pub async fn cleanup_scan(app: AppHandle, state: State<'_, CleanupState>, root: String, id: u64) -> CmdResult<Report> {
+    crate::guard::probe(&root).await?;
     let (gen, slot) = (state.gen.clone(), state.index.clone());
     gen.store(id, Ordering::SeqCst);
     tauri::async_runtime::spawn_blocking(move || {

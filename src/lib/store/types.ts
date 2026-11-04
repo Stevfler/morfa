@@ -25,6 +25,8 @@ export type Pane = {
   entries: Entry[]
   loading: boolean
   error: string | null
+  /** On a network filesystem; undefined until known, and treated as remote until then. */
+  remote?: boolean
   selected: Set<string>
   cursor: number
   anchor: number
@@ -37,7 +39,14 @@ export type Pane = {
 
 export type Tab = { id: number; panes: Pane[]; active: number }
 
-export type Place = { name: string; path: string; kind: string; total: number; free: number; fs: string; removable: boolean }
+export type Place = { name: string; path: string; kind: string; total: number; free: number; fs: string; removable: boolean; network: boolean; unavailable: boolean }
+
+/** Backend error for a filesystem call abandoned because the mount stopped answering (see guard.rs). */
+export const isNotResponding = (e: unknown) => String(e).startsWith('not-responding')
+/** Largest file previewed on a share without being asked: reading more over a slow link is the user's call. */
+export const REMOTE_AUTO_MAX = 1 << 20
+/** Don't read this file's contents unprompted while the cursor passes over it. */
+export const remoteHold = (p: Pane, size: number) => p.remote !== false && size > REMOTE_AUTO_MAX
 
 /** Pseudo-path for the "This PC"-style Drives overview; never sent to the backend. */
 export const DRIVES = 'morfa://drives'
@@ -65,16 +74,24 @@ export function parseArchive(path: string): { archive: string; rel: string } | n
 /** Formats the backend can open (src-tauri/src/archive/read.rs). */
 export const isArchiveFile = (name: string) => /\.(zip|7z|tar|tgz|tbz2|txz|tzst|tar\.(gz|bz2|xz|zst))$/i.test(name)
 
+/** `host-key-changed: <server> <expected> <presented>` from the SFTP client. */
+export function parseHostKeyChange(e: unknown): { server: string; expected: string; got: string } | null {
+  const m = /host-key-changed: (\S+) (\S+) (\S+)/.exec(String(e))
+  return m ? { server: m[1], expected: m[2], got: m[3] } : null
+}
+
 export type CloudStatus = { state: 'idle' | 'syncing' | 'error'; error: string | null; current: string | null; last: number }
+export type CloudHold = { pin: string; toServer: boolean; count: number; gone: boolean; confirmed: boolean; sample: string[]; digest: string }
 export type CloudAccount = {
   id: string
-  kind: 'nextcloud'
+  kind: 'nextcloud' | 'webdav' | 'sftp'
   name: string
   server: string
   login: string
   localRoot: string
   status: CloudStatus
   pins: string[]
+  holds: CloudHold[]
 }
 
 /** A volume that is not mounted yet (from `list_drives`). */

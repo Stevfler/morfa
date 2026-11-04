@@ -6,6 +6,7 @@ import { visible } from './view'
 import { fail, toast } from './toast'
 import { stopSearch } from './search'
 import { persist, syncWatch } from './tabs'
+import { archiveLocal } from './archive'
 import { archivePath, cloudPath, isArchiveFile, isSpecial, parseArchive, parseCloud, type Entry, type Pane, type Place } from './types'
 import { t } from '../i18n'
 
@@ -24,6 +25,11 @@ export async function load_(p: Pane) {
     return
   }
   p.loading = true
+  if (!cloud && !arc) checkRemote(p)
+  else {
+    p.remote = false
+    remoteFor.delete(p)
+  }
   try {
     const entries = arc
       ? (await invoke<Entry[]>('archive_list', { archive: arc.archive, rel: arc.rel })).map((e) => ({ ...e, path: archivePath(arc.archive, e.path) }))
@@ -52,6 +58,18 @@ export async function load_(p: Pane) {
     if (!stale()) p.loading = false
   }
 }
+
+/** Learns whether the folder is on a share; a listing or preview doesn't wait for the answer. */
+function checkRemote(p: Pane) {
+  const path = p.path
+  // Asked on every load: a mount can come back, and a timeout's answer isn't final.
+  if (remoteFor.get(p) !== path) p.remote = undefined
+  remoteFor.set(p, path)
+  invoke<boolean>('is_remote', { path }).then((r) => {
+    if (p.path === path) p.remote = r
+  }).catch(() => {})
+}
+const remoteFor = new WeakMap<Pane, string>()
 
 /** Inside a cloud account's local folder: attach sync marks to the entries. */
 async function markMirrored(dir: string, entries: Entry[]) {
@@ -129,7 +147,7 @@ export async function open(p: Pane, e: Entry | undefined, opts: { reveal?: boole
 /** A file inside an archive opens from a temporary copy. A nested archive is unpacked and browsed. */
 async function openArchived(archive: string, rel: string, e: Entry) {
   try {
-    const local = await invoke<string>('archive_open', { archive, rel })
+    const local = await archiveLocal(archivePath(archive, rel))
     if (isArchiveFile(e.name)) return await go(pane(), archivePath(local))
     await openPath(local)
   } catch (err) {
@@ -156,7 +174,7 @@ export const reveal = (path: string) => revealItemInDir(path).catch(fail)
 
 export function refreshAll() {
   for (const t of state.tabs) for (const p of t.panes) if (!p.search) load_(p)
-  invoke<Place[]>('places').then((pl) => (state.places = pl))
+  invoke<Place[]>('places').then((pl) => (state.places = pl)).catch(() => {})
 }
 
 // Frecency: folders you visit often & recently float to the top of "Jump to".

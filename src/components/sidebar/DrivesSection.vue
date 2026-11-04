@@ -50,6 +50,7 @@ onUnmounted(() => window.removeEventListener('focus', refreshDrives))
             :style="{ width: `${100 - (d.free / d.total) * 100}%` }" />
         </span>
         <span v-if="d.total" class="text-[11px] text-faint">{{ t('drive.freeOf', { free: fmtSize(d.free), total: fmtSize(d.total) }) }}</span>
+        <span v-else-if="d.unavailable" class="text-[11px] text-danger">{{ t('drive.notResponding') }}</span>
       </button>
       <button
         v-if="ejectable(d)" class="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded text-dim hover:bg-line hover:text-fg"

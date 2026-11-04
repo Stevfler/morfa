@@ -50,6 +50,9 @@ pub async fn search(app: AppHandle, state: State<'_, SearchState>, root: String,
     // Storing it cancels any older search; 0 is reserved for "cancelled".
     let gen = state.0.clone();
     gen.store(id, Ordering::SeqCst);
+    // A root that doesn't answer gets an error now. A mount dying mid-walk leaves the threads
+    // stuck, but the emitting thread below still sees a cancel and the UI moves on.
+    crate::guard::probe(&root).await?;
     std::thread::spawn(move || {
         let is_match = matcher(&query);
         let walker = ignore::WalkBuilder::new(&root).hidden(!hidden).git_ignore(gitignore.unwrap_or(false)).parents(false).threads(num_threads()).build_parallel();

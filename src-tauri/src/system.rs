@@ -17,12 +17,16 @@ fn reap(child: Child) {
 }
 
 #[tauri::command]
-pub fn open_terminal(path: String) -> CmdResult<()> {
-    let dir = Path::new(&path);
-    if !dir.is_dir() {
-        return Err(format!("Not a folder: {path}"));
-    }
-    spawn_terminal(dir).map(reap).map_err(|e| format!("Could not open a terminal: {e}"))
+pub async fn open_terminal(path: String) -> CmdResult<()> {
+    let p = path.clone();
+    crate::guard::guarded(&path, crate::guard::quick_for(&path), move |_| {
+        let dir = Path::new(&p);
+        if !dir.is_dir() {
+            return Err(format!("Not a folder: {p}"));
+        }
+        spawn_terminal(dir).map(reap).map_err(|e| format!("Could not open a terminal: {e}"))
+    })
+    .await
 }
 
 #[cfg(target_os = "macos")]

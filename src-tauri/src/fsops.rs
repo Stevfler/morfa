@@ -15,15 +15,17 @@ fn free(p: &Path) -> bool {
 #[tauri::command]
 pub async fn create_dir(parent: String, name: String) -> CmdResult<String> {
     validate_name(&name)?;
-    let p = names::create_unique(&Path::new(&parent).join(name), true)?;
-    Ok(p.to_string_lossy().into())
+    crate::guard::probe(&parent).await?;
+    // Past the probe it runs to the end: abandoning it would report failure for an item it creates.
+    tauri::async_runtime::spawn_blocking(move || Ok(names::create_unique(&Path::new(&parent).join(name), true)?.to_string_lossy().into())).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
 pub async fn create_file(parent: String, name: String) -> CmdResult<String> {
     validate_name(&name)?;
-    let p = names::create_unique(&Path::new(&parent).join(name), false)?;
-    Ok(p.to_string_lossy().into())
+    crate::guard::probe(&parent).await?;
+    // Past the probe it runs to the end: abandoning it would report failure for an item it creates.
+    tauri::async_runtime::spawn_blocking(move || Ok(names::create_unique(&Path::new(&parent).join(name), false)?.to_string_lossy().into())).await.map_err(|e| e.to_string())?
 }
 
 pub(crate) fn remove_any(p: &Path) -> std::io::Result<()> {
@@ -37,7 +39,14 @@ pub(crate) fn remove_any(p: &Path) -> std::io::Result<()> {
 /// Rename/move each `from` to exactly `to`. Refuses to overwrite. Used for rename, batch rename and undo.
 #[tauri::command]
 pub async fn move_pairs(pairs: Vec<(String, String)>) -> CmdResult<()> {
-    for (from, to) in &pairs {
+    if let Some((from, _)) = pairs.first() {
+        crate::guard::probe(from).await?;
+    }
+    tauri::async_runtime::spawn_blocking(move || move_all(&pairs)).await.map_err(|e| e.to_string())?
+}
+
+fn move_all(pairs: &[(String, String)]) -> CmdResult<()> {
+    for (from, to) in pairs {
         if from == to {
             continue;
         }
@@ -68,6 +77,9 @@ pub async fn move_pairs(pairs: Vec<(String, String)>) -> CmdResult<()> {
 
 #[tauri::command]
 pub async fn delete_items(paths: Vec<String>) -> CmdResult<()> {
+    if let Some(first) = paths.first() {
+        crate::guard::probe(first).await?;
+    }
     tauri::async_runtime::spawn_blocking(move || delete_all(&paths)).await.map_err(|e| e.to_string())?
 }
 

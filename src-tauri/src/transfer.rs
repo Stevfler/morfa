@@ -170,6 +170,11 @@ fn run(cx: &mut Ctx, sources: &[String], dest: &Path, moving: bool, pairs: &mut 
 /// and the error that stopped the op, if any.
 #[tauri::command]
 pub async fn transfer(app: AppHandle, state: State<'_, OpsState>, id: u64, sources: Vec<String>, dest: String, mode: String) -> CmdResult<TransferResult> {
+    // A dead share fails here, rather than as a progress bar that never moves.
+    crate::guard::probe(&dest).await?;
+    if let Some(first) = sources.first() {
+        crate::guard::probe(first).await?;
+    }
     let ops = state.0.clone();
     ops.lock().unwrap_or_else(|e| e.into_inner()).running.insert(id);
     let job = tauri::async_runtime::spawn_blocking(move || {

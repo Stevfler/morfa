@@ -48,8 +48,9 @@ async function commitPath(target = pathText.value) {
     const e = await invoke<Entry>('stat', { path: t })
     state.editPath = false
     e.isDir ? S.go(p, e.path) : S.go(p, parent(e.path)!, { focus: e.path })
-  } catch {
-    S.toast({ title: tr('pane.folderNotFound'), desc: t, tone: 'error' })
+  } catch (err) {
+    if (S.isNotResponding(err)) S.fail(err)
+    else S.toast({ title: tr('pane.folderNotFound'), desc: t, tone: 'error' })
   }
 }
 function pathKey(ev: KeyboardEvent) {

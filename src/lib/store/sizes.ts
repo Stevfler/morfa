@@ -4,11 +4,12 @@ import { basename, fmtSize } from '../util'
 import { pane, state } from './state'
 import { targets, visible } from './view'
 import { fail, toast } from './toast'
-import type { Pane } from './types'
+import { parseArchive, type Pane } from './types'
 import { t } from '../i18n'
 
 // Size walks are tagged with a generation; cancelSizes() stops every walk started before it.
 let gen = Date.now() // monotonic across webview reloads (backend keeps the last cancelled gen)
+const SIZE_WALKS = 4
 const inflight = new Map<string, number>() // path -> generation measuring it
 
 export function cancelSizes() {
@@ -26,12 +27,16 @@ watch(
 /** Resolves true if all walks finished, false if they were cancelled (navigation) meanwhile. */
 export async function computeSizes(paths: string[]): Promise<boolean> {
   const g = gen
-  await Promise.all(
-    paths.map(async (path) => {
-      if (inflight.get(path) === g) return // already being measured
-      inflight.set(path, g)
-      state.sizes[path] = 'pending'
+  const queue = paths.filter((path) => !parseArchive(path) && inflight.get(path) !== g)
+  for (const path of queue) {
+    inflight.set(path, g)
+    state.sizes[path] = 'pending'
+  }
+  // A few at a time: each walk is multi-threaded, and a share's mount only admits so many calls.
+  const worker = async () => {
+    for (let path = queue.shift(); path !== undefined; path = queue.shift()) {
       try {
+        if (gen !== g) throw 'cancelled' // navigated away while this one waited its turn
         const [bytes] = await invoke<[number, number]>('dir_size', { path, gen: g })
         state.sizes[path] = bytes
       } catch {
@@ -39,8 +44,9 @@ export async function computeSizes(paths: string[]): Promise<boolean> {
       } finally {
         if (inflight.get(path) === g) inflight.delete(path)
       }
-    }),
-  )
+    }
+  }
+  await Promise.all(Array.from({ length: SIZE_WALKS }, worker))
   return gen === g
 }
 

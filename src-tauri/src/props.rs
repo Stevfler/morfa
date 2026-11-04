@@ -1,5 +1,5 @@
 //! Detailed properties for the Properties dialog.
-use crate::CmdResult;
+use crate::{guard, CmdResult};
 use serde::Serialize;
 use std::{
     path::Path,
@@ -39,9 +39,8 @@ fn ms(t: std::io::Result<SystemTime>) -> u64 {
 
 #[tauri::command]
 pub async fn properties(path: String) -> CmdResult<Props> {
-    tauri::async_runtime::spawn_blocking(move || read(Path::new(&path)))
-        .await
-        .map_err(|e| e.to_string())?
+    let p = path.clone();
+    guard::guarded(&path, guard::stall_for(&path), move |_| read(Path::new(&p))).await
 }
 
 fn read(p: &Path) -> Result<Props, String> {

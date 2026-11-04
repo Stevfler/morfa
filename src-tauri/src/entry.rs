@@ -16,7 +16,8 @@ pub struct Entry {
 
 pub fn entry_from(path: &Path) -> Option<Entry> {
     let sym = std::fs::symlink_metadata(path).ok()?;
-    let meta = std::fs::metadata(path).unwrap_or_else(|_| sym.clone());
+    // One round trip per entry on a share: only a symlink needs a second, for its target.
+    let meta = if sym.file_type().is_symlink() { std::fs::metadata(path).unwrap_or_else(|_| sym.clone()) } else { sym.clone() };
     let name = path.file_name()?.to_string_lossy().to_string();
     let is_dir = meta.is_dir();
     Some(Entry {
@@ -38,6 +39,13 @@ pub fn entry_from(path: &Path) -> Option<Entry> {
             .map(|d| d.as_millis() as u64)
             .unwrap_or(0),
     })
+}
+
+/// A row for a symlink or mount point whose target doesn't answer. Shown as a folder, since opening
+/// one gives the pane's "not responding" error rather than handing the path to another app.
+pub fn entry_unresponsive(path: &Path, is_symlink: bool) -> Option<Entry> {
+    let name = path.file_name()?.to_string_lossy().to_string();
+    Some(Entry { hidden: name.starts_with('.'), ext: String::new(), name, path: path.to_string_lossy().to_string(), is_dir: true, is_symlink, size: 0, modified: 0 })
 }
 
 #[cfg(windows)]

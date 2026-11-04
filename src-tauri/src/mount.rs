@@ -111,7 +111,7 @@ async fn blocking<T: Send + 'static>(f: impl FnOnce() -> Result<T, String> + Sen
 /// Unmounted volumes the user could mount.
 #[tauri::command]
 pub async fn list_drives() -> CmdResult<Vec<Drive>> {
-    blocking(backend::list).await
+    crate::guard::guarded("list-drives", std::time::Duration::from_secs(10), |_| backend::list()).await
 }
 
 /// Mount (unlocking first when `passphrase` is given / required); returns the mount path.

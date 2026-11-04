@@ -51,7 +51,8 @@ pub enum Doc {
 
 #[tauri::command]
 pub async fn office_preview(path: String) -> CmdResult<Doc> {
-    tauri::async_runtime::spawn_blocking(move || read(Path::new(&path))).await.map_err(|e| e.to_string())?
+    let p = path.clone();
+    crate::guard::guarded(&path, std::time::Duration::from_secs(30), move |_| read(Path::new(&p))).await
 }
 
 pub fn read(path: &Path) -> CmdResult<Doc> {

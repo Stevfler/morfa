@@ -6,7 +6,9 @@ mod docview;
 mod entry;
 mod fsinfo;
 mod fsops;
+mod guard;
 mod mount;
+mod netfs;
 mod office;
 mod places;
 mod props;
@@ -60,6 +62,7 @@ pub fn run() {
             cancel_sizes,
             read_text,
             complete_path,
+            is_remote,
             home_dir,
             update_mode,
             open_terminal,
@@ -102,6 +105,9 @@ pub fn run() {
             office::office_remove,
             cloud::cloud_accounts,
             cloud::cloud_connect,
+            cloud::cloud_connect_webdav,
+            cloud::cloud_sftp_probe,
+            cloud::cloud_connect_sftp,
             cloud::cloud_connect_cancel,
             cloud::cloud_remove,
             cloud::cloud_list,
@@ -110,6 +116,7 @@ pub fn run() {
             cloud::cloud_pin,
             cloud::cloud_unpin,
             cloud::cloud_fetch,
+            cloud::cloud_hold_resolve,
             cloud::cloud_sync,
         ])
         .run(tauri::generate_context!())

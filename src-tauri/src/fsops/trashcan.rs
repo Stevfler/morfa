@@ -2,6 +2,9 @@ use crate::CmdResult;
 
 #[tauri::command]
 pub async fn trash_items(paths: Vec<String>) -> CmdResult<()> {
+    if let Some(first) = paths.first() {
+        crate::guard::probe(first).await?;
+    }
     tauri::async_runtime::spawn_blocking(move || trash_blocking(&paths)).await.map_err(|e| e.to_string())?
 }
 

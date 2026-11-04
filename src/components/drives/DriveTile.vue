@@ -51,6 +51,7 @@ async function copyPath() {
               <span v-if="d.fs" class="ml-auto rounded bg-raised px-1.5 py-0.5 font-mono text-[10.5px] uppercase text-faint">{{ d.fs }}</span>
             </span>
           </template>
+          <span v-else-if="d.unavailable" class="text-[12px] text-danger">{{ t('drive.notResponding') }}</span>
         </button>
         <button
           v-if="ejectable(d)" class="absolute top-3 right-3 grid size-7 place-items-center rounded-md text-dim hover:bg-line hover:text-fg"

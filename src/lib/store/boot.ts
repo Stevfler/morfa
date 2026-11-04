@@ -1,12 +1,13 @@
 import { watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { load, save } from '../util'
 import { newPane, nextId, state } from './state'
 import { go, load_ } from './navigation'
 import { persist, syncWatch } from './tabs'
 import { startSearch } from './search'
-import type { Entry, Place } from './types'
+import { isNotResponding, type Entry, type Place } from './types'
 import { settings } from '../settings'
 import { initCloud } from '../cloud'
 
@@ -25,10 +26,12 @@ export async function init() {
     state.tabs = [{ id: nextId(), panes: [newPane(state.home)], active: 0 }]
   }
   for (const t of state.tabs) for (const p of t.panes) load_(p).then(() => {
-      if (p.error) go(p, state.home, { history: false })
+      // An outage isn't a missing folder: keep the saved path, with Retry in the pane.
+      if (p.error && !isNotResponding(p.error)) go(p, state.home, { history: false })
     })
   syncWatch()
-  state.places = await invoke<Place[]>('places')
+  // Not awaited: a slow answer must not hold up the listeners below.
+  invoke<Place[]>('places').then((pl) => (state.places = pl)).catch((e) => console.warn('places:', e))
 
   await listen<{ id: number; entries: Entry[]; done: boolean; scanned: number }>('search', ({ payload }) => {
     for (const t of state.tabs)
@@ -50,6 +53,14 @@ export async function init() {
       for (const t of state.tabs) for (const p of t.panes) if (!p.search && dirty.has(p.path)) load_(p)
       dirty.clear()
     }, 150)
+  })
+
+  // Shares aren't watched: catch up on what changed there when the window comes back.
+  let lastFocus = 0
+  await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+    if (!focused || Date.now() - lastFocus < 5000) return
+    lastFocus = Date.now()
+    for (const t of state.tabs) for (const p of t.panes) if (p.remote && !p.search && !p.loading && !p.error) load_(p)
   })
 
   watch(() => state.bookmarks, (v) => save('morfa.bookmarks', v), { deep: true })
