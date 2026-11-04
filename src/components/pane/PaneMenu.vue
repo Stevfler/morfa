@@ -9,12 +9,12 @@ import TagsMenuItems from '../tags/TagsMenuItems.vue'
 import * as S from '../../lib/store'
 import type { Pane } from '../../lib/store'
 import { keyLabel, parent } from '../../lib/util'
-import { cmd, openProperties } from '../../lib/commands'
+import { cmd, openProperties, showProperties } from '../../lib/commands'
 import { t as tr } from '../../lib/i18n'
 import { canDownload, refreshOffice } from '../../lib/office'
 import { pin, unpin, showLocal, showInCloud, openWeb, syncNow } from '../../lib/cloud'
 import { within } from '../../lib/store/navigation'
-import { formatLabel, isConvertible, isImage, openConvert, quickConvert, targetsFor } from '../../lib/convert'
+import { formatLabel, isConvertible, isImage, openConvert, quickConvert, recipesFor, recipeSummary, recipeTargets, runRecipe, targetsFor, type Recipe } from '../../lib/convert'
 
 const props = defineProps<{ pane: Pane }>()
 const onItem = defineModel<boolean>('onItem', { required: true })
@@ -35,14 +35,18 @@ const convertLabel = computed(() => {
 })
 // Targets load lazily on menu open (cached per extension set); null while loading.
 const quick = ref<string[] | null>(null)
+const menuRecipes = ref<Recipe[]>([])
 let seq = 0
 async function loadQuick() {
   const c = convertible.value
   const my = ++seq
   quick.value = null
+  menuRecipes.value = []
   if (!c) return
-  const list = await targetsFor(c).catch(() => [])
-  if (my === seq) quick.value = list.slice(0, 4)
+  const [list, fit] = await Promise.all([targetsFor(c).catch(() => []), recipeTargets(S.targets(p), p.path).length === c.length ? recipesFor(c) : []])
+  if (my !== seq) return
+  quick.value = list.slice(0, 4)
+  menuRecipes.value = fit
 }
 // Documents with no formats because the Office module is missing: offer it instead of an empty list.
 const getOffice = computed(() => {
@@ -57,6 +61,8 @@ function onOpen(o: boolean) {
 }
 
 const cloud = computed(() => S.parseCloud(p.path))
+/** Only Nextcloud has a known web interface. */
+const hasWeb = computed(() => state.cloud.find((a) => a.id === cloud.value?.id)?.kind === 'nextcloud')
 const inArchive = computed(() => S.parseArchive(p.path))
 const archives = computed(() => S.targets(p).filter((e) => !e.isDir && S.isArchiveFile(e.name)).map((e) => e.path))
 const otherFolder = computed(() => {
@@ -104,11 +110,11 @@ function openIn(where: 'tab' | 'other') {
             <ContextMenuItem class="mi" @select="unpin(S.targets(p), true)"><Icon name="broom" />{{ tr('cloud.unpinDelete') }}</ContextMenuItem>
           </template>
           <ContextMenuItem v-if="cursorEntry.cloud" class="mi" @select="showLocal(cursorEntry)"><Icon name="hard-drive" />{{ tr('cloud.showLocal') }}</ContextMenuItem>
-          <ContextMenuItem class="mi" @select="openWeb(cloud.id, cursorEntry.isDir ? S.parseCloud(cursorEntry.path)!.rel : cloud.rel)"><Icon name="external-link" />{{ tr('cloud.openWeb') }}</ContextMenuItem>
+          <ContextMenuItem v-if="hasWeb" class="mi" @select="openWeb(cloud.id, cursorEntry.isDir ? S.parseCloud(cursorEntry.path)!.rel : cloud.rel)"><Icon name="external-link" />{{ tr('cloud.openWeb') }}</ContextMenuItem>
         </template>
         <template v-else-if="cloud">
           <ContextMenuItem class="mi" @select="syncNow(cloud.id)"><Icon name="refresh" />{{ tr('cloud.syncNow') }}</ContextMenuItem>
-          <ContextMenuItem class="mi" @select="openWeb(cloud.id, cloud.rel)"><Icon name="external-link" />{{ tr('cloud.openWeb') }}</ContextMenuItem>
+          <ContextMenuItem v-if="hasWeb" class="mi" @select="openWeb(cloud.id, cloud.rel)"><Icon name="external-link" />{{ tr('cloud.openWeb') }}</ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.selectAll(p)"><Icon name="check-all" />{{ tr('pane.menu.selectAll') }}<span>{{ keyLabel('Ctrl+A') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="state.showHidden = !state.showHidden"><Icon name="eye" />{{ state.showHidden ? tr('pane.menu.hideHidden') : tr('pane.menu.showHidden') }}<span>{{ keyLabel('Ctrl+H') }}</span></ContextMenuItem>
         </template>
@@ -128,7 +134,9 @@ function openIn(where: 'tab' | 'other') {
                 <ContextMenuItem v-if="!quick" class="mi" disabled>…</ContextMenuItem>
                 <ContextMenuItem v-if="getOffice" class="mi" @select="openConvert(convertible)"><Icon name="download" />{{ tr('office.getModule') }}</ContextMenuItem>
                 <ContextMenuItem v-for="f in quick ?? []" :key="f" class="mi" @select="quickConvert(convertible, f)">{{ formatLabel(f) }}</ContextMenuItem>
-                <ContextMenuSeparator v-if="quick?.length !== 0 || getOffice" class="sep" />
+                <ContextMenuSeparator v-if="menuRecipes.length && quick?.length" class="sep" />
+                <ContextMenuItem v-for="r in menuRecipes" :key="r.id" class="mi" :title="recipeSummary(r)" @select="runRecipe(r, convertible!)"><Icon name="zap" /><div class="max-w-64 min-w-0 truncate">{{ r.name }}</div></ContextMenuItem>
+                <ContextMenuSeparator v-if="quick?.length !== 0 || getOffice || menuRecipes.length" class="sep" />
                 <ContextMenuItem class="mi" @select="openConvert(convertible)">{{ tr('pane.menu.moreOptions') }}</ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuPortal>
@@ -176,7 +184,7 @@ function openIn(where: 'tab' | 'other') {
           <ContextMenuItem class="mi" @select="S.calcFolderSizes(p)"><Icon name="gauge" />{{ tr('pane.menu.folderSizes') }}<span>{{ keyLabel('Ctrl+Shift+S') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.toggleBookmark(p.path)"><Icon name="star" />{{ state.bookmarks.includes(p.path) ? tr('pane.menu.removeFav') : tr('pane.menu.addFav') }}<span>{{ keyLabel('Ctrl+D') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.openTerminal(p.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}<span>{{ keyLabel('Ctrl+`') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="state.properties = [p.path]"><Icon name="info" />{{ tr('pane.menu.properties') }}<span>{{ keyLabel('Alt+Enter') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="showProperties([p.path])"><Icon name="info" />{{ tr('pane.menu.properties') }}<span>{{ keyLabel('Alt+Enter') }}</span></ContextMenuItem>
         </template>
       </ContextMenuContent>
     </ContextMenuPortal>

@@ -7,6 +7,7 @@ import * as S from '../lib/store'
 import { commands, prettyKeys } from '../lib/commands'
 import { basename, fuzzy, keyLabel } from '../lib/util'
 import { t } from '../lib/i18n'
+import { recipes, recipeSummary, recipeTargets, runRecipe } from '../lib/convert'
 import { allTags, refreshAllTags, showTag, tagLabel } from '../lib/tags'
 
 type Item = { key: string; title: string; sub?: string; icon: IconName; keys?: string; group: string; run: () => unknown }
@@ -44,6 +45,15 @@ const tagItems = (): Item[] =>
     key: 't:' + tag, title: `#${tagLabel(tag)}`, sub: t('props.items', { count: n }), icon: 'tag', group: t('tags.section'), run: () => showTag(S.pane(), tag),
   }))
 
+// Only with local files selected: there is nothing to run a recipe on otherwise.
+function recipeItems(): Item[] {
+  if (!recipeTargets(S.targets(), S.pane().path).length) return []
+  return recipes.value.map((r) => ({
+    key: 'r:' + r.id, title: r.name, sub: recipeSummary(r), icon: 'zap', group: t('recipes.title'),
+    run: () => runRecipe(r, recipeTargets(S.targets(), S.pane().path), S.targets().length),
+  }))
+}
+
 const items = computed<Item[]>(() => {
   const query = q.value.trim()
   const out: Item[] = []
@@ -69,8 +79,9 @@ const items = computed<Item[]>(() => {
   const cmds: Item[] = commands
     .filter((c) => c.id !== 'palette')
     .map((c) => ({ key: c.id, title: c.title, icon: c.icon, keys: c.keys, group: c.groupLabel, run: c.run }))
-  if (!query) return [...out, ...cmds]
-  const scoredCmds = cmds.map((c) => [fuzzy(query, c.title + ' ' + c.group), c] as const).filter(([s]) => s >= 0)
+  const recs = recipeItems()
+  if (!query) return [...out, ...recs, ...cmds]
+  const scoredCmds = [...recs, ...cmds].map((c) => [fuzzy(query, c.title + ' ' + c.group), c] as const).filter(([s]) => s >= 0)
   const scoredFolders = folders.map((f) => [fuzzy(query, f.title) - 50 + S.frecencyScore(f.sub!), f] as const).filter(([s]) => s > -50)
   const scoredTags = tagItems().map((t) => [fuzzy(query, t.title.slice(1)) - 40, t] as const).filter(([s]) => s > -40)
   return [...out, ...[...scoredCmds, ...scoredFolders, ...scoredTags].sort((a, b) => b[0] - a[0]).map(([, x]) => x)].slice(0, 60)

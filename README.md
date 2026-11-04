@@ -60,6 +60,7 @@ It was built because the usual options each fall short somewhere:
 
 **Conversion**
 - Images via libvips: JPEG, PNG, WebP, AVIF, HEIC and more, with quality and resize controls and a size estimate
+- Saved recipes such as "photos to WebP under 2 MB": run them from the Convert menu or the command palette. Morfa finds the best quality under the limit and reports a file that can't fit instead of writing it oversized
 - Video and audio via ffmpeg
 - Office documents and PDF via an optional Office module, downloaded on demand
 - All engines ship with the app, so there is nothing extra to install
@@ -74,8 +75,12 @@ It was built because the usual options each fall short somewhere:
 - Browse the whole cloud without downloading anything
 - Pick files or folders to **keep on this device**. They download into a folder you choose and stay in two-way sync.
 - Sync marks on every item: in sync, waiting, partly on the device, cloud only
-- Conflicts keep both versions, and deletions go to the Trash on both sides
-- Yandex Disk and generic WebDAV are planned
+- Conflicts keep both versions, and deletions go to the Trash on both sides where the server has one
+- Mass deletions, or a kept folder that vanished on one side (say, a disk that isn't connected), are held until you confirm or restore them
+- Generic WebDAV (folder address, login, app password) and SFTP (password or private key file) use the same browsing and keep-on-device sync. So far tested against OpenSSH and Apache on localhost, not through the app window or against other servers.
+- SFTP asks you to confirm the server's fingerprint on first connection and refuses a changed key
+- WebDAV and SFTP servers have no trash: deleting a kept file on this device deletes it on the server for good
+- Yandex Disk is planned
 
 **Looks**
 - 6 themes (Midnight, Daylight, Nord, Mocha, OLED, Forest), 8 accent colors, adjustable corner rounding, animation level and row density

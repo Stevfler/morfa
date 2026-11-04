@@ -157,6 +157,11 @@ function extractTargets() {
 
 /** Properties of the selection, or of the current folder when nothing is selected. */
 export function openProperties(p = S.pane()) {
-  const t = S.targets(p)
-  S.state.properties = t.length ? t.map((e) => e.path) : [p.path]
+  const sel = S.targets(p)
+  showProperties(sel.length ? sel.map((e) => e.path) : [p.path])
+}
+/** Properties read the disk, which pseudo-paths inside an archive aren't on. */
+export function showProperties(paths: string[]) {
+  if (paths.some(S.parseArchive)) return S.toast({ title: t('archive.noProperties'), tone: 'info' }, 2500)
+  S.state.properties = paths
 }

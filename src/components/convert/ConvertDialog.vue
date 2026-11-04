@@ -8,8 +8,9 @@ import OutputPicker from './OutputPicker.vue'
 import SizeEstimate from './SizeEstimate.vue'
 import EngineBanner from './EngineBanner.vue'
 import ConvertHeader from './ConvertHeader.vue'
+import RecipeManager from './RecipeManager.vue'
 import * as S from '../../lib/store'
-import { caps, loadCaps, defaultOpts, runConvert, targetsFor, missingEngine, isImage, isImageFormat, isMedia, isMediaFormat, isVideo, isLossless, formatGroup, extOf, PRESETS, type ConvertOpts } from '../../lib/convert'
+import { caps, loadCaps, defaultOpts, runConvert, applicable, gateOpts, validTemplate, targetsFor, missingEngine, isImage, isImageFormat, isMedia, isMediaFormat, isVideo, isLossless, formatGroup, extOf, PRESETS, type ConvertOpts } from '../../lib/convert'
 import { basename, load, save } from '../../lib/util'
 import { t } from '../../lib/i18n'
 import { officeEpoch } from '../../lib/office'
@@ -24,6 +25,7 @@ const paths = computed(() => state.convert?.paths ?? [])
 const opts = reactive<ConvertOpts>(defaultOpts('webp'))
 const preset = ref('balanced')
 const loading = ref(false)
+const limitInvalid = ref(false)
 const targets = ref<string[] | null>(null)
 
 watch(open, async (v) => {
@@ -64,6 +66,7 @@ const mediaIn = computed(() => paths.value.some(isMedia))
 // Video/audio output (gif counts as video when made from a media source).
 const mediaOut = computed(() => isMediaFormat(opts.format, mediaIn.value))
 const lossless = computed(() => LOSSLESS.has(opts.format) || (mediaOut.value && isLossless(opts.format)))
+const can = computed(() => applicable(paths.value, opts.format))
 const audioOut = computed(() => formatGroup(opts.format) === 'audio')
 const audioOnly = computed(() => audioOut.value && paths.value.some(isVideo))
 const videoResize = computed(() => mediaOut.value && !audioOut.value && paths.value.every((p) => isVideo(p) || extOf(p) === 'gif'))
@@ -81,16 +84,19 @@ const example = computed(() => {
   const stem = dot > 0 ? n.slice(0, dot) : n
   return (opts.nameTemplate || '{name}').replace(/\{name\}/g, stem) + '.' + opts.format
 })
-const canConvert = computed(() => !loading.value && !noEngine.value && !!targets.value?.includes(opts.format) && paths.value.length > 0 && !!opts.nameTemplate.trim())
+const canConvert = computed(() => !loading.value && !noEngine.value && !!targets.value?.includes(opts.format) && paths.value.length > 0 && validTemplate(opts.nameTemplate) && !limitInvalid.value)
 
 function submit() {
   if (!canConvert.value) return
   save(KEY, { format: opts.format, preset: preset.value, quality: opts.quality, stripMetadata: opts.stripMetadata } satisfies Remembered)
   const sources = [...paths.value]
-  const resize = (imageIn.value || videoResize.value) && opts.resize ? { ...opts.resize } : null
-  const o: ConvertOpts = { ...opts, resize, stripMetadata: (imageIn.value || mediaOut.value) && opts.stripMetadata }
+  const o = current()
   state.convert = null
   void runConvert(sources, o)
+}
+/** The options as they'd run now, without those that don't apply to these sources. */
+function current(): ConvertOpts {
+  return gateOpts(paths.value, { ...opts, resize: opts.resize && { ...opts.resize } })
 }
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Enter' && !e.isComposing && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); submit() }
@@ -116,17 +122,22 @@ function onKey(e: KeyboardEvent) {
             <p v-else-if="audioOnly" class="mt-2 text-[12px] text-faint">{{ t('convert.audioOnly') }}</p>
           </section>
           <ConvertOptions
-            :opts="opts" v-model:preset="preset" :lossless="lossless" :audio="audioOut"
-            :quality="imageOut || mediaOut" :resize="imageIn || videoResize" :strip="imageIn || mediaOut"
+            :opts="opts" v-model:preset="preset" v-model:limit-invalid="limitInvalid" :lossless="lossless" :audio="audioOut"
+            :quality="imageOut || mediaOut" :resize="imageIn || videoResize" :strip="imageIn || mediaOut" :limit="can.limit"
           />
           <section>
             <h3 class="sec">{{ t('convert.saveTo') }}</h3>
             <OutputPicker v-model:out-dir="opts.outDir" v-model:name-template="opts.nameTemplate" :example="example" />
+            <p v-if="!validTemplate(opts.nameTemplate) && opts.nameTemplate.trim()" class="mt-2 text-[11.5px] text-danger">{{ t('recipes.badTemplate') }}</p>
+          </section>
+          <section>
+            <h3 class="sec">{{ t('recipes.title') }}</h3>
+            <RecipeManager :options="current" :can-save="!loading && !!targets?.includes(opts.format) && !limitInvalid" />
           </section>
         </div>
 
         <footer class="flex items-center gap-3 border-t border-line/60 px-7 py-4">
-          <SizeEstimate :source="imageIn ? paths[0] ?? null : null" :opts="opts" :disabled="noEngine || loading" />
+          <SizeEstimate :source="imageIn && !(can.limit && opts.maxBytes) ? paths[0] ?? null : null" :opts="opts" :disabled="noEngine || loading" />
           <DialogClose class="ml-auto h-9 rounded-lg px-4 text-[12.5px] text-dim transition hover:bg-raised hover:text-fg">{{ t('common.cancel') }}</DialogClose>
           <button
             class="flex h-9 items-center gap-2 rounded-lg bg-accent px-5 text-[12.5px] font-medium text-on-accent transition hover:brightness-110 disabled:opacity-40"

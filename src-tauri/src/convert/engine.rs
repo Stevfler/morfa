@@ -100,7 +100,7 @@ fn animated(src: &Path, fmt: &str) -> bool {
     matches!(ext_of(src).as_str(), "gif" | "webp") && matches!(fmt, "gif" | "webp")
 }
 
-fn lossy(fmt: &str) -> bool {
+pub fn lossy(fmt: &str) -> bool {
     matches!(fmt, "jpg" | "webp" | "avif" | "heic" | "jxl")
 }
 

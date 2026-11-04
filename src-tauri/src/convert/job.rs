@@ -1,5 +1,5 @@
 //! Converts a single file: run the engine into a temp file, then publish it.
-use super::{engine::{command, Engine}, naming, ConvertOpts};
+use super::{engine::{command, lossy, Engine}, fit, naming, ConvertOpts};
 use std::path::{Path, PathBuf};
 
 /// Convert `src` to `dest` (a temp file is used and removed on any failure). `cancelled` is polled
@@ -21,11 +21,21 @@ fn run(e: &Engine, src: &Path, tmp: &Path, o: &ConvertOpts, cancelled: &dyn Fn()
 }
 
 /// Full per-file pipeline used by `convert_images`: pick a name, convert, publish.
-pub fn convert_file(e: &Engine, src: &Path, o: &ConvertOpts, cancelled: &dyn Fn() -> bool) -> Result<PathBuf, String> {
+pub fn convert_file(e: &Engine, src: &Path, o: &ConvertOpts, cancelled: &dyn Fn() -> bool, part: &dyn Fn(f64)) -> Result<PathBuf, String> {
     let ext = o.format.as_str();
     let dest = naming::dest_for(src, o.out_dir.as_deref(), &o.name_template, ext);
-    let tmp = naming::temp_for(&dest);
-    convert_to(e, src, &tmp, o, cancelled)?;
+    let tmp = match o.max_bytes {
+        Some(limit) => {
+            let mut temp = || naming::temp_for(&dest);
+            let mut encode = |quality: u8, tmp: &Path| convert_to(e, src, tmp, &ConvertOpts { quality, ..o.clone() }, cancelled);
+            fit::search(o.quality, limit, lossy(ext), &mut temp, &mut encode, cancelled, part)?.tmp
+        }
+        None => {
+            let tmp = naming::temp_for(&dest);
+            convert_to(e, src, &tmp, o, cancelled)?;
+            tmp
+        }
+    };
     if cancelled() {
         let _ = std::fs::remove_file(&tmp);
         return Err("Cancelled".into());

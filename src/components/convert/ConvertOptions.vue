@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import QualityPicker from './QualityPicker.vue'
 import ResizePicker from './ResizePicker.vue'
+import SizeLimit from './SizeLimit.vue'
 import type { ConvertOpts } from '../../lib/convert'
 import { t } from '../../lib/i18n'
 
 /** Quality / size / metadata sections; which ones apply is decided by the dialog. */
 // `opts` is the dialog's reactive options object, edited in place.
-const { opts } = defineProps<{ opts: ConvertOpts; quality: boolean; resize: boolean; strip: boolean; lossless: boolean; audio: boolean }>()
+const { opts } = defineProps<{ opts: ConvertOpts; quality: boolean; resize: boolean; strip: boolean; limit: boolean; lossless: boolean; audio: boolean }>()
 const preset = defineModel<string>('preset', { required: true })
+const limitInvalid = defineModel<boolean>('limitInvalid', { required: true })
 </script>
 
 <template>
@@ -21,6 +23,10 @@ const preset = defineModel<string>('preset', { required: true })
   <section v-if="resize">
     <h3 class="sec">{{ t('convert.size') }}</h3>
     <ResizePicker v-model="opts.resize" />
+  </section>
+  <section v-if="limit">
+    <h3 class="sec">{{ t('recipes.limit') }}</h3>
+    <SizeLimit v-model="opts.maxBytes" v-model:invalid="limitInvalid" />
   </section>
   <section v-if="strip">
     <label class="flex cursor-pointer items-center justify-between gap-4 rounded-lg px-1 py-1">

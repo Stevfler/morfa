@@ -1,19 +1,33 @@
 //! Picks the engine for one source by its extension and runs it.
-use super::{doc, engine, job, pdf, routes::{self, Via}, video, ConvertOpts, ConvertResult};
+use super::{doc, engine, job, naming, pdf, routes::{self, Via}, video, ConvertOpts, ConvertResult};
 use std::{
     path::{Path, PathBuf},
     sync::{atomic::{AtomicUsize, Ordering}, Mutex},
 };
 
+/// A size limit only means something for image routes; other engines must not ignore it silently.
+pub const LIMIT_IMAGES_ONLY: &str = "LIMIT_IMAGES_ONLY";
+pub const NO_OUT_DIR: &str = "NO_OUT_DIR";
+pub const BAD_TEMPLATE: &str = "BAD_TEMPLATE";
+
 /// Convert one source; returns every file written (several for PDF -> images). `part` gets
 /// in-file progress (0..1) from engines that report it (ffmpeg).
 pub fn convert_one(src: &Path, o: &ConvertOpts, worker: usize, cancelled: &dyn Fn() -> bool, part: &dyn Fn(f64)) -> Result<Vec<PathBuf>, String> {
+    if !naming::template_ok(&o.name_template) {
+        return Err(BAD_TEMPLATE.into());
+    }
+    if o.out_dir.as_deref().is_some_and(|d| !Path::new(d).is_dir()) {
+        return Err(NO_OUT_DIR.into());
+    }
     let ext = routes::norm(&src.extension().unwrap_or_default().to_string_lossy());
     let fmt = o.format.as_str();
     // Same-format image re-encodes (resize/strip/quality) stay allowed, as before.
     let via = routes::detected(|a| routes::route(&ext, fmt, a).or_else(|| (ext == fmt && a.image.iter().any(|f| f == fmt)).then_some(Via::Image)));
+    if o.max_bytes.is_some() && via.is_some_and(|v| v != Via::Image) {
+        return Err(LIMIT_IMAGES_ONLY.into());
+    }
     match via {
-        Some(Via::Image) => job::convert_file(engine::engine().ok_or(engine::NO_ENGINE)?, src, o, cancelled).map(|p| vec![p]),
+        Some(Via::Image) => job::convert_file(engine::engine().ok_or(engine::NO_ENGINE)?, src, o, cancelled, part).map(|p| vec![p]),
         Some(Via::PdfPages) => pdf::convert(src, o, cancelled),
         Some(Via::Office) => doc::office_convert(src, o, worker, cancelled).map(|p| vec![p]),
         Some(Via::Pandoc) => doc::pandoc_convert(src, o, cancelled).map(|p| vec![p]),

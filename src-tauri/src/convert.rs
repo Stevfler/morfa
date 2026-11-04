@@ -3,8 +3,9 @@
 mod dispatch;
 pub(crate) mod doc;
 mod engine;
+mod fit;
 mod job;
-mod naming;
+pub(crate) mod naming;
 mod pdf;
 pub mod preview;
 pub(crate) mod proc;
@@ -41,6 +42,9 @@ pub struct ConvertOpts {
     pub strip_metadata: bool,
     pub out_dir: Option<String>,
     pub name_template: String,
+    /// Per-file size limit in bytes (image routes only); quality is searched to meet it.
+    #[serde(default)]
+    pub max_bytes: Option<u64>,
 }
 
 #[derive(Serialize)]

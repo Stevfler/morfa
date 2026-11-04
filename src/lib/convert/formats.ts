@@ -8,6 +8,8 @@ export type ConvertOpts = {
   /** null = next to each source */
   outDir: string | null
   nameTemplate: string
+  /** Per-file size limit (lossy image output from image sources); null = none */
+  maxBytes: number | null
 }
 
 export type Caps = { engine: 'vips' | 'magick' | null; formats: string[]; office?: boolean; pandoc?: boolean; ffmpeg?: boolean }
@@ -87,4 +89,41 @@ export const defaultOpts = (format: string): ConvertOpts => ({
   stripMetadata: false,
   outDir: null,
   nameTemplate: '{name}',
+  maxBytes: null,
 })
+
+export const LIMIT_MIN = 1024
+export const LIMIT_MAX = 10 * 1024 ** 3
+const LIMIT_UNITS: Record<string, number> = { kb: 1024, 'кб': 1024, mb: 1024 ** 2, 'мб': 1024 ** 2, gb: 1024 ** 3, 'гб': 1024 ** 3 }
+
+/**
+ * Size limit as typed: megabytes unless a unit says otherwise. '' is no limit (null); anything not
+ * clearly one size is 'invalid', including `1,000` and `1 000`, which could mean 1 or 1000.
+ */
+export function parseLimit(text: string): number | null | 'invalid' {
+  const s = text.trim().toLowerCase()
+  if (!s) return null
+  const m = /^(\d+)(?:[.,](\d+))?\s*(kb|mb|gb|кб|мб|гб)?$/.exec(s)
+  if (!m || (m[2]?.length === 3 && !/^0+$/.test(m[1]))) return 'invalid'
+  const bytes = Math.round(Number(`${m[1]}.${m[2] ?? 0}`) * LIMIT_UNITS[m[3] ?? 'mb'])
+  return bytes >= LIMIT_MIN && bytes <= LIMIT_MAX ? bytes : 'invalid'
+}
+
+/** A name template that can't leave the output folder (`D:evil` on Windows). */
+export const validTemplate = (s: string) => !!s.trim() && !s.includes(':')
+
+/** Which options apply to these sources and format; shared by the dialog and recipes. */
+export function applicable(paths: string[], format: string) {
+  const mediaOut = isMediaFormat(format, paths.some(isMedia))
+  const audioOut = formatGroup(format) === 'audio'
+  const imageOut = isImageFormat(format) && !mediaOut
+  const imageIn = imageOut && paths.every(isImage)
+  const videoResize = mediaOut && !audioOut && paths.every((p) => isVideo(p) || extOf(p) === 'gif')
+  return { mediaOut, audioOut, imageOut, imageIn, videoResize, resize: imageIn || videoResize, strip: imageIn || mediaOut, limit: imageIn && !isLossless(format) }
+}
+
+/** The options with everything that doesn't apply to these sources switched off. */
+export function gateOpts(paths: string[], o: ConvertOpts): ConvertOpts {
+  const a = applicable(paths, o.format)
+  return { ...o, resize: a.resize ? o.resize : null, stripMetadata: a.strip && o.stripMetadata, maxBytes: a.limit ? o.maxBytes : null }
+}

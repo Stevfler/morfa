@@ -22,11 +22,12 @@ fn cache_path(src: &Path) -> CmdResult<PathBuf> {
 /// PNG copy of `path` (downscaled to fit `MAX_SIDE`) for Quick Look; returns its path.
 #[tauri::command]
 pub async fn convert_preview(path: String) -> CmdResult<String> {
+    crate::guard::probe(&path).await?;
     tauri::async_runtime::spawn_blocking(move || {
         let src = PathBuf::from(&path);
         let out = cache_path(&src)?;
         if !out.is_file() {
-            let mut o = ConvertOpts { format: "png".into(), quality: 90, resize: Some(Resize { mode: "max".into(), value: MAX_SIDE }), strip_metadata: true, out_dir: None, name_template: "{name}".into() };
+            let mut o = ConvertOpts { format: "png".into(), quality: 90, resize: Some(Resize { mode: "max".into(), value: MAX_SIDE }), strip_metadata: true, out_dir: None, name_template: "{name}".into(), max_bytes: None };
             let e = super::ready(&mut o)?;
             let tmp = super::naming::temp_for(&out);
             job::convert_to(e, &src, &tmp, &o, &|| false)?;
@@ -41,13 +42,16 @@ pub async fn convert_preview(path: String) -> CmdResult<String> {
 /// Raw bytes of an image for the webview (a blob URL), sidestepping the asset protocol.
 #[tauri::command]
 pub async fn image_bytes(path: String) -> CmdResult<tauri::ipc::Response> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let len = std::fs::metadata(&path).map_err(|e| e.to_string())?.len();
-        if len > 256 << 20 {
+    let p = path.clone();
+    crate::guard::guarded(&path, crate::guard::stall_for(&path), move |beat| {
+        let m = std::fs::metadata(&p).map_err(|e| e.to_string())?;
+        if !m.is_file() {
+            return Err("not a file".into());
+        }
+        if m.len() > 256 << 20 {
             return Err("image too large to preview".into());
         }
-        std::fs::read(&path).map(tauri::ipc::Response::new).map_err(|e| e.to_string())
+        crate::fsinfo::guard_read(&p, m.len(), beat).map(tauri::ipc::Response::new)
     })
     .await
-    .map_err(|e| e.to_string())?
 }

@@ -8,8 +8,23 @@ fn same(a: &Path, b: &Path) -> bool {
     a == b || matches!((a.canonicalize(), b.canonicalize()), (Ok(x), Ok(y)) if x == y)
 }
 
+/// Prefix of every in-progress conversion file; mirror sync skips these.
+pub const TEMP_PREFIX: &str = ".morfa-convert-";
+
+/// `:` in a template is refused on every OS: on Windows `D:evil` leaves the output folder and
+/// `a:b` writes to an alternate data stream, and a saved recipe shouldn't depend on the OS.
+pub fn template_ok(template: &str) -> bool {
+    !template.contains(':')
+}
+
 fn sanitize(s: &str) -> String {
-    let s: String = s.chars().map(|c| if matches!(c, '/' | '\\' | '\0') { '_' } else { c }).collect();
+    sanitize_for(s, cfg!(windows))
+}
+
+/// `windows` also neutralizes `:`, the last line of defence after `template_ok`. Elsewhere it's a
+/// legal character that a source's own name may hold.
+fn sanitize_for(s: &str, windows: bool) -> String {
+    let s: String = s.chars().map(|c| if matches!(c, '/' | '\\' | '\0') || (windows && c == ':') { '_' } else { c }).collect();
     if s.trim().is_empty() || s == "." || s == ".." { "image".into() } else { s }
 }
 
@@ -39,7 +54,7 @@ pub fn temp_for(dest: &Path) -> PathBuf {
     static N: AtomicU64 = AtomicU64::new(0);
     let ext = dest.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default();
     let n = N.fetch_add(1, Ordering::Relaxed);
-    dest.with_file_name(format!(".morfa-convert-{}-{n}.{ext}", std::process::id()))
+    dest.with_file_name(format!("{TEMP_PREFIX}{}-{n}.{ext}", std::process::id()))
 }
 
 /// Move the finished temp into place without replacing anything; if `dest` got taken meanwhile,
@@ -64,4 +79,18 @@ pub fn publish(tmp: &Path, src: &Path, mut dest: PathBuf, out_dir: Option<&str>,
         }
     }
     Err(std::io::Error::other("couldn't find a free file name"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn drive_relative_template_cannot_leave_the_folder() {
+        assert!(!template_ok("D:evil") && !template_ok("{name}:x"));
+        assert!(template_ok("small-{name}"));
+        assert_eq!(sanitize_for("D:evil", true), "D_evil");
+        assert_eq!(sanitize_for("a:b", false), "a:b");
+        assert_eq!(sanitize_for("../x", false), ".._x");
+    }
 }

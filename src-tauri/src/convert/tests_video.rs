@@ -8,7 +8,7 @@ fn s(v: &[&str]) -> Vec<String> {
 }
 
 fn opts(format: &str, quality: u8, resize: Option<Resize>, strip: bool) -> ConvertOpts {
-    ConvertOpts { format: format.into(), quality, resize, strip_metadata: strip, out_dir: None, name_template: "{name}".into() }
+    ConvertOpts { format: format.into(), quality, resize, strip_metadata: strip, out_dir: None, name_template: "{name}".into(), max_bytes: None }
 }
 
 #[test]

@@ -3,7 +3,7 @@ use routes::{targets, Avail};
 use std::{path::PathBuf, time::Instant};
 
 fn opts(format: &str) -> ConvertOpts {
-    ConvertOpts { format: format.into(), quality: 80, resize: None, strip_metadata: false, out_dir: None, name_template: "{name}".into() }
+    ConvertOpts { format: format.into(), quality: 80, resize: None, strip_metadata: false, out_dir: None, name_template: "{name}".into(), max_bytes: None }
 }
 
 fn tmpdir(tag: &str) -> PathBuf {

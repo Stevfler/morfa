@@ -27,6 +27,16 @@ function show(path: string) {
   } else go(p, dir, { focus: path })
 }
 
+/** Backend codes in words; anything else is the engine's own message. */
+function reason(err: string) {
+  const over = /^OVER_LIMIT:(\d+):(\d+)$/.exec(err)
+  if (over) return t('recipes.overLimit', { size: fmtSize(+over[1]), limit: fmtSize(+over[2]) })
+  if (err === 'LIMIT_IMAGES_ONLY') return t('recipes.limitImagesOnly')
+  if (err === 'BAD_TEMPLATE') return t('recipes.badTemplate')
+  if (err === 'NO_OUT_DIR') return t('recipes.noOutDir')
+  return err
+}
+
 function failed(e: unknown) {
   const msg = String(e)
   if (msg.includes('NO_ENGINE:office')) return noOffice()
@@ -58,7 +68,7 @@ export async function runConvert(sources: string[], opts: ConvertOpts): Promise<
     if (r.failed.length) {
       const [src, err] = r.failed[0]
       if (err.includes('NO_ENGINE:')) failed(err)
-      else toast({ title: t('convert.failedN', { count: r.failed.length }), desc: `${basename(src)}: ${err}`, tone: 'error' }, 10000)
+      else toast({ title: t('convert.failedN', { count: r.failed.length }), desc: `${basename(src)}: ${reason(err)}`, tone: 'error' }, 10000)
     }
     if (r.cancelled) toast({ title: t('convert.cancelled'), tone: 'info' })
   } catch (e) {
@@ -82,7 +92,7 @@ function record(pairs: [string, string][], opts: ConvertOpts, fmt: string) {
     redo: async () => {
       const r = await call(sources, opts)
       outputs = r.pairs.map(([, d]) => d)
-      if (r.failed.length) throw r.failed[0][1]
+      if (r.failed.length) throw reason(r.failed[0][1])
     },
   })
   state.redo = []

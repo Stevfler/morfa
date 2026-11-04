@@ -2,7 +2,7 @@ use super::*;
 use std::path::{Path, PathBuf};
 
 fn opts(format: &str, resize: Option<Resize>) -> ConvertOpts {
-    ConvertOpts { format: format.into(), quality: 80, resize, strip_metadata: true, out_dir: None, name_template: "{name}".into() }
+    ConvertOpts { format: format.into(), quality: 80, resize, strip_metadata: true, out_dir: None, name_template: "{name}".into(), max_bytes: None }
 }
 
 fn tmpdir(tag: &str) -> PathBuf {
