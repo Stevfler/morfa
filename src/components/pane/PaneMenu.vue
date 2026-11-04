@@ -145,7 +145,7 @@ function openIn(where: 'tab' | 'other') {
             <ContextMenuItem class="mi" @select="S.extractArchives(archives)"><Icon name="file-archive" />{{ tr('archive.extractHere') }}</ContextMenuItem>
             <ContextMenuItem v-if="otherFolder" class="mi" @select="S.extractArchives(archives, otherFolder!)"><Icon name="columns" />{{ tr('archive.extractOther') }}</ContextMenuItem>
           </template>
-          <ContextMenuSub v-if="!p.search && !S.isSpecial(p.path)">
+          <ContextMenuSub v-if="!p.search && !S.isSpecial(p.path) && archives.length < S.targets(p).length">
             <ContextMenuSubTrigger class="mi"><Icon name="file-archive" />{{ tr('archive.compress') }}<Icon name="chevron-right" class="ml-auto" /></ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent class="menu min-w-40" :side-offset="4">
