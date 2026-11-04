@@ -1,0 +1,16 @@
+export const archive = {
+  'archive.extractHere': 'Распаковать сюда',
+  'archive.extractOther': 'Распаковать в другую панель',
+  'archive.extractAll': 'Распаковать всё',
+  'archive.compress': 'Сжать в',
+  'archive.extracting': 'Распаковка «{name}»',
+  'archive.extracted': 'Распакован «{name}»',
+  'archive.compressing': { one: 'Сжатие: {count} элемент', few: 'Сжатие: {count} элемента', many: 'Сжатие: {count} элементов', other: 'Сжатие: {count} элемента' },
+  'archive.compressed': 'Создан «{name}»',
+  'archive.cancelled': 'Отменено, лишних файлов не осталось',
+  'archive.readOnly': 'Архивы здесь только для чтения',
+  'archive.readOnlyHint': 'Распакуйте файлы, чтобы работать с ними',
+  'archive.noneSelected': 'Архивы не выбраны',
+  'cmd.extract': 'Распаковать архив',
+  'cmd.compress': 'Сжать в ZIP',
+}

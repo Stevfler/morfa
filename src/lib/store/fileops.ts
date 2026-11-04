@@ -5,8 +5,9 @@ import { nextId, otherPane, pane, state } from './state'
 import { targets } from './view'
 import { fail, toast } from './toast'
 import { pushUndo } from './history'
-import { load_, refreshAll } from './navigation'
-import { isSpecial, type Pane } from './types'
+import { load_, open, refreshAll } from './navigation'
+import { isSpecial, parseArchive, type Pane } from './types'
+import { extractEntries } from './archive'
 import { t } from '../i18n'
 
 const items = (count: number) => t('core.items', { count })
@@ -15,6 +16,7 @@ const describe = (paths: string[]) => (paths.length === 1 ? t('core.quoted', { n
 export function copyToClipboard(mode: 'copy' | 'move', p: Pane = pane()) {
   const sel = targets(p)
   if (!sel.length) return
+  if (parseArchive(p.path)) return toast({ title: t('archive.readOnly'), desc: t('archive.readOnlyHint'), tone: 'info' }, 3000)
   state.clipboard = { mode, paths: sel.map((e) => e.path) }
   toast(
     { title: t(mode === 'copy' ? 'fileops.copied' : 'fileops.cut', { what: describe(state.clipboard.paths) }), desc: t('fileops.pasteHint', { key: keyLabel('Ctrl+V') }), tone: 'info' },
@@ -71,11 +73,13 @@ function recordTransfer(pairs: [string, string][], dest: string, mode: 'copy' | 
 export function cancelOp(id: number) {
   const kind = state.ops.find((o) => o.id === id)?.kind
   if (kind === 'office') return invoke('office_cancel')
+  if (kind === 'archive') return invoke('archive_cancel', { id })
   return invoke(kind === 'convert' ? 'convert_cancel' : 'cancel_op', { id })
 }
 
 export async function trash(paths = targets().map((e) => e.path)) {
   if (!paths.length) return
+  if (paths.some(parseArchive)) return toast({ title: t('archive.readOnly'), tone: 'info' }, 2500)
   try {
     await invoke('trash_items', { paths })
     pushUndo({
@@ -91,6 +95,7 @@ export async function trash(paths = targets().map((e) => e.path)) {
 
 export function deleteForever(paths = targets().map((e) => e.path)) {
   if (!paths.length) return
+  if (paths.some(parseArchive)) return toast({ title: t('archive.readOnly'), tone: 'info' }, 2500)
   state.confirm = {
     title: t('fileops.deleteTitle', { what: describe(paths) }),
     desc: t('fileops.deleteDesc'),
@@ -141,6 +146,7 @@ export async function movePairs(pairs: [string, string][], label: string): Promi
 
 export function startRename(p: Pane = pane()) {
   const sel = targets(p)
+  if (parseArchive(p.path)) return toast({ title: t('archive.readOnly'), tone: 'info' }, 2500)
   if (sel.length > 1) state.batchRename = sel.map((e) => e.path)
   else if (sel.length === 1) state.renaming = sel[0].path
 }
@@ -173,6 +179,8 @@ export async function create(kind: 'dir' | 'file', p: Pane = pane()) {
 export function toOtherBlocked(p: Pane = pane()): string | null {
   const o = otherPane()
   if (!o) return t('fileops.noDual')
+  // Copying out of an archive unpacks; only the destination has to be a real folder.
+  if (parseArchive(p.path) && !isSpecial(o.path)) return targets(p).length ? null : t('fileops.nothingSelected')
   if (isSpecial(o.path) || isSpecial(p.path)) return t('fileops.bothFolders')
   if (o.path === p.path) return t('fileops.sameFolder')
   return targets(p).length ? null : t('fileops.nothingSelected')
@@ -182,11 +190,16 @@ export function toOtherBlocked(p: Pane = pane()): string | null {
 export function toOther(mode: 'copy' | 'move') {
   const why = toOtherBlocked()
   if (why) return toast({ title: why, tone: 'info' })
+  if (parseArchive(pane().path)) {
+    if (mode === 'move') return toast({ title: t('archive.readOnly'), desc: t('archive.readOnlyHint'), tone: 'info' }, 3000)
+    return extractEntries(pane(), targets(), otherPane()!.path)
+  }
   transfer(targets().map((e) => e.path), otherPane()!.path, mode)
 }
 
 /** F4: open the item under the cursor with the system's default app (folders too). */
 export function openDefault(p: Pane = pane()) {
   const e = targets(p)[0]
+  if (e && parseArchive(e.path)) return void open(p, e)
   if (e) openPath(e.path).catch(fail)
 }

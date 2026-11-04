@@ -7,6 +7,7 @@ import { pane } from './pane'
 import { tools } from './tools'
 import { media } from './media'
 import { cloud } from './cloud'
+import { archive } from './archive'
 import { update } from './update'
 
 export const ru: Dict = {
@@ -18,5 +19,6 @@ export const ru: Dict = {
   ...tools,
   ...media,
   ...cloud,
+  ...archive,
   ...update,
 }

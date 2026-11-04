@@ -53,6 +53,18 @@ export function parseCloud(path: string): { id: string; rel: string } | null {
   return i < 0 ? { id: rest, rel: '' } : { id: rest.slice(0, i), rel: rest.slice(i + 1) }
 }
 
+/** Inside an archive file: `morfa://archive/<encoded file path>/<rel>`. Read-only, listed via `archive_list`. */
+const ARCHIVE = 'morfa://archive/'
+export const archivePath = (archive: string, rel = '') => `${ARCHIVE}${encodeURIComponent(archive)}${rel ? '/' + rel : ''}`
+export function parseArchive(path: string): { archive: string; rel: string } | null {
+  if (!path.startsWith(ARCHIVE)) return null
+  const rest = path.slice(ARCHIVE.length)
+  const i = rest.indexOf('/')
+  return { archive: decodeURIComponent(i < 0 ? rest : rest.slice(0, i)), rel: i < 0 ? '' : rest.slice(i + 1) }
+}
+/** Formats the backend can open (src-tauri/src/archive/read.rs). */
+export const isArchiveFile = (name: string) => /\.(zip|7z|tar|tgz|tbz2|txz|tzst|tar\.(gz|bz2|xz|zst))$/i.test(name)
+
 export type CloudStatus = { state: 'idle' | 'syncing' | 'error'; error: string | null; current: string | null; last: number }
 export type CloudAccount = {
   id: string
@@ -88,5 +100,5 @@ export type Op = {
   part?: number | null
   /** What done/total count (default 'bytes'). */
   unit?: 'bytes' | 'files'
-  kind?: 'transfer' | 'convert' | 'office'
+  kind?: 'transfer' | 'convert' | 'office' | 'archive'
 }

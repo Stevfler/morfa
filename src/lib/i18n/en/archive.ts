@@ -1,0 +1,16 @@
+export const archive = {
+  'archive.extractHere': 'Extract here',
+  'archive.extractOther': 'Extract to other pane',
+  'archive.extractAll': 'Extract everything',
+  'archive.compress': 'Compress to',
+  'archive.extracting': 'Extracting “{name}”',
+  'archive.extracted': 'Extracted “{name}”',
+  'archive.compressing': { one: 'Compressing {count} item', other: 'Compressing {count} items' },
+  'archive.compressed': 'Created “{name}”',
+  'archive.cancelled': 'Cancelled, nothing was left behind',
+  'archive.readOnly': 'Archives are read-only here',
+  'archive.readOnlyHint': 'Extract the items to work with them',
+  'archive.noneSelected': 'No archives selected',
+  'cmd.extract': 'Extract archive',
+  'cmd.compress': 'Compress to ZIP',
+}

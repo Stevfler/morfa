@@ -50,6 +50,8 @@ export const commands = ([
   { id: 'redo', group: 'edit', icon: 'redo', keys: 'Ctrl+Shift+Z', run: () => S.redo() },
   { id: 'selectall', group: 'edit', icon: 'check-all', keys: 'Ctrl+A', run: () => S.selectAll() },
   { id: 'convert', group: 'edit', icon: 'image', run: () => convertTargets() },
+  { id: 'extract', group: 'edit', icon: 'file-archive', run: () => extractTargets() },
+  { id: 'compress', group: 'edit', icon: 'file-archive', run: () => S.targets().length && !S.isSpecial(S.pane().path) && S.compress(S.targets().map((e) => e.path), S.pane().path, 'zip') },
   { id: 'copypath', group: 'edit', icon: 'link', keys: 'Ctrl+Shift+C', run: () => S.copyPath() },
   { id: 'properties', group: 'edit', icon: 'info', keys: 'Alt+Enter', run: () => openProperties() },
 
@@ -142,6 +144,15 @@ function convertTargets() {
   const paths = S.targets().filter((e) => !e.isDir && isConvertible(e.path)).map((e) => e.path)
   if (paths.length) openConvert(paths)
   else S.toast({ title: t('cmd.convertNone'), tone: 'info' }, 2500)
+}
+
+/** Unpacks the selection inside an archive, or the selected archive files next to themselves. */
+function extractTargets() {
+  const p = S.pane()
+  if (S.parseArchive(p.path)) return S.extractEntries(p, S.targets())
+  const files = S.targets().filter((e) => !e.isDir && S.isArchiveFile(e.name)).map((e) => e.path)
+  if (files.length) S.extractArchives(files)
+  else S.toast({ title: t('archive.noneSelected'), tone: 'info' }, 2500)
 }
 
 /** Properties of the selection, or of the current folder when nothing is selected. */

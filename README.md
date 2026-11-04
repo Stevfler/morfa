@@ -53,6 +53,11 @@ It was built because the usual options each fall short somewhere:
 - Batch rename with find and replace, regex, numbering templates and case changes
 - Trash with restore (Linux, Windows) or "Show in Trash" (macOS)
 
+**Archives**
+- Open zip, 7z, tar, tar.gz, tar.bz2, tar.xz and tar.zst like folders
+- Extract everything or only the selected items, here or into the other pane. Files never get overwritten, and a cancelled extraction leaves nothing behind
+- Compress the selection to zip or tar.gz, with progress, cancel and undo
+
 **Conversion**
 - Images via libvips: JPEG, PNG, WebP, AVIF, HEIC and more, with quality and resize controls and a size estimate
 - Video and audio via ffmpeg

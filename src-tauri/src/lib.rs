@@ -1,3 +1,4 @@
+mod archive;
 mod cleanup;
 mod cloud;
 mod convert;
@@ -40,6 +41,7 @@ pub fn run() {
         .manage(SearchState::default())
         .manage(WatchState::default())
         .manage(transfer::OpsState::default())
+        .manage(archive::ArchiveState::default())
         .manage(cleanup::CleanupState::default())
         .manage(convert::ConvertState::default())
         .manage(office::OfficeState::default())
@@ -71,6 +73,11 @@ pub fn run() {
             fsops::trashcan::restore_trashed,
             fsops::trashcan::reveal_trash,
             fsops::delete_items,
+            archive::archive_list,
+            archive::archive_extract,
+            archive::archive_pack,
+            archive::archive_cancel,
+            archive::archive_open,
             cleanup::cleanup_scan,
             cleanup::cleanup_cancel,
             cleanup::cleanup_children,

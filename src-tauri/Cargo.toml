@@ -32,6 +32,15 @@ percent-encoding = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+tar = "0.4.46"
+flate2 = "1.1.10"
+ruzstd = "0.9.1"
+lzma-rust2 = { version = "0.25.0", default-features = false, features = ["std", "xz", "encoder"] }
+bzip2 = "0.6.1"
+sevenz-rust2 = { version = "0.24.2", default-features = false, features = ["aes256", "bzip2", "ppmd"] }
+
+[dev-dependencies]
+sevenz-rust2 = { version = "0.24.2", default-features = false, features = ["compress"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

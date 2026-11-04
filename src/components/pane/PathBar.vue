@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import Icon from '../Icon.vue'
 import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
-import { crumbs, keyLabel, parent } from '../../lib/util'
+import { basename, crumbs, keyLabel, parent } from '../../lib/util'
 import type { DragDrop } from '../../composables/useDragDrop'
 import { t as tr } from '../../lib/i18n'
 
@@ -23,6 +23,13 @@ const cloudCrumbs = computed(() => {
   const name = state.cloud.find((a) => a.id === c.id)?.name ?? tr('cloud.title')
   const parts = c.rel ? c.rel.split('/') : []
   return [{ label: name, path: S.cloudPath(c.id) }, ...parts.map((seg, i) => ({ label: seg, path: S.cloudPath(c.id, parts.slice(0, i + 1).join('/')) }))]
+})
+const arc = computed(() => S.parseArchive(p.path))
+const arcCrumbs = computed(() => {
+  const a = arc.value
+  if (!a) return []
+  const parts = a.rel ? a.rel.split('/') : []
+  return [{ label: basename(a.archive), path: S.archivePath(a.archive) }, ...parts.map((seg, i) => ({ label: seg, path: S.archivePath(a.archive, parts.slice(0, i + 1).join('/')) }))]
 })
 const editing = computed(() => state.editPath && props.active)
 watch(editing, async (v) => {
@@ -76,13 +83,13 @@ function pathKey(ev: KeyboardEvent) {
         </button>
       </div>
     </template>
-    <div v-else-if="cloud" class="flex h-7 items-center overflow-hidden rounded-md px-1">
-      <template v-for="(c, k) in cloudCrumbs" :key="c.path">
+    <div v-else-if="cloud || arc" class="flex h-7 items-center overflow-hidden rounded-md px-1">
+      <template v-for="(c, k) in (arc ? arcCrumbs : cloudCrumbs)" :key="c.path">
         <Icon name="chevron-right" v-if="k > 0" class="size-3.5 shrink-0 text-faint" />
         <button
           class="flex shrink-0 items-center gap-1.5 truncate rounded px-1.5 py-0.5 text-[12.5px] transition hover:bg-raised"
-          :class="k === cloudCrumbs.length - 1 ? 'font-medium text-fg' : 'text-dim'" @click="S.go(p, c.path)"
-        ><Icon v-if="k === 0" name="cloud" class="size-3.5 text-dim" />{{ c.label }}</button>
+          :class="k === (arc ? arcCrumbs : cloudCrumbs).length - 1 ? 'font-medium text-fg' : 'text-dim'" @click="S.go(p, c.path)"
+        ><Icon v-if="k === 0" :name="arc ? 'file-archive' : 'cloud'" class="size-3.5 text-dim" />{{ c.label }}</button>
       </template>
     </div>
     <div v-else-if="S.isSpecial(p.path)" class="flex h-7 cursor-text items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium hover:bg-raised"

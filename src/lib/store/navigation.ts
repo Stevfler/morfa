@@ -6,7 +6,7 @@ import { visible } from './view'
 import { fail, toast } from './toast'
 import { stopSearch } from './search'
 import { persist, syncWatch } from './tabs'
-import { cloudPath, isSpecial, parseCloud, type Entry, type Pane, type Place } from './types'
+import { archivePath, cloudPath, isArchiveFile, isSpecial, parseArchive, parseCloud, type Entry, type Pane, type Place } from './types'
 import { t } from '../i18n'
 
 // Per-pane load token: only the latest load_ for a pane may apply its result.
@@ -17,18 +17,21 @@ export async function load_(p: Pane) {
   loadSeq.set(p, seq)
   const stale = () => loadSeq.get(p) !== seq
   const cloud = parseCloud(p.path)
-  if (isSpecial(p.path) && !cloud) {
+  const arc = parseArchive(p.path)
+  if (isSpecial(p.path) && !cloud && !arc) {
     // Special views (Drives overview) render their own content; nothing to list.
     Object.assign(p, { entries: [], error: null, loading: false })
     return
   }
   p.loading = true
   try {
-    const entries = cloud
+    const entries = arc
+      ? (await invoke<Entry[]>('archive_list', { archive: arc.archive, rel: arc.rel })).map((e) => ({ ...e, path: archivePath(arc.archive, e.path) }))
+      : cloud
       ? await invoke<Entry[]>('cloud_list', { id: cloud.id, rel: cloud.rel })
       : await invoke<Entry[]>('list_dir', { path: p.path })
     if (stale()) return
-    if (!cloud) await markMirrored(p.path, entries)
+    if (!cloud && !arc) await markMirrored(p.path, entries)
     if (stale()) return
     p.entries = entries
     p.error = null
@@ -77,6 +80,8 @@ export async function go(p: Pane, path: string, opts: { history?: boolean; focus
 }
 
 function parentOf(path: string) {
+  const a = parseArchive(path)
+  if (a) return a.rel ? archivePath(a.archive, a.rel.split('/').slice(0, -1).join('/')) : parent(a.archive)
   const c = parseCloud(path)
   if (c) return c.rel ? cloudPath(c.id, c.rel.split('/').slice(0, -1).join('/')) : null
   return isSpecial(path) ? null : parent(path)
@@ -84,7 +89,9 @@ function parentOf(path: string) {
 export const canUp = (p: Pane) => !!parentOf(p.path)
 export function up(p: Pane = pane()) {
   const par = parentOf(p.path)
-  if (par) go(p, par, { focus: p.path })
+  const a = parseArchive(p.path)
+  // Leaving an archive lands on the archive file itself.
+  if (par) go(p, par, { focus: a && !a.rel ? a.archive : p.path })
 }
 export function back(p: Pane = pane()) {
   const prev = p.back.pop()
@@ -104,13 +111,27 @@ export async function open(p: Pane, e: Entry | undefined, opts: { reveal?: boole
   if (e.isDir && !opts.reveal) return go(p, e.path)
   const cloud = parseCloud(e.path)
   if (cloud) return openCloudFile(cloud.id, cloud.rel, e)
+  const inside = parseArchive(e.path)
+  if (inside) return openArchived(inside.archive, inside.rel, e)
   if (p.search || opts.reveal) {
     // From search results: jump into the containing folder with the item focused.
     const dir = parent(e.path)
     if (dir) return go(p, dir, { focus: e.path })
   }
+  if (isArchiveFile(e.name)) return go(p, archivePath(e.path))
   try {
     await openPath(e.path)
+  } catch (err) {
+    fail(err)
+  }
+}
+
+/** A file inside an archive opens from a temporary copy. A nested archive is unpacked and browsed. */
+async function openArchived(archive: string, rel: string, e: Entry) {
+  try {
+    const local = await invoke<string>('archive_open', { archive, rel })
+    if (isArchiveFile(e.name)) return await go(pane(), archivePath(local))
+    await openPath(local)
   } catch (err) {
     fail(err)
   }

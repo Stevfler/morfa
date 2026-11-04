@@ -57,6 +57,12 @@ function onOpen(o: boolean) {
 }
 
 const cloud = computed(() => S.parseCloud(p.path))
+const inArchive = computed(() => S.parseArchive(p.path))
+const archives = computed(() => S.targets(p).filter((e) => !e.isDir && S.isArchiveFile(e.name)).map((e) => e.path))
+const otherFolder = computed(() => {
+  const o = S.otherPane()
+  return o && o !== p && !S.isSpecial(o.path) ? o.path : null
+})
 const mirrored = computed(() => !cloud.value && state.cloud.some((a) => within(p.path, a.localRoot)))
 const canPin = computed(() => S.targets(p).some((e) => !e.link && (!e.cloud || e.cloud === 'partial')))
 const canUnpin = computed(() => S.targets(p).some((e) => !!e.cloud))
@@ -78,7 +84,18 @@ function openIn(where: 'tab' | 'other') {
     <ContextMenuTrigger as-child @contextmenu.capture="focusThis"><slot /></ContextMenuTrigger>
     <ContextMenuPortal>
       <ContextMenuContent class="menu">
-        <template v-if="cloud && onItem && cursorEntry">
+        <template v-if="inArchive && onItem && cursorEntry">
+          <ContextMenuItem class="mi" @select="S.open(p, cursorEntry)"><Icon name="folder-open" />{{ tr('pane.menu.open') }}<span>Enter</span></ContextMenuItem>
+          <ContextMenuSeparator class="sep" />
+          <ContextMenuItem class="mi" @select="S.extractEntries(p, S.targets(p))"><Icon name="file-archive" />{{ tr('archive.extractHere') }}</ContextMenuItem>
+          <ContextMenuItem v-if="otherFolder" class="mi" @select="S.extractEntries(p, S.targets(p), otherFolder!)"><Icon name="columns" />{{ tr('archive.extractOther') }}</ContextMenuItem>
+        </template>
+        <template v-else-if="inArchive">
+          <ContextMenuItem class="mi" @select="S.extractArchives([inArchive.archive])"><Icon name="file-archive" />{{ tr('archive.extractAll') }}</ContextMenuItem>
+          <ContextMenuItem class="mi" @select="S.selectAll(p)"><Icon name="check-all" />{{ tr('pane.menu.selectAll') }}<span>{{ keyLabel('Ctrl+A') }}</span></ContextMenuItem>
+          <ContextMenuItem class="mi" @select="state.showHidden = !state.showHidden"><Icon name="eye" />{{ state.showHidden ? tr('pane.menu.hideHidden') : tr('pane.menu.showHidden') }}<span>{{ keyLabel('Ctrl+H') }}</span></ContextMenuItem>
+        </template>
+        <template v-else-if="cloud && onItem && cursorEntry">
           <ContextMenuItem class="mi" @select="S.open(p, cursorEntry)"><Icon name="folder-open" />{{ tr('pane.menu.open') }}<span>Enter</span></ContextMenuItem>
           <ContextMenuSeparator class="sep" />
           <ContextMenuItem v-if="canPin" class="mi" @select="pin(S.targets(p))"><Icon name="cloud-download" />{{ tr('cloud.pin') }}</ContextMenuItem>
@@ -113,6 +130,19 @@ function openIn(where: 'tab' | 'other') {
                 <ContextMenuItem v-for="f in quick ?? []" :key="f" class="mi" @select="quickConvert(convertible, f)">{{ formatLabel(f) }}</ContextMenuItem>
                 <ContextMenuSeparator v-if="quick?.length !== 0 || getOffice" class="sep" />
                 <ContextMenuItem class="mi" @select="openConvert(convertible)">{{ tr('pane.menu.moreOptions') }}</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuPortal>
+          </ContextMenuSub>
+          <template v-if="archives.length">
+            <ContextMenuItem class="mi" @select="S.extractArchives(archives)"><Icon name="file-archive" />{{ tr('archive.extractHere') }}</ContextMenuItem>
+            <ContextMenuItem v-if="otherFolder" class="mi" @select="S.extractArchives(archives, otherFolder!)"><Icon name="columns" />{{ tr('archive.extractOther') }}</ContextMenuItem>
+          </template>
+          <ContextMenuSub v-if="!p.search && !S.isSpecial(p.path)">
+            <ContextMenuSubTrigger class="mi"><Icon name="file-archive" />{{ tr('archive.compress') }}<Icon name="chevron-right" class="ml-auto" /></ContextMenuSubTrigger>
+            <ContextMenuPortal>
+              <ContextMenuSubContent class="menu min-w-40" :side-offset="4">
+                <ContextMenuItem class="mi" @select="S.compress(paths(), p.path, 'zip')">ZIP</ContextMenuItem>
+                <ContextMenuItem class="mi" @select="S.compress(paths(), p.path, 'tar.gz')">TAR.GZ</ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuPortal>
           </ContextMenuSub>
