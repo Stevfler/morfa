@@ -29,7 +29,26 @@ pub(crate) const CANCELLED: &str = "Cancelled";
 #[derive(Default)]
 pub struct ArchiveState {
     index: Mutex<HashMap<String, (Stamp, Arc<Index>)>>,
+    jobs: Jobs,
+}
+
+/// Cancel flags are accepted only for running jobs, so ids never linger (same as transfer.rs).
+#[derive(Default)]
+struct Jobs {
+    running: Mutex<HashSet<u64>>,
     cancelled: Arc<Mutex<HashSet<u64>>>,
+}
+
+impl Jobs {
+    /// Returns whether the job was running. Holding `running` keeps this atomic with the end of `with_job`.
+    fn cancel(&self, id: u64) -> bool {
+        let running = self.running.lock().unwrap_or_else(|e| e.into_inner());
+        let known = running.contains(&id);
+        if known {
+            self.cancelled.lock().unwrap_or_else(|e| e.into_inner()).insert(id);
+        }
+        known
+    }
 }
 
 type Stamp = (u64, Option<SystemTime>);
@@ -38,6 +57,8 @@ type Stamp = (u64, Option<SystemTime>);
 #[derive(Default)]
 pub(crate) struct Index {
     dirs: HashMap<String, Vec<Item>>,
+    /// Files listed more than once; the last copy wins, so reading them can't stop at the first.
+    repeated: HashSet<String>,
 }
 
 impl Visitor for Index {
@@ -65,8 +86,21 @@ impl Index {
         let dir = item.rel.rsplit_once('/').map_or("", |(d, _)| d).to_string();
         let list = self.dirs.entry(dir).or_default();
         // Listed twice (implicit first, or a repeated entry): the later one wins.
+        if list.iter().any(|i| i.rel == item.rel && !i.is_dir) {
+            self.repeated.insert(item.rel.clone());
+        }
         list.retain(|i| i.rel != item.rel);
         list.push(item.clone());
+    }
+
+    fn item(&self, rel: &str) -> Option<&Item> {
+        self.dirs.get(rel.rsplit_once('/').map_or("", |(d, _)| d))?.iter().find(|i| i.rel == rel)
+    }
+
+    /// The files still to take when `rels` are all plain files with one copy each; otherwise a full scan is needed.
+    fn exact_files<'a>(&self, rels: &'a [String]) -> Option<HashSet<&'a str>> {
+        let plain = |r: &String| !self.repeated.contains(r) && self.item(r).is_some_and(|i| !i.is_dir && !i.is_link);
+        (!rels.is_empty() && rels.iter().all(plain)).then(|| rels.iter().map(String::as_str).collect())
     }
 
     fn selected_size(&self, rels: &[String]) -> u64 {
@@ -121,6 +155,7 @@ fn index_of(state: &Mutex<HashMap<String, (Stamp, Arc<Index>)>>, archive: &str) 
 
 #[tauri::command]
 pub async fn archive_list(app: AppHandle, archive: String, rel: String) -> CmdResult<Vec<ArchiveEntry>> {
+    crate::guard::probe(&archive).await?;
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<ArchiveState>();
         let idx = index_of(&state.index, &archive)?;
@@ -200,11 +235,15 @@ impl Job {
 }
 
 /// Runs `f` as a cancellable job, always clearing its cancel flag afterwards.
-fn with_job<T>(app: Option<AppHandle>, cancelled: Arc<Mutex<HashSet<u64>>>, id: u64, f: impl FnOnce(&mut Job) -> CmdResult<T>) -> CmdResult<T> {
-    let mut job = Job { app, cancelled: cancelled.clone(), id, done: 0, total: 0, last: Instant::now() };
+fn with_job<T>(app: Option<AppHandle>, jobs: &Jobs, id: u64, f: impl FnOnce(&mut Job) -> CmdResult<T>) -> CmdResult<T> {
+    jobs.running.lock().unwrap_or_else(|e| e.into_inner()).insert(id);
+    let mut job = Job { app, cancelled: jobs.cancelled.clone(), id, done: 0, total: 0, last: Instant::now() };
     let r = f(&mut job);
+    let mut running = jobs.running.lock().unwrap_or_else(|e| e.into_inner());
     let was_cancelled = job.is_cancelled();
-    cancelled.lock().unwrap_or_else(|e| e.into_inner()).remove(&id);
+    jobs.cancelled.lock().unwrap_or_else(|e| e.into_inner()).remove(&id);
+    running.remove(&id);
+    drop(running);
     // A cancel that arrives after the job finished must not hide its result.
     r.map_err(|e| if was_cancelled { CANCELLED.to_string() } else { e })
 }
@@ -227,6 +266,8 @@ struct Extract<'a> {
     base: &'a str,
     staging: &'a Path,
     job: &'a mut Job,
+    /// Exact-file selection: what is still to come. `None` scans the whole archive.
+    left: Option<HashSet<&'a str>>,
 }
 
 impl Extract<'_> {
@@ -261,7 +302,13 @@ impl Visitor for Extract<'_> {
             use std::os::unix::fs::PermissionsExt;
             let _ = file.set_permissions(fs::Permissions::from_mode((mode & 0o777) | 0o600));
         }
+        if let Some(left) = &mut self.left {
+            left.remove(item.rel.as_str());
+        }
         Ok(())
+    }
+    fn finished(&self) -> bool {
+        self.job.is_cancelled() || self.left.as_ref().is_some_and(HashSet::is_empty)
     }
 }
 
@@ -299,7 +346,7 @@ pub(crate) fn extract(job: &mut Job, idx: &Index, archive: &Path, rels: &[String
     let staging = dest.join(format!(".morfa-extract-{}-{}", std::process::id(), job.id));
     fs::create_dir(&staging).map_err(|e| format!("{}: {e}", dest.display()))?;
     let guard = Staging(staging.clone());
-    walk(archive, &mut Extract { rels, base, staging: &staging, job })?;
+    walk(archive, &mut Extract { rels, base, staging: &staging, left: idx.exact_files(rels), job })?;
     if job.is_cancelled() {
         return Err(CANCELLED.into());
     }
@@ -331,8 +378,10 @@ pub(crate) fn extract(job: &mut Job, idx: &Index, archive: &Path, rels: &[String
 pub async fn archive_extract(app: AppHandle, id: u64, archive: String, rels: Vec<String>, base: String, dest: String, wrap: bool) -> CmdResult<Vec<String>> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<ArchiveState>();
-        let idx = index_of(&state.index, &archive)?;
-        with_job(Some(app.clone()), state.cancelled.clone(), id, |job| extract(job, &idx, Path::new(&archive), &rels, &base, Path::new(&dest), wrap))
+        with_job(Some(app.clone()), &state.jobs, id, |job| {
+            let idx = index_of(&state.index, &archive)?;
+            extract(job, &idx, Path::new(&archive), &rels, &base, Path::new(&dest), wrap)
+        })
     })
     .await
     .map_err(|e| e.to_string())?
@@ -342,48 +391,106 @@ pub async fn archive_extract(app: AppHandle, id: u64, archive: String, rels: Vec
 pub async fn archive_pack(app: AppHandle, id: u64, sources: Vec<String>, dest: String, format: String) -> CmdResult<String> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<ArchiveState>();
-        with_job(Some(app.clone()), state.cancelled.clone(), id, |job| pack::pack(job, &sources, Path::new(&dest), &format))
+        with_job(Some(app.clone()), &state.jobs, id, |job| pack::pack(job, &sources, Path::new(&dest), &format))
     })
     .await
     .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn archive_cancel(state: State<'_, ArchiveState>, id: u64) {
-    state.cancelled.lock().unwrap_or_else(|e| e.into_inner()).insert(id);
+pub fn archive_cancel(state: State<'_, ArchiveState>, id: u64) -> bool {
+    state.jobs.cancel(id)
 }
 
 /// Unpack one file to a temp folder so the system can open it; returns its path.
+/// Each call has its own job id, so `archive_cancel` stops only that call. Previews get their own
+/// size-capped folder; explicit opens may stay in use (another app, a nested archive being browsed),
+/// so only the day-old sweep ever touches theirs.
 #[tauri::command]
-pub async fn archive_open(app: AppHandle, archive: String, rel: String) -> CmdResult<String> {
+pub async fn archive_open(app: AppHandle, id: u64, archive: String, rel: String, preview: bool) -> CmdResult<String> {
+    crate::guard::probe(&archive).await?;
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<ArchiveState>();
-        let idx = index_of(&state.index, &archive)?;
-        let root = dirs::cache_dir().unwrap_or_else(std::env::temp_dir).join("morfa").join("archive-open");
-        sweep(&root);
-        let s = stamp(Path::new(&archive))?;
-        let key = Sha256::digest(format!("{archive}\0{rel}\0{}\0{:?}", s.0, s.1));
-        let dir = root.join(key.iter().take(12).map(|b| format!("{b:02x}")).collect::<String>());
-        let name = rel.rsplit('/').next().unwrap_or(&rel);
-        let file = dir.join(name);
-        if file.exists() {
-            return Ok(file.to_string_lossy().to_string());
-        }
-        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-        let base = rel.rsplit_once('/').map_or("", |(d, _)| d);
-        // Id 0 is never given to a visible op, so nothing can cancel this.
-        with_job(None, Default::default(), 0, |job| extract(job, &idx, Path::new(&archive), std::slice::from_ref(&rel), base, &dir, false))?;
-        Ok(file.to_string_lossy().to_string())
+        let cache = dirs::cache_dir().unwrap_or_else(std::env::temp_dir).join("morfa");
+        let (opened, previews) = (cache.join("archive-open"), cache.join("archive-preview"));
+        sweep(&opened);
+        sweep(&previews);
+        with_job(None, &state.jobs, id, |job| {
+            let idx = index_of(&state.index, &archive)?;
+            let (root, cap) = if preview { (&previews, Some(PREVIEW_CACHE_MAX)) } else { (&opened, None) };
+            open_copy(job, &idx, Path::new(&archive), &rel, root, cap)
+        })
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+fn open_copy(job: &mut Job, idx: &Index, archive: &Path, rel: &str, root: &Path, cap: Option<u64>) -> CmdResult<String> {
+    let name = rel.rsplit('/').next().unwrap_or(rel);
+    if !idx.item(rel).is_some_and(|i| !i.is_dir && !i.is_link) {
+        return Err(format!("\"{name}\" is a link or a folder, so it can't be opened from the archive"));
+    }
+    let s = stamp(archive)?;
+    let key = Sha256::digest(format!("{}\0{rel}\0{}\0{:?}", archive.display(), s.0, s.1));
+    let dir = root.join(key.iter().take(12).map(|b| format!("{b:02x}")).collect::<String>());
+    let file = dir.join(name);
+    if !file.exists() {
+        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let base = rel.rsplit_once('/').map_or("", |(d, _)| d);
+        let out = extract(job, idx, archive, &[rel.to_string()], base, &dir, false)?;
+        // Another call for this entry got there first and ours landed as "name (2)": drop the extra copy.
+        for extra in out.iter().map(Path::new).filter(|p| *p != file) {
+            let _ = fs::remove_file(extra);
+        }
+        if !file.is_file() {
+            return Err(format!("\"{name}\" wasn't unpacked from the archive"));
+        }
+    }
+    // Reuse counts as use, for both the sweep and eviction.
+    let _ = fs::File::open(&dir).and_then(|d| d.set_modified(SystemTime::now()));
+    if let Some(cap) = cap {
+        trim_cache(root, &dir, cap);
+    }
+    Ok(file.to_string_lossy().to_string())
+}
+
+/// Preview copies are kept up to about this much in total.
+const PREVIEW_CACHE_MAX: u64 = 1 << 30;
+
+/// A live extraction of this process is staging inside `dir`. One left by a crashed run doesn't count.
+fn in_flight(dir: &Path) -> bool {
+    let prefix = format!(".morfa-extract-{}-", std::process::id());
+    fs::read_dir(dir).into_iter().flatten().flatten().any(|e| e.file_name().to_string_lossy().starts_with(&prefix))
+}
+
+fn tree_size(path: &Path) -> u64 {
+    let Ok(m) = fs::symlink_metadata(path) else { return 0 };
+    if !m.is_dir() {
+        return m.len();
+    }
+    fs::read_dir(path).into_iter().flatten().flatten().map(|e| tree_size(&e.path())).sum()
+}
+
+/// Remove the least recently used entry folders until the cache fits in `cap`; `keep` and folders being unpacked into stay.
+fn trim_cache(root: &Path, keep: &Path, cap: u64) {
+    let mut dirs: Vec<(Option<SystemTime>, PathBuf, u64)> = fs::read_dir(root).into_iter().flatten().flatten().map(|e| (e.metadata().and_then(|m| m.modified()).ok(), e.path(), tree_size(&e.path()))).collect();
+    let mut total: u64 = dirs.iter().map(|d| d.2).sum();
+    dirs.sort_by_key(|d| d.0);
+    for (_, path, size) in dirs {
+        if total <= cap {
+            break;
+        }
+        if path != keep && !in_flight(&path) && fs::remove_dir_all(&path).is_ok() {
+            total -= size;
+        }
+    }
 }
 
 /// Drop files opened from archives more than a day ago.
 fn sweep(root: &Path) {
     for e in fs::read_dir(root).into_iter().flatten().flatten() {
         let old = e.metadata().and_then(|m| m.modified()).ok().and_then(|t| t.elapsed().ok()).is_some_and(|a| a > Duration::from_secs(86_400));
-        if old {
+        if old && !in_flight(&e.path()) {
             let _ = fs::remove_dir_all(e.path());
         }
     }

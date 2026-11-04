@@ -1,5 +1,5 @@
 import { nextId, state } from './state'
-import type { Toast } from './types'
+import { isNotResponding, parseHostKeyChange, type Toast } from './types'
 import { t } from '../i18n'
 
 export function toast(t: Omit<Toast, 'id'>, ms = 5000) {
@@ -11,5 +11,7 @@ export function toast(t: Omit<Toast, 'id'>, ms = 5000) {
 export const dismiss = (id: number) => (state.toasts = state.toasts.filter((t) => t.id !== id))
 
 export function fail(e: unknown) {
-  toast({ title: t('error.generic'), desc: String(e), tone: 'error' }, 8000)
+  const changed = parseHostKeyChange(e)
+  if (changed) return void toast({ title: t('cloud.hostKeyChangedTitle'), desc: t('cloud.hostKeyChanged', changed), tone: 'error' }, 15000)
+  toast({ title: isNotResponding(e) ? t('pane.notResponding') : t('error.generic'), desc: isNotResponding(e) ? t('pane.notRespondingHint') : String(e), tone: 'error' }, 8000)
 }

@@ -8,6 +8,7 @@ export const archive = {
   'archive.compressing': { one: 'Сжатие: {count} элемент', few: 'Сжатие: {count} элемента', many: 'Сжатие: {count} элементов', other: 'Сжатие: {count} элемента' },
   'archive.compressed': 'Создан «{name}»',
   'archive.cancelled': 'Отменено, лишних файлов не осталось',
+  'archive.noProperties': 'Свойства внутри архива недоступны',
   'archive.readOnly': 'Архивы здесь только для чтения',
   'archive.readOnlyHint': 'Распакуйте файлы, чтобы работать с ними',
   'archive.noneSelected': 'Архивы не выбраны',

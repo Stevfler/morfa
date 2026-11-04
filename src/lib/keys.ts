@@ -93,7 +93,7 @@ function holdSpace(e: KeyboardEvent): boolean {
   if (canQuickLook(e2)) {
     // Open once the image is decoded (or after a short cap) so it appears whole instead of popping in.
     const show = () => spaceHeld && (S.state.quickLook = true)
-    if (kindOf(e2) === 'image') Promise.race([imageUrl(e2.path), new Promise((r) => setTimeout(r, 300))]).then(show)
+    if (kindOf(e2) === 'image' && !S.parseArchive(e2.path)) Promise.race([imageUrl(e2.path), new Promise((r) => setTimeout(r, 300))]).then(show)
     else show()
   }
   return true

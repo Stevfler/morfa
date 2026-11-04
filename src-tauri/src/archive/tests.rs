@@ -159,3 +159,175 @@ fn sevenz_lists_and_extracts_one_file() {
     assert_eq!(fs::read_dir(&out).unwrap().count(), 1);
     fs::remove_dir_all(&d).unwrap();
 }
+
+/// A tar.gz with `first.txt`, then a big incompressible entry, cut off well before its end.
+fn tar_gz_with_cut_tail(d: &Path) -> (PathBuf, Index) {
+    let noise: Vec<u8> = (0..4_000_000u32).scan(1u32, |s, _| { *s = s.wrapping_mul(1_664_525).wrapping_add(1_013_904_223); Some((*s >> 24) as u8) }).collect();
+    let mut gz = tar::Builder::new(flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast()));
+    for (name, data) in [("first.txt", &b"hello"[..]), ("noise.bin", &noise[..])] {
+        let mut h = tar::Header::new_gnu();
+        h.set_size(data.len() as u64);
+        h.set_mode(0o644);
+        h.set_cksum();
+        gz.append_data(&mut h, name, data).unwrap();
+    }
+    let bytes = gz.into_inner().unwrap().finish().unwrap();
+    let arc = d.join("a.tar.gz");
+    fs::write(&arc, &bytes).unwrap();
+    let idx = index(&arc);
+    fs::write(&arc, &bytes[..bytes.len() / 2]).unwrap();
+    (arc, idx)
+}
+
+#[test]
+fn exact_file_selection_stops_before_a_corrupt_tail() {
+    let d = tmp("early");
+    let (arc, idx) = tar_gz_with_cut_tail(&d);
+    let out = d.join("out");
+    fs::create_dir(&out).unwrap();
+    let r = extract(&mut job(Default::default()), &idx, &arc, &["first.txt".to_string()], "", &out, false).unwrap();
+    assert_eq!(r.len(), 1);
+    assert_eq!(fs::read_to_string(out.join("first.txt")).unwrap(), "hello");
+    // Everything has to scan on, so it does reach the damage.
+    assert!(extract(&mut job(Default::default()), &idx, &arc, &[], "", &out, true).is_err());
+    assert!(fs::read_dir(&out).unwrap().flatten().all(|e| !e.file_name().to_string_lossy().starts_with(".morfa-extract")));
+    fs::remove_dir_all(&d).unwrap();
+}
+
+#[test]
+fn repeated_entry_and_folder_selections_scan_everything() {
+    let d = tmp("repeat");
+    let mut t = tar::Builder::new(Vec::new());
+    for data in [&b"old"[..], &b"new"[..]] {
+        let mut h = tar::Header::new_gnu();
+        h.set_size(3);
+        h.set_mode(0o644);
+        h.set_cksum();
+        t.append_data(&mut h, "dir/f.txt", data).unwrap();
+    }
+    let arc = d.join("a.tar");
+    fs::write(&arc, t.into_inner().unwrap()).unwrap();
+    let idx = index(&arc);
+    assert!(idx.exact_files(&["dir/f.txt".to_string()]).is_none());
+    assert!(idx.exact_files(&["dir".to_string()]).is_none());
+    let root = d.join("cache");
+    let p = open_copy(&mut job(Default::default()), &idx, &arc, "dir/f.txt", &root, None).unwrap();
+    assert_eq!(fs::read_to_string(p).unwrap(), "new");
+    fs::remove_dir_all(&d).unwrap();
+}
+
+#[test]
+fn cancelled_open_cleans_up_and_a_later_open_works() {
+    let d = tmp("open-cancel");
+    let (arc, idx) = tar_gz_with_cut_tail(&d);
+    let root = d.join("cache");
+    let jobs = Jobs::default();
+    jobs.cancelled.lock().unwrap().insert(1);
+    let e = with_job(None, &jobs, 1, |j| open_copy(j, &idx, &arc, "first.txt", &root, None)).unwrap_err();
+    assert!(e.contains(CANCELLED), "{e}");
+    assert_eq!(tree_size(&root), 0);
+    for dir in fs::read_dir(&root).unwrap().flatten() {
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 0, "staging left behind");
+    }
+    // The flag is gone with the job, and the same entry opens fine afterwards.
+    let p = with_job(None, &jobs, 1, |j| open_copy(j, &idx, &arc, "first.txt", &root, None)).unwrap();
+    assert_eq!(fs::read_to_string(p).unwrap(), "hello");
+    fs::remove_dir_all(&d).unwrap();
+}
+
+#[test]
+fn open_of_a_link_is_a_clear_error() {
+    let d = tmp("open-link");
+    let mut t = tar::Builder::new(Vec::new());
+    let mut h = tar::Header::new_gnu();
+    h.set_entry_type(tar::EntryType::Symlink);
+    h.set_size(0);
+    h.set_mode(0o777);
+    t.append_link(&mut h, "l.txt", "/etc/hosts").unwrap();
+    let arc = d.join("a.tar");
+    fs::write(&arc, t.into_inner().unwrap()).unwrap();
+    let e = open_copy(&mut job(Default::default()), &index(&arc), &arc, "l.txt", &d.join("cache"), None).unwrap_err();
+    assert!(e.contains("link"), "{e}");
+    fs::remove_dir_all(&d).unwrap();
+}
+
+#[test]
+fn trim_cache_drops_oldest_but_never_the_kept_one() {
+    let d = tmp("trim");
+    for (name, age) in [("old", 300), ("mid", 200), ("new", 100)] {
+        fs::create_dir(d.join(name)).unwrap();
+        fs::write(d.join(name).join("f"), [0u8; 100]).unwrap();
+        let t = SystemTime::now() - Duration::from_secs(age);
+        fs::File::open(d.join(name)).unwrap().set_modified(t).unwrap();
+    }
+    trim_cache(&d, &d.join("old"), 150);
+    assert!(d.join("old").exists(), "kept even though oldest and over the cap");
+    assert!(!d.join("mid").exists());
+    assert!(!d.join("new").exists());
+    fs::remove_dir_all(&d).unwrap();
+}
+
+#[test]
+fn preview_trim_leaves_the_open_root_alone() {
+    let d = tmp("roots");
+    let (arc, idx) = tar_gz_with_cut_tail(&d);
+    let (opened, previews) = (d.join("archive-open"), d.join("archive-preview"));
+    let kept = open_copy(&mut job(Default::default()), &idx, &arc, "first.txt", &opened, None).unwrap();
+    fs::create_dir_all(previews.join("stale")).unwrap();
+    fs::write(previews.join("stale/f"), [0u8; 100]).unwrap();
+    open_copy(&mut job(Default::default()), &idx, &arc, "first.txt", &previews, Some(0)).unwrap();
+    assert!(!previews.join("stale").exists());
+    assert_eq!(fs::read_to_string(kept).unwrap(), "hello");
+    fs::remove_dir_all(&d).unwrap();
+}
+
+#[test]
+fn trim_and_sweep_spare_in_flight_folders_but_not_crash_leftovers() {
+    let d = tmp("inflight");
+    let day_old = SystemTime::now() - Duration::from_secs(90_000);
+    let live = format!(".morfa-extract-{}-7", std::process::id());
+    for (name, staging) in [("live", live.as_str()), ("crashed", ".morfa-extract-0-7")] {
+        fs::create_dir_all(d.join(name).join(staging)).unwrap();
+        fs::write(d.join(name).join(staging).join("part"), [0u8; 100]).unwrap();
+    }
+    fs::create_dir(d.join("keep")).unwrap();
+    trim_cache(&d, &d.join("keep"), 0);
+    assert!(d.join("live").join(&live).exists());
+    assert!(!d.join("crashed").exists());
+    fs::File::open(d.join("live")).unwrap().set_modified(day_old).unwrap();
+    sweep(&d);
+    assert!(d.join("live").join(&live).exists());
+    fs::remove_dir_all(d.join("live").join(&live)).unwrap();
+    fs::File::open(d.join("live")).unwrap().set_modified(day_old).unwrap();
+    sweep(&d);
+    assert!(!d.join("live").exists());
+    fs::remove_dir_all(&d).unwrap();
+}
+
+#[test]
+fn reuse_refreshes_the_folder_so_eviction_is_lru() {
+    let d = tmp("lru");
+    let (arc, idx) = tar_gz_with_cut_tail(&d);
+    let root = d.join("cache");
+    let p = PathBuf::from(open_copy(&mut job(Default::default()), &idx, &arc, "first.txt", &root, None).unwrap());
+    let dir = p.parent().unwrap();
+    let old = SystemTime::now() - Duration::from_secs(5000);
+    fs::File::open(dir).unwrap().set_modified(old).unwrap();
+    open_copy(&mut job(Default::default()), &idx, &arc, "first.txt", &root, None).unwrap();
+    assert!(fs::metadata(dir).unwrap().modified().unwrap() > old + Duration::from_secs(4000));
+    fs::remove_dir_all(&d).unwrap();
+}
+
+#[test]
+fn cancel_is_accepted_only_while_running_and_never_lingers() {
+    let jobs = Jobs::default();
+    assert!(!jobs.cancel(5));
+    assert!(jobs.cancelled.lock().unwrap().is_empty());
+    let r = with_job(None, &jobs, 5, |j| {
+        assert!(jobs.cancel(5));
+        assert!(j.is_cancelled());
+        Ok(())
+    });
+    assert!(r.is_ok(), "a cancel after the work finished doesn't hide its result");
+    assert!(jobs.cancelled.lock().unwrap().is_empty() && jobs.running.lock().unwrap().is_empty());
+}

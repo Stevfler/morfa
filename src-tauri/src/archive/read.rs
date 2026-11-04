@@ -26,6 +26,26 @@ impl Item {
 pub(crate) trait Visitor {
     fn want(&mut self, item: &Item) -> bool;
     fn take(&mut self, item: &Item, data: &mut dyn Read) -> CmdResult<()>;
+    /// True once nothing more is needed (or the job was cancelled): the walk ends early.
+    fn finished(&self) -> bool {
+        false
+    }
+}
+
+/// Reads past data nobody wants, stopping as soon as the visitor is finished. Returns false if it did.
+fn skip(data: &mut dyn Read, v: &dyn Visitor) -> io::Result<bool> {
+    let mut buf = vec![0u8; 256 * 1024];
+    loop {
+        if v.finished() {
+            return Ok(false);
+        }
+        match data.read(&mut buf) {
+            Ok(0) => return Ok(true),
+            Ok(_) => {}
+            Err(e) if e.kind() == io::ErrorKind::Interrupted => {}
+            Err(e) => return Err(e),
+        }
+    }
 }
 
 /// Normalise an untrusted entry name; `None` means it tries to leave the extraction root.
@@ -72,6 +92,9 @@ pub(crate) fn walk(path: &Path, v: &mut dyn Visitor) -> CmdResult<()> {
 fn tar_walk(data: impl Read, v: &mut dyn Visitor) -> CmdResult<()> {
     let mut tar = tar::Archive::new(data);
     for entry in tar.entries().map_err(|e| e.to_string())? {
+        if v.finished() {
+            break;
+        }
         let mut entry = entry.map_err(|e| e.to_string())?;
         let kind = entry.header().entry_type();
         let (is_dir, is_link) = (kind.is_dir(), kind.is_symlink() || kind.is_hard_link());
@@ -85,6 +108,8 @@ fn tar_walk(data: impl Read, v: &mut dyn Visitor) -> CmdResult<()> {
         let item = Item { rel, is_dir, is_link, size: if is_dir || is_link { 0 } else { entry.size() }, modified: h.mtime().unwrap_or(0).saturating_mul(1000), mode: h.mode().ok() };
         if v.want(&item) {
             v.take(&item, &mut entry)?;
+        } else if !skip(&mut entry, v).map_err(|e| e.to_string())? {
+            break;
         }
     }
     Ok(())
@@ -93,6 +118,9 @@ fn tar_walk(data: impl Read, v: &mut dyn Visitor) -> CmdResult<()> {
 fn zip_walk(data: BufReader<File>, v: &mut dyn Visitor) -> CmdResult<()> {
     let mut zip = zip::ZipArchive::new(data).map_err(|e| e.to_string())?;
     for i in 0..zip.len() {
+        if v.finished() {
+            break;
+        }
         let item = {
             let f = zip.by_index_raw(i).map_err(|e| e.to_string())?;
             let name = f.name().map_err(|e| e.to_string())?;
@@ -147,11 +175,11 @@ fn sevenz_walk(path: &Path, v: &mut dyn Visitor) -> CmdResult<()> {
                 failure = Some(e);
                 return Ok(false);
             }
+            Ok(!v.finished())
         } else {
             // The library needs each stream consumed to keep its position in solid blocks.
-            io::copy(data, &mut io::sink())?;
+            skip(data, &*v).map_err(sevenz_rust2::Error::from)
         }
-        Ok(true)
     });
     if let Some(e) = failure {
         return Err(e);

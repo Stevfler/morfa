@@ -2,7 +2,7 @@ import { reactive, ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { t } from '../i18n'
 import type { Pane } from '../store'
-import { fail, startSearch } from '../store'
+import { fail, parseArchive, startSearch } from '../store'
 
 /** Finder's colour labels; stored as plain tags with these names. */
 export const COLORS = [
@@ -37,6 +37,7 @@ function flush() {
 
 /** Tags of `path`; schedules a batched fetch the first time it is asked. */
 export function tagsOf(path: string): string[] {
+  if (parseArchive(path)) return [] // nothing inside an archive can be tagged
   const t = cache.get(path)
   if (t) return t
   if (!queue.size) queueMicrotask(flush)

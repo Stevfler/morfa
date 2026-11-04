@@ -8,6 +8,7 @@ export const archive = {
   'archive.compressing': { one: 'Compressing {count} item', other: 'Compressing {count} items' },
   'archive.compressed': 'Created “{name}”',
   'archive.cancelled': 'Cancelled, nothing was left behind',
+  'archive.noProperties': 'Properties aren’t available inside an archive',
   'archive.readOnly': 'Archives are read-only here',
   'archive.readOnlyHint': 'Extract the items to work with them',
   'archive.noneSelected': 'No archives selected',

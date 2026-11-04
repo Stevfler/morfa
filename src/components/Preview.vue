@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useImageUrl } from '../composables/useImageUrl'
 import Icon from './Icon.vue'
@@ -14,31 +14,68 @@ const entry = computed<Entry | undefined>(() => {
   return S.visible(p)[p.cursor]
 })
 const kind = computed(() => (entry.value ? kindOf(entry.value) : 'file'))
-const src = useImageUrl(() => (entry.value && kindOf(entry.value) === 'image' ? entry.value.path : null))
+/** Temp copy of an image inside an archive, once unpacked. */
+const unpackedImage = ref<string | null>(null)
+/** On a share, big files and folder contents wait for a click. */
+const asked = ref(false)
+const held = computed(() => {
+  const e = entry.value
+  if (!e || asked.value || S.parseArchive(e.path)) return false
+  const p = S.pane()
+  return e.isDir ? p.remote !== false : S.remoteHold(p, e.size) && (kindOf(e) === 'image' || ['text', 'code'].includes(kindOf(e)))
+})
+const src = useImageUrl(() => (entry.value && kindOf(entry.value) === 'image' && !held.value ? (S.parseArchive(entry.value.path) ? unpackedImage.value : entry.value.path) : null))
 
 const text = ref<string | null>(null)
 const children = ref<Entry[] | null>(null)
 const loading = ref(false)
 let seq = 0
 
+/** Quick Look closing cancels an unpack it shared with us: try again once if the entry is still current. */
+async function unpack(path: string, my: number) {
+  try {
+    return await S.previewLocal(path)
+  } catch (err) {
+    if (err !== 'Cancelled' || my !== seq) throw err
+    return S.previewLocal(path)
+  }
+}
+
 // Debounced so holding ↓ through a folder doesn't hammer the disk.
 let timer: ReturnType<typeof setTimeout> | undefined
+watch(entry, (e, old) => {
+  if (e?.path !== old?.path) asked.value = false
+}, { flush: 'sync' })
 watch(
-  entry,
-  (e) => {
+  [entry, held],
+  ([e], [old]) => {
     clearTimeout(timer)
+    if (e?.path !== old?.path) S.cancelPreviewUnpack()
     text.value = null
     children.value = null
+    unpackedImage.value = null
     if (!e) return
     const my = ++seq
+    loading.value = false
+    if (held.value) return
     timer = setTimeout(async () => {
       loading.value = true
       try {
         if (e.isDir) {
-          const list = await invoke<Entry[]>('list_dir', { path: e.path })
+          const arc = S.parseArchive(e.path)
+          const list = await (arc ? invoke<Entry[]>('archive_list', { archive: arc.archive, rel: arc.rel }) : invoke<Entry[]>('list_dir', { path: e.path }))
           if (my === seq) children.value = list.filter((c) => state.showHidden || !c.hidden)
+        } else if (S.parseArchive(e.path) && (!S.archiveAutoPreview(e) || kindOf(e) === 'file')) {
+          /* not unpacked on cursor movement — metadata only */
+        } else if (kindOf(e) === 'image') {
+          if (S.parseArchive(e.path)) {
+            const local = await unpack(e.path, my)
+            if (my === seq) unpackedImage.value = local
+          }
         } else if (['text', 'code'].includes(kindOf(e)) || (kindOf(e) === 'file' && e.size < 2e6)) {
-          const s = await invoke<string | null>('read_text', { path: e.path, max: 64 * 1024 })
+          const path = S.parseArchive(e.path) ? await unpack(e.path, my) : e.path
+          if (my !== seq) return
+          const s = await invoke<string | null>('read_text', { path, max: 64 * 1024 })
           if (my === seq) text.value = s
         }
       } catch {
@@ -51,6 +88,11 @@ watch(
   { immediate: true },
 )
 
+onBeforeUnmount(() => {
+  clearTimeout(timer)
+  S.cancelPreviewUnpack()
+})
+
 const childStats = computed(() => {
   if (!children.value) return null
   const dirs = children.value.filter((c) => c.isDir).length
@@ -60,6 +102,7 @@ const size = computed(() => {
   const e = entry.value
   if (!e) return ''
   if (!e.isDir) return fmtSize(e.size)
+  if (S.parseArchive(e.path)) return '—' // dir_size can't walk into an archive
   const s = state.sizes[e.path]
   return s === 'pending' ? t('preview.calculating') : typeof s === 'number' ? fmtSize(s) : null
 })
@@ -108,6 +151,10 @@ const size = computed(() => {
           </li>
           <li v-if="children.length > 14" class="text-[11.5px] text-faint">{{ t('preview.more', { count: children.length - 14 }) }}</li>
         </ul>
+
+        <button v-if="held" class="btn" @click="asked = true">
+          <Icon name="eye" class="size-3.5 shrink-0" />{{ entry.isDir ? t('preview.showContents') : t('preview.loadRemote') }}
+        </button>
 
         <div class="flex gap-2 pt-1">
           <button class="btn min-w-0 max-w-full" :title="entry.isDir ? t('shell.open') : t('shell.openDefault')" @click="S.open(S.pane(), entry)">

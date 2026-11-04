@@ -26,9 +26,10 @@ export function kindOf(e: { isDir: boolean; ext: string; name: string }): Kind {
 }
 
 /** Quick Look only handles images and plain text; everything else opens in its own app. */
-export function canQuickLook(e: { isDir: boolean; ext: string; name: string; path?: string } | undefined) {
-  // Files inside an archive aren't on disk, and the viewers read from disk.
-  return !!e && !e.path?.startsWith('morfa://archive/') && (['image', 'text', 'code'].includes(kindOf(e)) || (!e.isDir && OFFICE.includes(e.ext)))
+export function canQuickLook(e: { isDir: boolean; ext: string; name: string; path?: string; isSymlink?: boolean } | undefined) {
+  // Links inside an archive are never unpacked, so there's nothing to read.
+  if (e?.isSymlink && e.path?.startsWith('morfa://archive/')) return false
+  return !!e && (['image', 'text', 'code'].includes(kindOf(e)) || (!e.isDir && OFFICE.includes(e.ext)))
 }
 
 export const KIND_ICON: Record<Kind, IconName> = {
