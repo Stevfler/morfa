@@ -7,6 +7,7 @@ import * as S from '../lib/store'
 import type { Entry } from '../lib/store'
 import { fmtDateFull, fmtSize, keyLabel, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL } from '../lib/util'
 import { t } from '../lib/i18n'
+import { branchOf } from '../lib/git'
 
 const state = S.state
 const entry = computed<Entry | undefined>(() => {
@@ -93,6 +94,7 @@ onBeforeUnmount(() => {
   S.cancelPreviewUnpack()
 })
 
+const branch = computed(() => (entry.value?.isDir ? branchOf(entry.value.path) : null))
 const childStats = computed(() => {
   if (!children.value) return null
   const dirs = children.value.filter((c) => c.isDir).length
@@ -137,6 +139,10 @@ const size = computed(() => {
           <template v-if="childStats">
             <dt class="text-faint">{{ t('preview.contains') }}</dt>
             <dd class="text-fg">{{ t('preview.folders', { count: childStats.dirs }) }}, {{ t('preview.files', { count: childStats.files }) }}</dd>
+          </template>
+          <template v-if="branch">
+            <dt class="text-faint">{{ t('preview.branch') }}</dt>
+            <dd class="flex min-w-0 items-center gap-1 text-fg"><Icon name="git-branch" class="size-3.5 shrink-0 text-dim" /><span class="break-all select-text">{{ branch }}</span></dd>
           </template>
           <dt class="text-faint">{{ t('preview.modified') }}</dt>
           <dd class="text-fg">{{ fmtDateFull(entry.modified) }}</dd>

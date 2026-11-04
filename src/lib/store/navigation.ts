@@ -9,6 +9,7 @@ import { persist, syncWatch } from './tabs'
 import { archiveLocal } from './archive'
 import { archivePath, cloudPath, isArchiveFile, isSpecial, parseArchive, parseCloud, type Entry, type Pane, type Place } from './types'
 import { t } from '../i18n'
+import { recheckBranches } from '../git'
 
 // Per-pane load token: only the latest load_ for a pane may apply its result.
 const loadSeq = new WeakMap<Pane, number>()
@@ -25,6 +26,7 @@ export async function load_(p: Pane) {
     return
   }
   p.loading = true
+  recheckBranches()
   if (!cloud && !arc) checkRemote(p)
   else {
     p.remote = false

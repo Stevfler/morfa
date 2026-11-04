@@ -6,6 +6,7 @@ mod docview;
 mod entry;
 mod fsinfo;
 mod fsops;
+mod git;
 mod guard;
 mod mount;
 mod netfs;
@@ -95,6 +96,7 @@ pub fn run() {
             convert::preview::convert_preview,
             convert::preview::image_bytes,
             docview::office_preview,
+            git::git_branches,
             tags::tags_get,
             tags::tags_set,
             tags::tags_all,

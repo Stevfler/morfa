@@ -7,6 +7,7 @@
 const rows = [
   ['folder',           'folder',            'folder',              'folder',                    'folder',                     'folder'],
   ['folder-open',      'folder-open',       'folder-open',         'folder-open',               'folder-open',                'folder-open'],
+  ['git-branch',       'git-branch',        'git-branch',          'git-branch',                'branch',                     'git-branch'],
   ['folder-plus',      'folder-plus',       'folder-plus',         'add-folder',                'folder-add',                 'folder-plus'],
   ['file',             'file',              'file',                'file',                      'document',                   'file'],
   ['file-plus',        'file-plus',         'file-plus',           'file-add',                  'document-add',               'file-plus'],

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Icon from '../Icon.vue'
 import type { IconName } from '../../lib/icons'
 import TagDots from '../tags/TagDots.vue'
@@ -7,6 +7,7 @@ import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
 import { fmtDate, fmtDateFull, fmtSize, kindOf, KIND_COLOR, KIND_ICON, KIND_LABEL, parent } from '../../lib/util'
 import { t } from '../../lib/i18n'
+import { branchOf } from '../../lib/git'
 
 const props = defineProps<{ pane: Pane; e: Entry; i: number; row: number; active: boolean; dropTarget: string | null }>()
 const p = props.pane
@@ -31,6 +32,8 @@ const CLOUD_ICON: Record<string, IconName> = { synced: 'cloud-check', pending: '
 const CLOUD_CLASS: Record<string, string> = { synced: 'text-ok', pending: 'text-accent', partial: 'text-dim' }
 const cloudTitle = (m: string) =>
   t(m === 'synced' ? 'cloud.markSynced' : m === 'pending' ? 'cloud.markPending' : 'cloud.markPartial')
+
+const branch = computed(() => (props.e.isDir ? branchOf(props.e.path) : null))
 
 const rel = (e: Entry) => {
   const dir = parent(e.path) ?? ''
@@ -64,6 +67,10 @@ function sizeCell(e: Entry) {
         spellcheck="false" @keydown="renameKey" @blur="S.renameTo(e.path, ($event.target as HTMLInputElement).value, pane)" @mousedown.stop
       />
       <span v-else class="truncate">{{ e.name }}</span>
+      <span v-if="branch" class="flex max-w-36 min-w-6 shrink-[4] items-center gap-1 rounded bg-raised px-1.5 py-px text-[11px] text-dim" :title="t('preview.branch') + ': ' + branch">
+        <Icon name="git-branch" class="size-3 shrink-0" />
+        <span class="truncate">{{ branch }}</span>
+      </span>
       <TagDots :path="e.path" />
       <Icon v-if="e.cloud" :name="CLOUD_ICON[e.cloud] ?? 'cloud'" class="size-3.5 shrink-0" :class="CLOUD_CLASS[e.cloud]" :title="cloudTitle(e.cloud)" />
       <Icon v-else-if="e.link" name="external-link" class="size-3.5 shrink-0 text-faint" :title="t('cloud.onlineOnly')" />

@@ -18,7 +18,7 @@ mod xattr;
 const STALL: Duration = Duration::from_secs(5);
 
 /// Runs `each` over `paths` on one guarded thread, returning results until it stalls, in order.
-fn batch<R: Send + 'static>(key: &str, paths: Vec<String>, each: impl Fn(&str) -> R + Send + 'static) -> Vec<R> {
+pub(crate) fn batch<R: Send + 'static>(key: &str, paths: Vec<String>, each: impl Fn(&str) -> R + Send + 'static) -> Vec<R> {
     let results = Arc::new(Mutex::new(Vec::with_capacity(paths.len())));
     let r2 = results.clone();
     let _ = guard::run_keyed(key, key, STALL, guard::LIMITS, move |beat| {

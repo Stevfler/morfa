@@ -10,6 +10,7 @@ import { startSearch } from './search'
 import { isNotResponding, type Entry, type Place } from './types'
 import { settings } from '../settings'
 import { initCloud } from '../cloud'
+import { recheckBranches } from '../git'
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
 const dirty = new Set<string>()
@@ -60,6 +61,7 @@ export async function init() {
   await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
     if (!focused || Date.now() - lastFocus < 5000) return
     lastFocus = Date.now()
+    recheckBranches()
     for (const t of state.tabs) for (const p of t.panes) if (p.remote && !p.search && !p.loading && !p.error) load_(p)
   })
 

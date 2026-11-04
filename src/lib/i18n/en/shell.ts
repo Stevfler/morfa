@@ -76,6 +76,7 @@ export const shell = {
   'preview.folders': { one: '{count} folder', other: '{count} folders' },
   'preview.files': { one: '{count} file', other: '{count} files' },
   'preview.modified': 'Modified',
+  'preview.branch': 'Git branch',
   'preview.where': 'Where',
   'preview.more': '+ {count} more',
   'sidebar.places': 'Places',
