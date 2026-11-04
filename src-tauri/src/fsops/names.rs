@@ -7,28 +7,59 @@ use std::{
 
 const MAX_ATTEMPTS: u32 = 10_000;
 
-/// Rejects names that are invalid on any of Linux, macOS or Windows.
-pub fn validate_name(name: &str) -> Result<(), String> {
+/// Why a name can't be used on Linux, macOS or Windows. Codes the UI translates.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NameIssue {
+    Empty,
+    Dots,
+    Char(char),
+    TrailingDot,
+    Reserved,
+}
+impl NameIssue {
+    pub fn code(self) -> &'static str {
+        match self {
+            NameIssue::Empty => "empty",
+            NameIssue::Dots => "dots",
+            NameIssue::Char(_) => "chars",
+            NameIssue::TrailingDot => "trailing",
+            NameIssue::Reserved => "reserved",
+        }
+    }
+}
+
+pub fn name_issue(name: &str) -> Option<NameIssue> {
     if name.trim().is_empty() {
-        return Err("Name can't be empty".into());
+        return Some(NameIssue::Empty);
     }
     if name == "." || name == ".." {
-        return Err(format!("\"{name}\" is not a valid name"));
+        return Some(NameIssue::Dots);
     }
     if let Some(c) = name.chars().find(|c| matches!(c, '/' | '\\' | '\0' | '<' | '>' | ':' | '"' | '|' | '?' | '*') || c.is_control()) {
-        let shown = if c.is_control() { "control characters".to_string() } else { format!("\"{c}\"") };
-        return Err(format!("Names can't contain {shown}"));
+        return Some(NameIssue::Char(c));
     }
     if name.ends_with('.') || name.ends_with(' ') {
-        return Err("Names can't end with a dot or a space".into());
+        return Some(NameIssue::TrailingDot);
     }
     let base = name.split('.').next().unwrap_or("").trim_end().to_ascii_uppercase();
     let reserved = matches!(base.as_str(), "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$")
         || ["COM", "LPT"].iter().any(|p| base.strip_prefix(p).is_some_and(|d| matches!(d, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³")));
-    if reserved {
-        return Err(format!("\"{name}\" is a reserved name on Windows"));
+    reserved.then_some(NameIssue::Reserved)
+}
+
+/// Rejects names that are invalid on any of Linux, macOS or Windows.
+pub fn validate_name(name: &str) -> Result<(), String> {
+    match name_issue(name) {
+        None => Ok(()),
+        Some(NameIssue::Empty) => Err("Name can't be empty".into()),
+        Some(NameIssue::Dots) => Err(format!("\"{name}\" is not a valid name")),
+        Some(NameIssue::Char(c)) => {
+            let shown = if c.is_control() { "control characters".to_string() } else { format!("\"{c}\"") };
+            Err(format!("Names can't contain {shown}"))
+        }
+        Some(NameIssue::TrailingDot) => Err("Names can't end with a dot or a space".into()),
+        Some(NameIssue::Reserved) => Err(format!("\"{name}\" is a reserved name on Windows")),
     }
-    Ok(())
 }
 
 fn candidate(p: &Path, is_dir: bool, n: u32) -> PathBuf {

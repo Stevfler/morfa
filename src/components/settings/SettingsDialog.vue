@@ -11,13 +11,17 @@ import AppearanceSection from './AppearanceSection.vue'
 import IconsSection from './IconsSection.vue'
 import BehaviourSection from './BehaviourSection.vue'
 import DocumentsSection from './DocumentsSection.vue'
+import IndexSection from './IndexSection.vue'
+import AutoConvertSection from './AutoConvertSection.vue'
 import AboutSection from './AboutSection.vue'
 
 const tabs = computed(() => ([
   { id: 'appearance', icon: 'palette' },
   { id: 'icons', icon: 'shapes' },
   { id: 'behaviour', icon: 'sliders' },
+  { id: 'search', icon: 'search' },
   { id: 'documents', icon: 'file-text' },
+  { id: 'automation', icon: 'zap' },
   { id: 'about', icon: 'info' },
 ] as const).map((x) => ({ ...x, label: t(`settings.tab.${x.id}`) })))
 </script>
@@ -47,7 +51,9 @@ const tabs = computed(() => ([
             <TabsContent value="appearance" class="outline-none"><AppearanceSection /></TabsContent>
             <TabsContent value="icons" class="outline-none"><IconsSection /></TabsContent>
             <TabsContent value="behaviour" class="outline-none"><BehaviourSection /></TabsContent>
+            <TabsContent value="search" class="outline-none"><IndexSection /></TabsContent>
             <TabsContent value="documents" class="outline-none"><DocumentsSection /></TabsContent>
+            <TabsContent value="automation" class="outline-none"><AutoConvertSection /></TabsContent>
             <TabsContent value="about" class="outline-none"><AboutSection /></TabsContent>
           </div>
         </TabsRoot>

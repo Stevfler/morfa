@@ -21,7 +21,7 @@ const buttons = computed<Btn[]>(() => {
   const dest = other ? other.path.split(/[\\/]/).filter(Boolean).pop() || other.path : ''
   const xfer = S.toOtherBlocked()
   return [
-    { id: 'rename', fkey: 'F2', text: t('fbar.rename'), icon: 'pencil', tip: t('fbar.rename'), disabled: none.value },
+    { id: 'rename', fkey: 'F2', text: t('fbar.rename'), icon: 'pencil', tip: t('fbar.rename'), disabled: n > 1 && !S.canBatchRename() ? t('batch.notHere') : none.value },
     { id: 'quicklook', fkey: 'F3', text: t('fbar.view'), icon: 'quicklook', tip: t('fbar.quickLookTip'), disabled: canQuickLook(S.visible(p)[p.cursor]) ? null : t('fbar.nothingToPreview') },
     { id: 'openapp', fkey: 'F4', text: t('shell.open'), icon: 'external-link', tip: t('shell.openDefault'), disabled: none.value },
     { id: 'copyother', fkey: 'F5', text: t('fbar.copy'), icon: 'copy', tip: t('fbar.copyTip', { what, dest }), disabled: xfer },

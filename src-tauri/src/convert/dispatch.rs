@@ -22,7 +22,7 @@ pub fn convert_one(src: &Path, o: &ConvertOpts, worker: usize, cancelled: &dyn F
     let ext = routes::norm(&src.extension().unwrap_or_default().to_string_lossy());
     let fmt = o.format.as_str();
     // Same-format image re-encodes (resize/strip/quality) stay allowed, as before.
-    let via = routes::detected(|a| routes::route(&ext, fmt, a).or_else(|| (ext == fmt && a.image.iter().any(|f| f == fmt)).then_some(Via::Image)));
+    let via = routes::detected(|a| routes::route_or_same(&ext, fmt, a));
     if o.max_bytes.is_some() && via.is_some_and(|v| v != Via::Image) {
         return Err(LIMIT_IMAGES_ONLY.into());
     }

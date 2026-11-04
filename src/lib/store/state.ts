@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import { load } from '../util'
-import type { CloudAccount, Pane, Place, Tab, Toast, Op, UndoItem } from './types'
+import type { CloudAccount, Entry, Pane, Place, Tab, Toast, Op, UndoItem } from './types'
 
 let uid = 1
 export const nextId = () => uid++
@@ -30,6 +30,8 @@ export const state = reactive({
   showHidden: load('morfa.hidden', false),
   preview: load('morfa.preview', false),
   quickLook: false,
+  /** Quick Look shows this instead of the pane's cursor, for a dialog's list of files. */
+  quickLookFile: null as Entry | null,
   clipboard: null as null | { mode: 'copy' | 'move'; paths: string[] },
   bookmarks: load<string[]>('morfa.bookmarks', []),
   frecency: load<Record<string, { n: number; t: number }>>('morfa.frecency', {}),

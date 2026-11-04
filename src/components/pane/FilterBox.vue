@@ -27,7 +27,7 @@ watch(() => p.search?.query, (v, old) => {
   // Typed-from-anywhere characters also trigger the search.
   if (v != null && v !== old) {
     clearTimeout(searchTimer)
-    searchTimer = setTimeout(() => S.startSearch(p, v), 180)
+    searchTimer = setTimeout(() => S.startSearch(p, v), p.search?.source === 'index' ? 30 : 180) // the walk needs typing to pause; the index doesn't
   }
 })
 function filterKey(ev: KeyboardEvent) {

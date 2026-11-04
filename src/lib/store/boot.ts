@@ -10,6 +10,8 @@ import { startSearch } from './search'
 import { isNotResponding, type Entry, type Place } from './types'
 import { settings } from '../settings'
 import { initCloud } from '../cloud'
+import { initFileIndex } from './fileindex'
+import { fail } from './toast'
 import { recheckBranches } from '../git'
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
@@ -34,15 +36,30 @@ export async function init() {
   // Not awaited: a slow answer must not hold up the listeners below.
   invoke<Place[]>('places').then((pl) => (state.places = pl)).catch((e) => console.warn('places:', e))
 
-  await listen<{ id: number; entries: Entry[]; done: boolean; scanned: number }>('search', ({ payload }) => {
+  await listen<{ id: number; entries: Entry[]; done: boolean; scanned: number; source: 'index' | 'live'; reason: string | null; total: number | null }>('search', ({ payload }) => {
     for (const t of state.tabs)
       for (const p of t.panes)
         if (p.search?.id === payload.id) {
           p.search.results.push(...payload.entries)
           p.search.done = payload.done
           p.search.scanned = payload.scanned
+          p.search.source = payload.source
+          p.search.reason = payload.reason
+          p.search.total = payload.total
         }
   })
+  // The index went away between choosing it and asking it: ask again, which walks.
+  await listen<number>('search-rerun', ({ payload }) => {
+    for (const t of state.tabs) for (const p of t.panes) if (p.search?.id === payload) startSearch(p, p.search.query)
+  })
+  // The index couldn't check its results: say so rather than show "nothing found".
+  await listen<{ id: number; error: string }>('search-failed', ({ payload }) => {
+    for (const t of state.tabs) for (const p of t.panes) if (p.search?.id === payload.id) p.search.done = true
+    fail(payload.error)
+  })
+  await initFileIndex()
+  // Late import: the convert module reads the store as it loads.
+  void import('../convert/auto').then((m) => m.initAutoConvert()).catch((e) => console.error('autoconvert', e))
   await listen<{ id: number; done: number; total: number; current: string; part?: number | null }>('op-progress', ({ payload }) => {
     const op = state.ops.find((o) => o.id === payload.id)
     if (op) Object.assign(op, { done: payload.done, total: payload.total, current: payload.current, part: payload.part })

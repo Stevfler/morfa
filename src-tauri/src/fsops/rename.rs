@@ -95,7 +95,7 @@ pub(super) fn is_cross_device(e: &io::Error) -> bool {
 }
 
 /// True if both paths name the same filesystem object (links not followed).
-pub(super) fn same_file(a: &Path, b: &Path) -> bool {
+pub(crate) fn same_file(a: &Path, b: &Path) -> bool {
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;

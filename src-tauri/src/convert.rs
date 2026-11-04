@@ -1,15 +1,15 @@
 //! File conversion by shelling out: images via libvips/ImageMagick, documents via LibreOffice/pandoc,
 //! video/audio via ffmpeg.
-mod dispatch;
+pub(crate) mod dispatch;
 pub(crate) mod doc;
-mod engine;
+pub(crate) mod engine;
 mod fit;
 mod job;
 pub(crate) mod naming;
 mod pdf;
 pub mod preview;
 pub(crate) mod proc;
-mod routes;
+pub(crate) mod routes;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

@@ -113,7 +113,7 @@ fn probe_fold(root: &Path) -> Fold {
     fold
 }
 
-fn fold_key(s: &str, f: Fold) -> String {
+pub(crate) fn fold_key(s: &str, f: Fold) -> String {
     let s: String = if f.unicode { s.nfc().collect() } else { s.to_string() };
     if f.case { s.to_lowercase() } else { s }
 }

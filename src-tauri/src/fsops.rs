@@ -6,7 +6,7 @@ pub mod trashcan;
 pub(crate) mod rename;
 #[cfg(test)]
 use rename::{move_by_copy, same_file};
-pub use names::validate_name;
+pub use names::{name_issue, validate_name};
 
 fn free(p: &Path) -> bool {
     p.symlink_metadata().is_err()
@@ -45,7 +45,89 @@ pub async fn move_pairs(pairs: Vec<(String, String)>) -> CmdResult<()> {
     tauri::async_runtime::spawn_blocking(move || move_all(&pairs)).await.map_err(|e| e.to_string())?
 }
 
-fn move_all(pairs: &[(String, String)]) -> CmdResult<()> {
+/// What a move call really did. Empty `completed` with an error: nothing changed.
+#[derive(serde::Serialize, Debug, Default)]
+pub struct MoveReport {
+    /// Net moves that stand, detours through temporary names composed. Survivors of a failed rollback
+    /// keep their temporary names, so the journal knows where those files are.
+    pub completed: Vec<(String, String)>,
+    pub error: Option<String>,
+}
+
+/// Moves in order. On the first failure, undoes what it did, newest first. A step that can't be
+/// undone stays in the report, and the rest are still tried: one stuck file mustn't strand a batch.
+pub(crate) fn move_tracked(pairs: &[(String, String)]) -> MoveReport {
+    move_tracked_with(pairs, &mut |p| move_all(std::slice::from_ref(p)))
+}
+
+/// `mv` performs one step; tests use it to make a rollback fail.
+fn move_tracked_with(pairs: &[(String, String)], mv: &mut dyn FnMut(&(String, String)) -> CmdResult<()>) -> MoveReport {
+    let mut done: Vec<(String, String)> = vec![];
+    // Folders each step had to create, deepest first.
+    let mut made: Vec<Vec<std::path::PathBuf>> = vec![];
+    let mut error = None;
+    for p in pairs {
+        let missing: Vec<std::path::PathBuf> = Path::new(&p.1).ancestors().skip(1).take_while(|a| !a.as_os_str().is_empty() && free(a)).map(Path::to_path_buf).collect();
+        match mv(p) {
+            Ok(()) if p.0 == p.1 => {}
+            Ok(()) => {
+                done.push(p.clone());
+                made.push(missing);
+            }
+            Err(e) => {
+                error = Some(explain_collision(&done, p).unwrap_or(e));
+                break;
+            }
+        }
+    }
+    if error.is_some() {
+        let mut stuck = vec![];
+        while let Some((f, t)) = done.pop() {
+            let dirs = made.pop().unwrap_or_default();
+            if mv(&(t.clone(), f.clone())).is_err() {
+                stuck.push((f, t));
+                continue;
+            }
+            // `remove_dir` only takes empty ones, so nothing that arrived meanwhile is lost.
+            for dir in dirs {
+                if fs::remove_dir(&dir).is_err() {
+                    break;
+                }
+            }
+        }
+        stuck.reverse();
+        done = stuck;
+    }
+    let mut net: Vec<(String, String)> = vec![];
+    for (f, t) in done {
+        match net.iter().position(|(_, to)| *to == f) {
+            Some(i) => net[i].1 = t,
+            None => net.push((f, t)),
+        }
+    }
+    net.retain(|(f, t)| f != t);
+    MoveReport { completed: net, error }
+}
+
+/// A step refused because an earlier step of this same call took the name: the disk treats the two
+/// spellings as one (like "ß" and "ss" on some disks), which "already exists" wouldn't explain.
+fn explain_collision(done: &[(String, String)], step: &(String, String)) -> Option<String> {
+    let t = Path::new(&step.1);
+    let (_, other) = done.iter().find(|(_, to)| *to != step.1 && rename::same_file(Path::new(to), t))?;
+    let name = |p: &Path| p.file_name().unwrap_or_default().to_string_lossy().into_owned();
+    Some(format!("\"{}\" and \"{}\" are the same name on this disk, so both can't be used", name(t), name(Path::new(other))))
+}
+
+/// `move_pairs` for a new user operation: reports exactly what stands instead of only failing.
+#[tauri::command]
+pub async fn move_pairs_report(pairs: Vec<(String, String)>) -> CmdResult<MoveReport> {
+    if let Some((from, _)) = pairs.first() {
+        crate::guard::probe(from).await?;
+    }
+    tauri::async_runtime::spawn_blocking(move || move_tracked(&pairs)).await.map_err(|e| e.to_string())
+}
+
+pub(crate) fn move_all(pairs: &[(String, String)]) -> CmdResult<()> {
     for (from, to) in pairs {
         if from == to {
             continue;
@@ -103,6 +185,78 @@ mod tests {
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    fn p(d: &Path, n: &str) -> String {
+        d.join(n).to_string_lossy().into_owned()
+    }
+
+    /// Batch steps through temporaries, as the dialog builds them.
+    fn detour(d: &Path, moves: &[(String, String)]) -> Vec<(String, String)> {
+        let tmp: Vec<_> = moves.iter().enumerate().map(|(i, (f, _))| (f.clone(), p(d, &format!("t{i}.morfa-tmp")))).collect();
+        let back: Vec<_> = tmp.iter().zip(moves).map(|((_, t), (_, to))| (t.clone(), to.clone())).collect();
+        tmp.into_iter().chain(back).collect()
+    }
+
+    #[test]
+    fn undoing_a_large_batch_over_a_new_file_changes_nothing() {
+        let d = tmp("undo-large");
+        // Renamed files now named x<i>; undo wants o<i> back, but a new o150 took a name.
+        let undo: Vec<_> = (0..300).map(|i| (p(&d, &format!("x{i}")), p(&d, &format!("o{i}")))).collect();
+        for (i, (f, _)) in undo.iter().enumerate() {
+            fs::write(f, i.to_string()).unwrap();
+        }
+        fs::write(d.join("o150"), "new").unwrap();
+        let r = move_tracked(&detour(&d, &undo));
+        assert!(r.error.unwrap().contains("o150"));
+        assert!(r.completed.is_empty());
+        for (i, (f, _)) in undo.iter().enumerate() {
+            assert_eq!(fs::read_to_string(f).unwrap(), i.to_string());
+        }
+        assert_eq!(fs::read_to_string(d.join("o150")).unwrap(), "new");
+        assert_eq!(fs::read_dir(&d).unwrap().count(), 301, "no temporaries left");
+        // With the blocker gone the same undo works: the item is worth keeping.
+        fs::remove_file(d.join("o150")).unwrap();
+        assert_eq!(move_tracked(&detour(&d, &undo)).error, None);
+        assert_eq!(fs::read_to_string(d.join("o299")).unwrap(), "299");
+        fs::remove_dir_all(&d).unwrap();
+    }
+
+    #[test]
+    fn a_stuck_rollback_reports_where_the_file_is_and_frees_the_rest() {
+        let d = tmp("stuck");
+        let moves: Vec<_> = (0..3).map(|i| (p(&d, &format!("a{i}")), p(&d, &format!("b{i}")))).collect();
+        for (f, _) in &moves {
+            fs::write(f, "x").unwrap();
+        }
+        fs::write(d.join("b2"), "blocker").unwrap();
+        let t1 = p(&d, "t1.morfa-tmp");
+        let a1 = p(&d, "a1");
+        // Only the way back for a1 is broken.
+        let r = move_tracked_with(&detour(&d, &moves), &mut |s| if s.0 == t1 && s.1 == a1 { Err("stuck".into()) } else { move_all(std::slice::from_ref(s)) });
+        assert!(r.error.is_some());
+        assert_eq!(r.completed, [(a1.clone(), t1.clone())]);
+        assert!(Path::new(&t1).exists() && !Path::new(&a1).exists());
+        assert!(d.join("a0").exists() && d.join("a2").exists() && !d.join("b0").exists());
+        fs::remove_dir_all(&d).unwrap();
+    }
+
+    #[test]
+    fn two_spellings_of_one_name_are_explained() {
+        let d = tmp("fold");
+        fs::write(d.join("a"), "1").unwrap();
+        fs::write(d.join("b"), "2").unwrap();
+        fs::write(d.join("Probe"), "").unwrap();
+        let folds = d.join("probe").exists();
+        fs::remove_file(d.join("Probe")).unwrap();
+        let r = move_tracked(&[(p(&d, "a"), p(&d, "Same")), (p(&d, "b"), p(&d, "same"))]);
+        if folds {
+            assert!(r.error.unwrap().contains("same name on this disk"));
+            assert!(r.completed.is_empty() && d.join("a").exists() && d.join("b").exists());
+        } else {
+            assert_eq!(r.error, None);
+        }
+        fs::remove_dir_all(&d).unwrap();
     }
 
     #[test]

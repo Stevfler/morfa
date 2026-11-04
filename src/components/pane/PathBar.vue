@@ -5,13 +5,12 @@ import Icon from '../Icon.vue'
 import * as S from '../../lib/store'
 import type { Entry, Pane } from '../../lib/store'
 import { basename, crumbs, keyLabel, parent } from '../../lib/util'
-import type { DragDrop } from '../../composables/useDragDrop'
+import { dropTarget } from '../../composables/useDragDrop'
 import { t as tr } from '../../lib/i18n'
 
-const props = defineProps<{ pane: Pane; active: boolean; dnd: DragDrop }>()
+const props = defineProps<{ pane: Pane; active: boolean }>()
 const p = props.pane
 const state = S.state
-const { dropTarget, dragOver, dragLeave, drop } = props.dnd
 
 const pathInput = ref<HTMLInputElement>()
 const pathText = ref('')
@@ -108,7 +107,7 @@ function pathKey(ev: KeyboardEvent) {
         <button
           class="shrink-0 truncate rounded px-1.5 py-0.5 text-[12.5px] transition hover:bg-raised"
           :class="[k === crumbs(p.path).length - 1 ? 'font-medium text-fg' : 'text-dim', dropTarget === c.path && 'bg-accent-soft ring-1 ring-accent']"
-          @click="S.go(p, c.path)" @dragover="dragOver($event, c.path)" @dragleave="dragLeave" @drop="drop($event, c.path)"
+          :data-drop="c.path" @click="S.go(p, c.path)"
         >{{ c.label }}</button>
       </template>
       <div class="h-full flex-1" @click="state.editPath = true" />

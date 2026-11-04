@@ -77,7 +77,7 @@ const items = computed<Item[]>(() => {
     return [...out, ...scored.map(([, f]) => f)].slice(0, 60)
   }
   const cmds: Item[] = commands
-    .filter((c) => c.id !== 'palette')
+    .filter((c) => c.id !== 'palette' && (c.id !== 'compare' || S.tab().panes.length > 1))
     .map((c) => ({ key: c.id, title: c.title, icon: c.icon, keys: c.keys, group: c.groupLabel, run: c.run }))
   const recs = recipeItems()
   if (!query) return [...out, ...recs, ...cmds]

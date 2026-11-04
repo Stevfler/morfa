@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { basename, parent } from '../util'
 import { nextId, state } from './state'
 import { fail, toast } from './toast'
-import { pushUndo } from './history'
+import { journalLink, journalRecord, pushUndo } from './history'
 import { refreshAll } from './navigation'
 import { parseArchive, type Entry, type Pane } from './types'
 import { t } from '../i18n'
@@ -56,13 +56,16 @@ export function cancelPreviewUnpack() {
 }
 
 /** Runs one cancellable archive job with a progress row. Resolves to the created paths, or null if it didn't finish. */
-async function job(label: string, run: (id: number) => Promise<string[]>): Promise<string[] | null> {
+async function job(label: string, kind: 'extract' | 'compress', sources: string[], run: (id: number) => Promise<string[]>): Promise<string[] | null> {
   const id = nextId()
+  const started = Date.now()
   state.ops.push({ id, label, done: 0, total: 0, current: '', kind: 'archive' })
   try {
     return await run(id)
   } catch (e) {
-    if (String(e).includes('Cancelled')) toast({ title: t('archive.cancelled'), tone: 'info' })
+    const cancelled = String(e).includes('Cancelled')
+    journalRecord(kind, label, sources.map((s) => [s, '']), cancelled ? 'cancelled' : 'failed', e, started)
+    if (cancelled) toast({ title: t('archive.cancelled'), tone: 'info' })
     else fail(e)
     return null
   } finally {
@@ -71,22 +74,26 @@ async function job(label: string, run: (id: number) => Promise<string[]>): Promi
   }
 }
 
-function recordCreated(label: string, created: string[], again: () => Promise<string[]>) {
+function recordCreated(kind: 'extract' | 'compress', label: string, sources: string[], created: string[], started: number, again: () => Promise<string[]>) {
   let current = created
+  // One archive out of many sources, or many items out of one archive.
+  const pairs = (): [string, string][] => (kind === 'compress' ? sources.map((s) => [s, current[0]]) : current.map((c) => [sources[0], c]))
   pushUndo({
     label,
     undo: () => invoke('trash_items', { paths: current }),
     redo: async () => {
       current = await again()
     },
+    journal: journalLink(kind, label, pairs, 'done', undefined, started),
   })
 }
 
 function extract(archive: string, rels: string[], base: string, dest: string, wrap: boolean) {
   const name = basename(archive)
   const call = (id: number) => invoke<string[]>('archive_extract', { id, archive, rels, base, dest, wrap })
-  return job(t('archive.extracting', { name }), call).then((made) => {
-    if (made) recordCreated(t('archive.extracted', { name }), made, () => call(nextId()))
+  const started = Date.now()
+  return job(t('archive.extracting', { name }), 'extract', [archive], call).then((made) => {
+    if (made) recordCreated('extract', t('archive.extracted', { name }), [archive], made, started, () => call(nextId()))
   })
 }
 
@@ -106,6 +113,7 @@ export async function extractEntries(p: Pane, entries: Entry[], dest?: string) {
 export async function compress(sources: string[], dest: string, format: 'zip' | 'tar.gz') {
   if (!sources.length) return
   const call = async (id: number) => [await invoke<string>('archive_pack', { id, sources, dest, format })]
-  const made = await job(t('archive.compressing', { count: sources.length }), call)
-  if (made) recordCreated(t('archive.compressed', { name: basename(made[0]) }), made, () => call(nextId()))
+  const started = Date.now()
+  const made = await job(t('archive.compressing', { count: sources.length }), 'compress', sources, call)
+  if (made) recordCreated('compress', t('archive.compressed', { name: basename(made[0]) }), sources, made, started, () => call(nextId()))
 }

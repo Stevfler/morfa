@@ -3,3 +3,4 @@ export { FORMATS, QUICK_FORMATS, PRESETS, isImage, isVideo, isAudio, isMedia, is
 export { caps, loadCaps, openConvert, estimate, targetsFor, missingEngine, resetConvertCaches, type Engine } from './caps'
 export { runConvert, quickConvert } from './run'
 export { recipes, addRecipe, recipeProblem, renameRecipe, deleteRecipe, nameOk, recipeSummary, recipesFor, recipeTargets, runRecipe, type Recipe } from './recipes'
+export { auto, addRule, addRuleFromMenu, updateRule, enableRule, deleteRule, pauseAll, resolveHold, processExisting, clearFailures, refusal, cancelAutoOp, initAutoConvert, type WatchRule } from './auto'

@@ -8,6 +8,7 @@ import { fmtSize } from '../../lib/util'
 import { state } from '../../lib/store'
 import { t } from '../../lib/i18n'
 import { cleanup, scan, cancelScan, close, removeSelected, selectedBytes } from './cleanup'
+import { openDedupe } from '../dedupe/dedupe'
 
 const open = computed({ get: () => cleanup.open, set: (v) => !v && close() })
 const now = ref(performance.now())
@@ -22,6 +23,12 @@ const elapsed = computed(() => {
   return ms < 60_000 ? t('cleanup.seconds', { n: (ms / 1000).toFixed(1) }) : t('cleanup.minutes', { m: Math.floor(ms / 60_000), s: Math.round((ms % 60_000) / 1000) })
 })
 const count = computed(() => cleanup.selected.size)
+
+function findDuplicates() {
+  const root = cleanup.root
+  close()
+  openDedupe(root)
+}
 
 function deleteForever() {
   const n = count.value, size = fmtSize(selectedBytes())
@@ -48,6 +55,7 @@ function deleteForever() {
             <span>{{ t('cleanup.files', { count: cleanup.files, n: cleanup.files.toLocaleString() }) }}</span>
             <span>{{ fmtSize(cleanup.bytes) }}</span>
             <span>{{ elapsed }}</span>
+            <button class="flex h-7 items-center gap-1.5 rounded-full bg-raised px-3 text-fg hover:bg-accent-soft" @click="findDuplicates"><Icon name="copy" class="size-3.5" /> {{ t('cleanup.findDuplicates') }}</button>
             <button v-if="cleanup.scanning" class="h-7 rounded-full bg-raised px-3 text-fg hover:bg-accent-soft" @click="cancelScan">{{ t('common.cancel') }}</button>
             <button v-else class="flex h-7 items-center gap-1.5 rounded-full bg-raised px-3 text-fg hover:bg-accent-soft" @click="scan">
               <Icon name="refresh" class="size-3.5" /> {{ t('cleanup.rescan') }}

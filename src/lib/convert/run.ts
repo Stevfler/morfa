@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { go, nextId, pane, refreshAll, state, toast } from '../store'
+import { journalLink, journalRecord } from '../store/history'
 import { basename, fmtSize, parent } from '../util'
 import { defaultOpts, isAudio, isImage, isVideo, type ConvertOpts } from './formats'
 import { t } from '../i18n'
@@ -28,7 +29,7 @@ function show(path: string) {
 }
 
 /** Backend codes in words; anything else is the engine's own message. */
-function reason(err: string) {
+export function reason(err: string) {
   const over = /^OVER_LIMIT:(\d+):(\d+)$/.exec(err)
   if (over) return t('recipes.overLimit', { size: fmtSize(+over[1]), limit: fmtSize(+over[2]) })
   if (err === 'LIMIT_IMAGES_ONLY') return t('recipes.limitImagesOnly')
@@ -60,11 +61,13 @@ async function noOffice() {
 export async function runConvert(sources: string[], opts: ConvertOpts): Promise<void> {
   if (!sources.length) return
   const id = nextId()
+  const started = Date.now()
   const fmt = opts.format.toUpperCase()
   state.ops.push({ id, label: t('convert.converting', { what: what(sources), fmt }), done: 0, total: sources.length, current: '', unit: 'files', kind: 'convert' })
   try {
     const r = await call(sources, opts, id)
-    if (r.pairs.length) record(r.pairs, opts, fmt)
+    if (r.pairs.length) record(r.pairs, opts, fmt, r.cancelled ? 'cancelled' : r.failed.length ? 'partial' : 'done', started, r.failed[0]?.[1])
+    else if (r.failed.length || r.cancelled) journalRecord('convert', t('convert.converted', { what: what(sources), fmt }), sources.map((s) => [s, '']), r.cancelled ? 'cancelled' : 'failed', r.failed[0]?.[1], started)
     if (r.failed.length) {
       const [src, err] = r.failed[0]
       if (err.includes('NO_ENGINE:')) failed(err)
@@ -72,6 +75,7 @@ export async function runConvert(sources: string[], opts: ConvertOpts): Promise<
     }
     if (r.cancelled) toast({ title: t('convert.cancelled'), tone: 'info' })
   } catch (e) {
+    journalRecord('convert', t('convert.converted', { what: what(sources), fmt }), sources.map((s) => [s, '']), 'failed', e, started)
     failed(e)
   } finally {
     state.ops = state.ops.filter((o) => o.id !== id)
@@ -80,8 +84,9 @@ export async function runConvert(sources: string[], opts: ConvertOpts): Promise<
 }
 
 /** Success toast with "Show", plus an undo entry that trashes the outputs (redo converts again). */
-function record(pairs: [string, string][], opts: ConvertOpts, fmt: string) {
+function record(pairs: [string, string][], opts: ConvertOpts, fmt: string, status: 'done' | 'partial' | 'cancelled', started: number, error?: string) {
   // A PDF rendered to images yields one pair per page, so sources repeat.
+  let current = pairs
   let outputs = pairs.map(([, d]) => d)
   const sources = [...new Set(pairs.map(([s]) => s))]
   const label = t('convert.converted', { what: what(sources), fmt })
@@ -91,9 +96,11 @@ function record(pairs: [string, string][], opts: ConvertOpts, fmt: string) {
     undo: () => invoke('trash_items', { paths: outputs }),
     redo: async () => {
       const r = await call(sources, opts)
+      current = r.pairs
       outputs = r.pairs.map(([, d]) => d)
       if (r.failed.length) throw reason(r.failed[0][1])
     },
+    journal: journalLink('convert', label, () => current, status, error, started),
   })
   state.redo = []
   toast({ title: label, tone: 'ok', action: { label: t('convert.show'), run: () => show(outputs[0]) } })

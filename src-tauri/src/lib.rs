@@ -1,18 +1,24 @@
 mod archive;
+mod autoconvert;
 mod cleanup;
 mod cloud;
+mod compare;
 mod convert;
+mod dedupe;
 mod docview;
 mod entry;
+mod findex;
 mod fsinfo;
 mod fsops;
 mod git;
 mod guard;
+mod journal;
 mod mount;
 mod netfs;
 mod office;
 mod places;
 mod props;
+mod rename_meta;
 mod search;
 mod sidecar;
 mod system;
@@ -39,16 +45,23 @@ pub fn run() {
             use tauri::Manager;
             sidecar::init(app.path().resource_dir().ok());
             cloud::init(app.handle().clone(), app.state::<cloud::CloudState>().inner());
+            app.state::<findex::IndexState>().init(app.handle().clone());
             Ok(())
         })
         .manage(SearchState::default())
+        .manage(findex::IndexState::default())
         .manage(WatchState::default())
+        .manage(rename_meta::RenameMetaState::default())
         .manage(transfer::OpsState::default())
         .manage(archive::ArchiveState::default())
         .manage(cleanup::CleanupState::default())
         .manage(convert::ConvertState::default())
+        .manage(autoconvert::AutoState::default())
         .manage(office::OfficeState::default())
         .manage(cloud::CloudState::default())
+        .manage(compare::CompareState::default())
+        .manage(dedupe::DedupeState::default())
+        .manage(journal::JournalState::default())
         .invoke_handler(tauri::generate_handler![
             list_dir,
             stat,
@@ -59,6 +72,12 @@ pub fn run() {
             mount::unmount_drive,
             search,
             cancel_search,
+            findex::index_configure,
+            findex::index_status,
+            findex::index_pause,
+            findex::index_cancel,
+            findex::index_rebuild,
+            findex::index_delete,
             dir_size,
             cancel_sizes,
             read_text,
@@ -71,6 +90,10 @@ pub fn run() {
             fsops::create_dir,
             fsops::create_file,
             fsops::move_pairs,
+            fsops::move_pairs_report,
+            rename_meta::rename_meta_read,
+            rename_meta::rename_check,
+            rename_meta::rename_cancel,
             transfer::transfer,
             transfer::cancel_op,
             fsops::trashcan::trash_items,
@@ -87,6 +110,16 @@ pub fn run() {
             cleanup::cleanup_children,
             cleanup::cleanup_delete,
             cleanup::cleanup_empty_trash,
+            autoconvert::autoconvert_sync,
+            autoconvert::autoconvert_add,
+            autoconvert::autoconvert_update,
+            autoconvert::autoconvert_enable,
+            autoconvert::autoconvert_delete,
+            autoconvert::autoconvert_pause_all,
+            autoconvert::autoconvert_resolve,
+            autoconvert::autoconvert_process_existing,
+            autoconvert::autoconvert_cancel,
+            autoconvert::autoconvert_clear_failures,
             convert::convert_caps,
             convert::convert_images,
             convert::convert_files,
@@ -120,7 +153,29 @@ pub fn run() {
             cloud::cloud_fetch,
             cloud::cloud_hold_resolve,
             cloud::cloud_sync,
+            compare::compare_check,
+            compare::compare_scan,
+            compare::compare_sync,
+            compare::compare_undo,
+            compare::compare_cancel,
+            dedupe::dedupe_scan,
+            dedupe::dedupe_remove,
+            dedupe::dedupe_cancel,
+            journal::journal_record,
+            journal::journal_list,
+            journal::journal_entry,
+            journal::journal_where,
+            journal::journal_preview,
+            journal::journal_apply,
+            journal::journal_mark_undone,
+            journal::journal_clear,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Morfa");
+        .build(tauri::generate_context!())
+        .expect("error while running Morfa")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                use tauri::Manager;
+                autoconvert::shutdown(app.state::<autoconvert::AutoState>().inner());
+            }
+        });
 }

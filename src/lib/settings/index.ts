@@ -27,6 +27,14 @@ export interface Settings {
   language: string
   /** Look for a new release on start. */
   checkUpdates: boolean
+  /** Keep the operations journal. */
+  journal: boolean
+  /** Keep an index of file names for instant search. Off unless asked for. */
+  fileIndex: boolean
+  /** Folders to index; empty means home. */
+  fileIndexRoots: string[]
+  /** Extra exclusions: a bare name anywhere, or `~/x` and absolute paths. */
+  fileIndexExcludes: string[]
 }
 
 const KEY = 'morfa.settings'
@@ -45,10 +53,16 @@ const defaults: Settings = {
   cleanupWarned: false,
   language: 'system',
   checkUpdates: true,
+  journal: true,
+  fileIndex: false,
+  fileIndexRoots: [],
+  fileIndexExcludes: [],
 }
 
 export const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
 const pick = <T,>(v: unknown, ok: readonly T[], d: T): T => (ok.includes(v as T) ? (v as T) : d)
+
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 
 /** Validate stored settings field by field; unknown keys are dropped, bad values fall back to defaults. */
 export function sanitize(raw: unknown): Settings {
@@ -66,6 +80,10 @@ export function sanitize(raw: unknown): Settings {
     respectGitignore: typeof r.respectGitignore === 'boolean' ? r.respectGitignore : defaults.respectGitignore,
     cleanupWarned: typeof r.cleanupWarned === 'boolean' ? r.cleanupWarned : defaults.cleanupWarned,
     checkUpdates: typeof r.checkUpdates === 'boolean' ? r.checkUpdates : defaults.checkUpdates,
+    journal: typeof r.journal === 'boolean' ? r.journal : defaults.journal,
+    fileIndex: r.fileIndex === true,
+    fileIndexRoots: strings(r.fileIndexRoots),
+    fileIndexExcludes: strings(r.fileIndexExcludes),
     language: typeof r.language === 'string' && /^(system|[a-z]{2})$/.test(r.language) ? r.language : defaults.language,
   }
 }
@@ -94,6 +112,7 @@ export function applySettings() {
 }
 
 let zoom = 1
+export const webviewZoom = () => zoom
 /** Webview zoom scales everything, px-sized text included; outside Tauri (plain vite) there's no webview. */
 function applyScale(f: number) {
   if (f === zoom || !('__TAURI_INTERNALS__' in window)) return

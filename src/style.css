@@ -143,6 +143,8 @@ kbd {
   .file-cols { grid-template-columns: minmax(0, 1fr) 64px 0 48px; }
   .file-cols > :nth-child(3) { visibility: hidden; overflow: hidden; }
 }
+/* an internal file drag is in progress */
+.morfa-dragging, .morfa-dragging * { cursor: grabbing !important; -webkit-user-select: none !important; user-select: none !important; }
 /* cards: faint edge so they read on light themes and OLED */
 @layer components {
   .card { box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-fg) 7%, transparent), 0 1px 2px rgb(0 0 0 / 0.05); }

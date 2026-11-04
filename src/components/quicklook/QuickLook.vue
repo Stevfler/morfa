@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent } from 'reka-ui'
+import { openPath } from '@tauri-apps/plugin-opener'
 import * as S from '../../lib/store'
 import type { Entry } from '../../lib/store'
 import { canQuickLook, fmtSize, kindOf, OFFICE, type Kind } from '../../lib/util'
@@ -14,6 +15,8 @@ import { imageUrl } from '../../composables/useImageUrl'
 import Image from './viewers/ImageViewer.vue'
 const Text = defineAsyncComponent(() => import('./viewers/TextViewer.vue'))
 const Office = defineAsyncComponent(() => import('./viewers/OfficeViewer.vue'))
+/** Longer than the slowest closing animation in style.css. */
+const QL_CLOSE_MS = 350
 const VIEWERS: Partial<Record<Kind, unknown>> = { image: Image, text: Text, code: Text }
 
 const open = computed({
@@ -25,12 +28,31 @@ const motion = computed(() => `ql-motion-${settings.motion}`)
 function close(v = false) {
   S.state.quickLook = v
 }
+// Closed from outside too (lib/keys.ts): the next Quick Look is the pane's again.
+// Kept through the closing animation, or the pane's file would flash in its place.
+let fileTimer: ReturnType<typeof setTimeout> | undefined
+let closing: Entry | null = null
+watch(() => S.state.quickLook, (v) => {
+  clearTimeout(fileTimer)
+  if (v) {
+    // Reopened from the pane before the timer ran: that one isn't a dialog's file.
+    if (closing && S.state.quickLookFile === closing) S.state.quickLookFile = null
+    closing = null
+    return
+  }
+  closing = S.state.quickLookFile
+  fileTimer = setTimeout(() => {
+    S.state.quickLookFile = null
+    closing = null
+  }, QL_CLOSE_MS)
+})
 const entry = computed<Entry | undefined>(() => {
+  if (S.state.quickLookFile) return S.state.quickLookFile
   const p = S.pane()
   return S.visible(p)[p.cursor]
 })
 const viewer = computed(() => (!entry.value ? null : OFFICE.includes(entry.value.ext) ? Office : VIEWERS[kindOf(entry.value)]))
-const pos = computed(() => `${S.pane().cursor + 1} / ${S.visible(S.pane()).length}`)
+const pos = computed(() => S.state.quickLookFile ? '' : `${S.pane().cursor + 1} / ${S.visible(S.pane()).length}`)
 
 const viewable = computed(() => !!viewer.value && canQuickLook(entry.value))
 const tooBig = computed(() => !!entry.value && S.archiveTooBig(entry.value))
@@ -91,6 +113,7 @@ watch(entry, () => {
 }, { immediate: true })
 
 function step(d: number) {
+  if (S.state.quickLookFile) return
   const p = S.pane()
   S.setCursor(p, p.cursor + d, 'move')
   scrollCursorIntoView(p)
@@ -98,6 +121,7 @@ function step(d: number) {
 
 function openEntry() {
   const p = S.pane()
+  if (S.state.quickLookFile) return void openPath(S.state.quickLookFile.path).catch(S.fail)
   close()
   S.open(p, entry.value)
 }

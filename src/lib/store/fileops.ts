@@ -3,10 +3,11 @@ import { openPath } from '@tauri-apps/plugin-opener'
 import { basename, join, keyLabel, parent } from '../util'
 import { nextId, otherPane, pane, state } from './state'
 import { targets } from './view'
-import { fail, toast } from './toast'
-import { pushUndo } from './history'
+import { fail, REPORTED, toast } from './toast'
+import { resolveStranded } from './moves'
+import { journalLink, journalRecord, pushUndo } from './history'
 import { load_, open, refreshAll } from './navigation'
-import { isSpecial, parseArchive, type Pane } from './types'
+import { isSpecial, parseArchive, type JournalKind, type Pane } from './types'
 import { extractEntries } from './archive'
 import { t } from '../i18n'
 
@@ -35,13 +36,17 @@ export async function transfer(sources: string[], dest: string, mode: 'copy' | '
   // Pseudo-locations (e.g. the Drives view) are not folders: never send them to the backend.
   if (!sources.length || isSpecial(dest) || sources.some(isSpecial)) return
   const id = nextId()
+  const started = Date.now()
   const cp = mode === 'copy'
   state.ops.push({ id, label: t(cp ? 'fileops.copying' : 'fileops.moving', { what: describe(sources), dest: basename(dest) }), done: 0, total: 0, current: '' })
   try {
     const { pairs, error } = await invoke<{ pairs: [string, string][]; error: string | null }>('transfer', { id, sources, dest, mode })
-    if (pairs.length) recordTransfer(pairs, dest, mode, error ? t(cp ? 'fileops.copyStopped' : 'fileops.moveStopped', { what: items(pairs.length) }) : undefined)
+    const status = !error ? 'done' : error === 'Cancelled' ? 'cancelled' : pairs.length ? 'partial' : 'failed'
+    if (pairs.length) recordTransfer(pairs, dest, mode, error ? t(cp ? 'fileops.copyStopped' : 'fileops.moveStopped', { what: items(pairs.length) }) : undefined, status, error, started)
+    else if (error) journalRecord(mode, transferLabel(sources, dest, mode), sources.map((s) => [s, '']), status, error, started)
     if (error) error === 'Cancelled' ? toast({ title: t(cp ? 'fileops.copyCancelled' : 'fileops.moveCancelled'), tone: 'info' }) : fail(error)
   } catch (e) {
+    journalRecord(mode, transferLabel(sources, dest, mode), sources.map((s) => [s, '']), 'failed', e, started)
     fail(e)
   } finally {
     state.ops = state.ops.filter((o) => o.id !== id)
@@ -49,10 +54,13 @@ export async function transfer(sources: string[], dest: string, mode: 'copy' | '
   }
 }
 
+const transferLabel = (sources: string[], dest: string, mode: 'copy' | 'move') => t(mode === 'copy' ? 'fileops.copiedTo' : 'fileops.movedTo', { what: describe(sources), dest: basename(dest) })
+
 /** Undo entry for a finished (or partly finished) transfer. Redo of a copy re-runs the copy. */
-function recordTransfer(pairs: [string, string][], dest: string, mode: 'copy' | 'move', note?: string) {
-  const label = t(mode === 'copy' ? 'fileops.copiedTo' : 'fileops.movedTo', { what: describe(pairs.map(([s]) => s)), dest: basename(dest) })
+function recordTransfer(pairs: [string, string][], dest: string, mode: 'copy' | 'move', note: string | undefined, status: 'done' | 'partial' | 'cancelled' | 'failed', error: string | null, started: number) {
+  const label = transferLabel(pairs.map(([s]) => s), dest, mode)
   let copies = pairs.map(([, d]) => d)
+  const sources = pairs.map(([s]) => s)
   const recopy = async () => {
     const r = await invoke<{ pairs: [string, string][]; error: string | null }>('transfer', { id: nextId(), sources: pairs.map(([s]) => s), dest, mode: 'copy' })
     copies = r.pairs.map(([, d]) => d)
@@ -60,11 +68,13 @@ function recordTransfer(pairs: [string, string][], dest: string, mode: 'copy' | 
   }
   pushUndo(
     mode === 'copy'
-      ? { label, undo: () => invoke('trash_items', { paths: copies }), redo: recopy }
+      ? { label, undo: () => invoke('trash_items', { paths: copies }), redo: recopy, journal: journalLink('copy', label, () => copies.map((d, i) => [sources[i] ?? '', d]), status, error ?? undefined, started) }
       : {
           label,
-          undo: () => invoke('move_pairs', { pairs: pairs.map(([s, d]) => [d, s]) }),
-          redo: () => invoke('move_pairs', { pairs }),
+          retry: true,
+          undo: () => replayMoves(pairs.map(([s, d]): [string, string] => [d, s]), 'move', label, true),
+          redo: () => replayMoves(pairs, 'move', label),
+          journal: journalLink('move', label, () => pairs, status, error ?? undefined, started),
         },
     note ?? (pairs.some(([s, d]) => basename(s) !== basename(d)) ? t('fileops.conflicts') : undefined),
   )
@@ -72,22 +82,29 @@ function recordTransfer(pairs: [string, string][], dest: string, mode: 'copy' | 
 
 export function cancelOp(id: number) {
   const kind = state.ops.find((o) => o.id === id)?.kind
+  if (kind === 'autoconvert') return import('../convert/auto').then((m) => m.cancelAutoOp(id))
   if (kind === 'office') return invoke('office_cancel')
   if (kind === 'archive') return invoke('archive_cancel', { id })
+  if (kind === 'compare') return invoke('compare_cancel', { id })
+  if (kind === 'dedupe') return invoke('dedupe_cancel', { id })
   return invoke(kind === 'convert' ? 'convert_cancel' : 'cancel_op', { id })
 }
 
 export async function trash(paths = targets().map((e) => e.path)) {
   if (!paths.length) return
   if (paths.some(parseArchive)) return toast({ title: t('archive.readOnly'), tone: 'info' }, 2500)
+  const started = Date.now()
   try {
     await invoke('trash_items', { paths })
+    const label = t('fileops.trashed', { what: describe(paths) })
     pushUndo({
-      label: t('fileops.trashed', { what: describe(paths) }),
+      label,
       undo: () => invoke('restore_trashed', { paths }),
       redo: () => invoke('trash_items', { paths }),
+      journal: journalLink('trash', label, () => paths.map((p) => [p, '']), 'done', undefined, started),
     })
   } catch (e) {
+    journalRecord('trash', t('fileops.trashed', { what: describe(paths) }), paths.map((p) => [p, '']), 'failed', e, started)
     fail(e)
   }
   refreshAll()
@@ -102,10 +119,13 @@ export function deleteForever(paths = targets().map((e) => e.path)) {
     danger: true,
     ok: t('cmd.delete'),
     run: async () => {
+      const started = Date.now()
       try {
         await invoke('delete_items', { paths })
         toast({ title: t('fileops.deleted', { what: describe(paths) }), tone: 'ok' })
+        journalRecord('delete', t('fileops.deleted', { what: describe(paths) }), paths.map((p) => [p, '']), 'done', undefined, started)
       } catch (e) {
+        journalRecord('delete', t('fileops.deleted', { what: describe(paths) }), paths.map((p) => [p, '']), 'failed', e, started)
         fail(e)
       }
       refreshAll()
@@ -126,32 +146,75 @@ export async function renameTo(path: string, newName: string, p: Pane = pane()) 
   if (!(await movePairs([[path, to]], t('fileops.renamed', { name: newName })))) p.focusAfterLoad = prev
 }
 
-/** Resolves to true on success. */
-export async function movePairs(pairs: [string, string][], label: string): Promise<boolean> {
+/** A rollback failed. Each file left behind is listed with the name it belongs under, also in the
+ *  journal, where undoing the entry moves it back there. A name that can't be told is said to be unknown. */
+function reportStranded(kind: JournalKind, label: string, steps: [string, string][], stranded: [string, string][], error: string, started: number, isUndo = false) {
+  const { named, unknown } = resolveStranded(steps, stranded, isUndo)
+  if (named.length) journalRecord(kind, label, named, 'partial', error, started)
+  else journalRecord(kind, label, unknown.map((at): [string, string] => [at, '']), 'failed', error, started)
+  const lines = [...named.map(([name, at]) => `${basename(at)} → ${basename(name)}`), ...unknown.map((at) => t('fileops.strandedUnknown', { name: basename(at) }))]
+  const shown = lines.slice(0, 6)
+  if (lines.length > 6) shown.push(`+${lines.length - 6}`)
+  toast({ title: t('fileops.stranded', { count: stranded.length }), desc: `${error}\n${shown.join('\n')}`, tone: 'error' }, 60000)
+}
+
+/** Undo or redo of moves: all or nothing, and what stands is reported. Throws so the item is kept. */
+async function replayMoves(steps: [string, string][], kind: JournalKind, label: string, isUndo = false) {
+  const started = Date.now()
+  const r = await invoke<{ completed: [string, string][]; error: string | null }>('move_pairs_report', { pairs: steps })
+  if (!r.error) return
+  if (!r.completed.length) throw t('fileops.nothingChanged', { error: r.error })
+  reportStranded(kind, label, steps, r.completed, r.error, started, isUndo)
+  throw REPORTED
+}
+
+/** Resolves to true on success. `record`: the moves as the user means them, when `pairs` takes detours. */
+export async function movePairs(pairs: [string, string][], label: string, kind: JournalKind = 'rename', record: [string, string][] = pairs): Promise<boolean> {
   let ok = false
+  const started = Date.now()
+  // The call that failed says what stands; nothing is ever guessed from the disk.
+  const asked = record.map(([from]): [string, string] => [from, ''])
   try {
-    await invoke('move_pairs', { pairs })
+    const r = await invoke<{ completed: [string, string][]; error: string | null }>('move_pairs_report', { pairs })
+    if (r.error) {
+      if (r.completed.length) reportStranded(kind, label, pairs, r.completed, r.error, started)
+      else {
+        journalRecord(kind, label, asked, 'failed', r.error, started)
+        fail(t('fileops.nothingChanged', { error: r.error }))
+      }
+      refreshAll()
+      return false
+    }
     pushUndo({
       label,
-      undo: () => invoke('move_pairs', { pairs: pairs.map(([a, b]) => [b, a]).reverse() }),
-      redo: () => invoke('move_pairs', { pairs }),
+      retry: true,
+      undo: () => replayMoves(pairs.map(([a, b]): [string, string] => [b, a]).reverse(), kind, label, true),
+      redo: () => replayMoves(pairs, kind, label),
+      journal: journalLink(kind, label, () => record, 'done', undefined, started),
     })
     ok = true
   } catch (e) {
+    journalRecord(kind, label, asked, 'failed', e, started)
     fail(e)
   }
   refreshAll()
   return ok
 }
 
+/** Batch rename needs real folders: not offered on pseudo-paths (Trash, cloud, Drives…). */
+export const canBatchRename = (p: Pane = pane()) => !isSpecial(p.path)
+
 export function startRename(p: Pane = pane()) {
   const sel = targets(p)
   if (parseArchive(p.path)) return toast({ title: t('archive.readOnly'), tone: 'info' }, 2500)
-  if (sel.length > 1) state.batchRename = sel.map((e) => e.path)
+  if (sel.length > 1) {
+    if (canBatchRename(p)) state.batchRename = sel.map((e) => e.path)
+  }
   else if (sel.length === 1) state.renaming = sel[0].path
 }
 
 export async function create(kind: 'dir' | 'file', p: Pane = pane()) {
+  const started = Date.now()
   try {
     const path = await invoke<string>(kind === 'dir' ? 'create_dir' : 'create_file', {
       parent: p.path,
@@ -167,6 +230,7 @@ export async function create(kind: 'dir' | 'file', p: Pane = pane()) {
       redo: async () => {
         current = await invoke<string>(kind === 'dir' ? 'create_dir' : 'create_file', { parent: parent(current)!, name: basename(current) })
       },
+      journal: journalLink('create', t('fileops.created', { name }), () => [['', current]], 'done', undefined, started),
     })
     await load_(p)
     state.renaming = path // name it right away

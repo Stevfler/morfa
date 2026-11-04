@@ -1,5 +1,5 @@
 //! Copy/move with progress reporting and cancellation.
-mod copy;
+pub(crate) mod copy;
 
 use crate::fsops::remove_any;
 use crate::CmdResult;

@@ -1,3 +1,4 @@
+import { journalRecord } from '../../lib/store/history'
 import { reactive } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
@@ -113,9 +114,11 @@ export async function removeSelected(permanent: boolean) {
   const paths = [...cleanup.selected.keys()]
   if (!paths.length) return
   cleanup.busy = true
+  const started = Date.now()
   try {
     const r = await invoke<DeleteReport>('cleanup_delete', { paths, permanent })
     prune(r.removed)
+    if (r.removed.length) journalRecord(permanent ? 'delete' : 'trash', t(permanent ? 'cleanup.deletedN' : 'cleanup.trashedN', { count: r.removed.length }), r.removed.map((p) => [p, '']), r.rejected.length ? 'partial' : 'done', undefined, started)
     if (r.removed.length) toast({ title: t('cleanup.freed', { size: fmtSize(r.freed) }), desc: t(permanent ? 'cleanup.deletedN' : 'cleanup.trashedN', { count: r.removed.length }), tone: 'ok' })
     if (r.rejected.length) toast({ title: t('cleanup.notRemoved', { count: r.rejected.length }), desc: r.rejected.slice(0, 4).map(([p, why]) => `${basename(p)}: ${why}`).join('\n'), tone: 'error' }, 9000)
   } catch (e) {

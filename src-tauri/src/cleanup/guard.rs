@@ -18,6 +18,13 @@ pub fn protection(p: &Path) -> Protection {
     c
 }
 
+/// The static rules alone, for an already resolved path that needn't exist: where undo puts an item
+/// back normally doesn't, so `protection`'s "can it be removed" has nothing to look at.
+pub fn location_protection(real: &Path) -> Protection {
+    let home = dirs::home_dir().and_then(|h| std::fs::canonicalize(&h).ok().or(Some(h))).unwrap_or_default();
+    protect::classify(&real.to_string_lossy(), protect::Os::current(), &home.to_string_lossy())
+}
+
 /// Parent (and the dir itself) writable, and not a mount point.
 #[cfg(unix)]
 fn removable(p: &Path) -> bool {

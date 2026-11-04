@@ -8,6 +8,10 @@ import { media } from './media'
 import { cloud } from './cloud'
 import { archive } from './archive'
 import { update } from './update'
+import { compare } from './compare'
+import { dedupe } from './dedupe'
+import { journal } from './journal'
+import { autoconvert } from './autoconvert'
 
 /** English is the source of truth: every other dictionary must provide the same keys. */
 export const en = {
@@ -21,5 +25,9 @@ export const en = {
   ...cloud,
   ...archive,
   ...update,
+  ...compare,
+  ...dedupe,
+  ...journal,
+  ...autoconvert,
 }
 export type Messages = typeof en

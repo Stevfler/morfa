@@ -63,6 +63,11 @@ pub fn is_media(ext: &str) -> bool {
     VIDEO_IN.contains(&ext) || AUDIO_IN.contains(&ext)
 }
 
+/// Video input, or a GIF: what a video resize applies to.
+pub fn is_video_like(ext: &str) -> bool {
+    VIDEO_IN.contains(&ext) || ext == "gif"
+}
+
 /// True if `fmt` is an audio-only output.
 pub fn is_audio(fmt: &str) -> bool {
     AUDIO_OUT.contains(&fmt)
@@ -94,6 +99,11 @@ pub fn route(ext: &str, fmt: &str, a: &Avail) -> Option<Via> {
         return Some(Via::Office);
     }
     (a.pandoc && has(&PANDOC_IN, ext) && has(&PANDOC_OUT, fmt)).then_some(Via::Pandoc)
+}
+
+/// `route`, plus same-format image re-encodes (resize, strip, quality), which aren't listed as targets.
+pub fn route_or_same(ext: &str, fmt: &str, a: &Avail) -> Option<Via> {
+    route(ext, fmt, a).or_else(|| (ext == fmt && a.image.iter().any(|f| f == fmt)).then_some(Via::Image))
 }
 
 fn order(ext: &str, a: &Avail) -> Vec<String> {

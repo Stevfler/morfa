@@ -5,9 +5,9 @@ import Icon from './Icon.vue'
 import DrivesSection from './sidebar/DrivesSection.vue'
 import TagsSection from './tags/TagsSection.vue'
 import CloudSection from './cloud/CloudSection.vue'
-import { state, pane, go, frecencyScore, transfer } from '../lib/store'
-import { basename, copyMod, keyLabel } from '../lib/util'
-import { DIRS_MIME } from '../composables/useDragDrop'
+import { state, pane, go, frecencyScore } from '../lib/store'
+import { basename, keyLabel } from '../lib/util'
+import { dropTarget } from '../composables/useDragDrop'
 import { t } from '../lib/i18n'
 
 const ICONS: Record<string, IconName> = {
@@ -24,17 +24,6 @@ const recent = computed(() =>
 )
 const current = computed(() => pane().path)
 
-function drop(e: DragEvent, dest: string) {
-  const data = e.dataTransfer?.getData('application/x-morfa-paths')
-  if (!data) return
-  transfer(JSON.parse(data), dest, copyMod(e) ? 'copy' : 'move')
-}
-
-function onDropFav(e: DragEvent) {
-  const data = e.dataTransfer?.getData(DIRS_MIME)
-  if (!data) return
-  for (const p of JSON.parse(data) as string[]) if (!state.bookmarks.includes(p)) state.bookmarks.push(p)
-}
 </script>
 
 <template>
@@ -43,22 +32,22 @@ function onDropFav(e: DragEvent) {
       <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">{{ t('sidebar.places') }}</h3>
       <button
         v-for="p in folders" :key="p.path"
-        class="item" :class="current === p.path && 'on'"
-        @click="go(pane(), p.path)" @dragover.prevent @drop.prevent="drop($event, p.path)"
+        class="item" :class="[current === p.path && 'on', dropTarget === p.path && 'bg-accent-soft ring-1 ring-accent']" :data-drop="p.path"
+        @click="go(pane(), p.path)"
       >
         <Icon :name="ICONS[p.kind]" class="size-4 shrink-0" />{{ p.name }}
       </button>
     </section>
 
-    <section @dragover.prevent @drop.prevent="onDropFav">
+    <section data-drop-fav>
       <h3 class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">{{ t('sidebar.favorites') }}</h3>
       <p v-if="!state.bookmarks.length" class="mx-2 rounded-lg bg-raised/50 px-3 py-2.5 text-[11.5px] leading-snug text-faint">
         {{ t('sidebar.favEmpty') }} <kbd>{{ keyLabel('Ctrl+D') }}</kbd>
       </p>
       <button
         v-for="b in state.bookmarks" :key="b"
-        class="item group" :class="current === b && 'on'" :title="b"
-        @click="go(pane(), b)" @dragover.prevent @drop.prevent.stop="drop($event, b)"
+        class="item group" :class="[current === b && 'on', dropTarget === b && 'bg-accent-soft ring-1 ring-accent']" :title="b" :data-drop="b"
+        @click="go(pane(), b)"
       >
         <Icon name="star" class="size-4 shrink-0 text-warn" /><span class="truncate">{{ basename(b) || b }}</span>
         <Icon name="x" class="ml-auto size-3.5 shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100"

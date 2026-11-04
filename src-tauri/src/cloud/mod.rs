@@ -3,10 +3,10 @@
 //! account's local folder and kept in two-way sync by a background worker.
 mod dav;
 mod login;
-mod names;
+pub(crate) mod names;
 mod sftp;
 mod store;
-mod sync;
+pub(crate) mod sync;
 
 use crate::CmdResult;
 use serde::Serialize;
@@ -167,6 +167,13 @@ struct Inner {
 
 #[derive(Default, Clone)]
 pub struct CloudState(Arc<Inner>);
+
+impl CloudState {
+    /// The local folder of every account: deleting inside one reaches its server.
+    pub(crate) fn mirror_roots(&self) -> Vec<PathBuf> {
+        lock(&self.0.accounts).iter().map(|a| PathBuf::from(&a.local_root)).collect()
+    }
+}
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|e| e.into_inner())

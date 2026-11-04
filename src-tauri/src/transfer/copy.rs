@@ -29,7 +29,7 @@ pub(super) fn size_of(p: &Path, cx: &Ctx) -> Option<u64> {
 }
 
 /// Recreate the symlink `src` at `dst`; fails with AlreadyExists if `dst` is taken.
-fn link(src: &Path, dst: &Path) -> io::Result<()> {
+pub(crate) fn link(src: &Path, dst: &Path) -> io::Result<()> {
     let target = fs::read_link(src)?;
     #[cfg(unix)]
     return std::os::unix::fs::symlink(target, dst);

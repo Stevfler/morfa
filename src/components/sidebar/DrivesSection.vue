@@ -4,21 +4,17 @@ import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal, ContextMenuCont
 import type { IconName } from '../../lib/icons'
 import Icon from '../Icon.vue'
 import UnlockDialog from './UnlockDialog.vue'
-import { state, pane, go, transfer } from '../../lib/store'
-import { copyMod, fmtSize } from '../../lib/util'
+import { state, pane, go } from '../../lib/store'
+import { fmtSize } from '../../lib/util'
 import { drives, ejectable, clickDrive, unmountPlace, refreshDrives } from './drives'
 import { openCleanup } from '../cleanup/cleanup'
 import { DRIVES } from '../../lib/store'
 import { t } from '../../lib/i18n'
+import { dropTarget } from '../../composables/useDragDrop'
 
 const disks = computed(() => state.places.filter((p) => ['disk', 'removable'].includes(p.kind)))
 const current = computed(() => pane().path)
 const icon = (removable: boolean): IconName => (removable ? 'usb' : 'hard-drive')
-
-function drop(e: DragEvent, dest: string) {
-  const data = e.dataTransfer?.getData('application/x-morfa-paths')
-  if (data) transfer(JSON.parse(data), dest, copyMod(e) ? 'copy' : 'move')
-}
 
 // Cheap refresh: on mount and whenever the window regains focus.
 onMounted(() => {
@@ -38,8 +34,8 @@ onUnmounted(() => window.removeEventListener('focus', refreshDrives))
     <ContextMenuTrigger as-child>
     <div class="group relative">
       <button
-        class="item !h-auto flex-col !items-stretch !gap-1 py-1.5" :class="current === d.path && 'on'" :title="d.path"
-        @click="go(pane(), d.path)" @dragover.prevent @drop.prevent="drop($event, d.path)"
+        class="item !h-auto flex-col !items-stretch !gap-1 py-1.5" :class="[current === d.path && 'on', dropTarget === d.path && 'bg-accent-soft ring-1 ring-accent']" :title="d.path" :data-drop="d.path"
+        @click="go(pane(), d.path)"
       >
         <span class="flex items-center gap-2.5 pr-5">
           <Icon :name="icon(d.kind === 'removable')" class="size-4 shrink-0" /><span class="truncate">{{ d.name }}</span>

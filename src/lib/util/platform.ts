@@ -10,7 +10,7 @@ export const primaryMod = (e: KeyboardEvent | MouseEvent) => (isMac ? e.metaKey 
 /** The "other" modifier (Ctrl on macOS, Super/Win elsewhere) — never part of our shortcuts. */
 export const otherMod = (e: KeyboardEvent | MouseEvent) => (isMac ? e.ctrlKey : e.metaKey)
 /** Drag & drop: hold Option (macOS) or Ctrl (elsewhere) to copy instead of move. */
-export const copyMod = (e: DragEvent) => (isMac ? e.altKey : e.ctrlKey)
+export const copyMod = (e: MouseEvent) => (isMac ? e.altKey : e.ctrlKey)
 
 const MAC_SYM: Record<string, string> = { Ctrl: '⌘', Alt: '⌥', Shift: '⇧', Backspace: '⌫', Del: '⌦', Enter: '↩' }
 /** "Ctrl+Shift+N" → ['⌘','⇧','N'] on macOS, ['Ctrl','Shift','N'] elsewhere. */

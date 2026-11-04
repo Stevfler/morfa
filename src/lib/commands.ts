@@ -1,5 +1,8 @@
 import type { IconName } from './icons'
 import { openCleanup } from '../components/cleanup/cleanup'
+import { openCompare } from '../components/compare/compare'
+import { openDedupe } from '../components/dedupe/dedupe'
+import { openJournal } from '../components/journal/journal'
 import { openSettings } from './settings'
 import * as S from './store'
 import { isConvertible, openConvert } from './convert'
@@ -59,10 +62,13 @@ export const commands = ([
   { id: 'moveother', group: 'dual', icon: 'arrow-swap', fkey: 'F6', fkeyMode: 'split', run: () => S.toOther('move') },
   { id: 'openapp', group: 'dual', icon: 'external-link', fkey: 'F4', fkeyMode: 'split', run: () => S.openDefault() },
   { id: 'otherpane', group: 'dual', icon: 'columns', run: () => S.focusPane(1 - S.tab().active) },
+  { id: 'compare', group: 'dual', icon: 'columns', run: () => openCompare() },
   { id: 'split', group: 'view', icon: 'columns', keys: 'Ctrl+\\', run: () => S.toggleSplit() },
   // Space is handled as hold-to-preview in keys.ts; from the palette it stays open until Esc/Space.
   { id: 'quicklook', group: 'view', icon: 'quicklook', keys: 'Space', fkey: 'F3', fkeyMode: 'split', run: () => (S.state.quickLook = canQuickLook(S.visible(S.pane())[S.pane().cursor])) },
   { id: 'cleanup', group: 'view', icon: 'broom', run: () => openCleanup(mountRoot(S.pane().path)) },
+  { id: 'duplicates', group: 'view', icon: 'copy', run: () => openDedupe(S.pane().path) },
+  { id: 'journal', group: 'view', icon: 'clock', keys: 'Ctrl+Shift+H', run: () => openJournal() },
   { id: 'settings', group: 'view', icon: 'settings', keys: 'Ctrl+,', run: () => openSettings() },
   { id: 'preview', group: 'view', icon: 'panel-right', keys: 'Ctrl+I', run: () => (S.state.preview = !S.state.preview) },
   { id: 'hidden', group: 'view', icon: 'eye', keys: 'Ctrl+H', run: () => (S.state.showHidden = !S.state.showHidden) },
@@ -79,7 +85,7 @@ for (const c of commands) {
 }
 
 // These act on the folder shown in the pane, so they do nothing on pseudo-locations like the Drives view.
-const NEEDS_FOLDER = new Set(['cleanup', 'search', 'refresh', 'newdir', 'newfile', 'paste', 'selectall', 'sizes', 'bookmark', 'terminal'])
+const NEEDS_FOLDER = new Set(['cleanup', 'duplicates', 'search', 'refresh', 'newdir', 'newfile', 'paste', 'selectall', 'sizes', 'bookmark', 'terminal'])
 for (const c of commands) {
   if (!NEEDS_FOLDER.has(c.id)) continue
   const run = c.run

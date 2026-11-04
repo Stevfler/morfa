@@ -3,16 +3,15 @@ import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as S from '../../lib/store'
 import { primaryMod } from '../../lib/util'
 import type { Pane } from '../../lib/store'
-import type { DragDrop } from '../../composables/useDragDrop'
+import { dropTarget, pressToDrag } from '../../composables/useDragDrop'
 import { settings } from '../../lib/settings'
 import FileRow from './FileRow.vue'
 import EmptyState from './EmptyState.vue'
 
-const props = defineProps<{ pane: Pane; active: boolean; dnd: DragDrop }>()
+const props = defineProps<{ pane: Pane; active: boolean }>()
 const emit = defineEmits<{ itemMenu: [] }>()
 const p = props.pane
 const state = S.state
-const { dropTarget, dragStart, dragOver, dragLeave, drop } = props.dnd
 
 // Row height follows the density setting; all scroll math below reads ROW.value.
 const ROW = computed(() => (settings.density === 'compact' ? 28 : 34))
@@ -80,25 +79,20 @@ function contextRow(i: number) {
 
 <template>
   <div
-    ref="scroller" :data-pane="p.id"
+    ref="scroller" :data-pane="p.id" :data-drop="p.path" :data-drop-pane="p.id"
     class="relative min-h-0 flex-1 overflow-y-auto outline-none select-none"
     :class="dropTarget === p.path && 'bg-accent-soft/30'"
     @scroll="scrollTop = ($event.target as HTMLElement).scrollTop"
     @click.self="p.selected.clear()"
-    @dragover="dragOver($event, p.path)" @dragleave.self="dragLeave" @drop="drop($event, p.path)"
   >
     <div :style="{ height: `${list.length * ROW}px` }" class="relative" @click.self="p.selected.clear()">
       <FileRow
         v-for="{ e, i } in rows" :key="e.path"
-        :pane="p" :e="e" :i="i" :row="ROW" :active="active" :drop-target="dropTarget"
-        @mousedown.left="pressRow($event, i)"
+        :pane="p" :e="e" :i="i" :row="ROW" :active="active" :drop-target="dropTarget" :data-drop="e.isDir ? e.path : undefined"
+        @mousedown.left="pressRow($event, i); pressToDrag($event, p, e, () => (pendingCollapse = -1))"
         @click.left="clickRow(i)"
         @dblclick="S.open(p, e)"
         @contextmenu="contextRow(i)"
-        @dragstart="pendingCollapse = -1; dragStart($event, e, list)"
-        @dragover.stop="e.isDir ? dragOver($event, e.path) : undefined"
-        @dragleave="dragLeave"
-        @drop.stop="e.isDir ? drop($event, e.path) : undefined"
       />
     </div>
     <EmptyState v-if="!list.length && !p.loading" :pane="p" />

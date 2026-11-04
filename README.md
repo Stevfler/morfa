@@ -41,16 +41,16 @@ It was built because the usual options each fall short somewhere:
 **Browsing**
 - Tabs, dual-pane mode, session restore
 - Command palette (`Ctrl+K`) and fuzzy "jump to folder" (`Ctrl+P`) ranked by how often and how recently you visit folders
-- Fast search with optional `.gitignore` support
+- Fast search with optional `.gitignore` support, and an optional file name index that answers as you type (off by default; see Settings, Search)
 - Quick Look: hold `Space` to preview images, text and Office documents
 - Favorites, frequent folders, color tags (stored in file metadata)
 - Folder sizes on demand, a properties dialog, open a terminal here
 
 **File operations**
 - Copy and move run in the background with progress and cancel. Existing files are never silently overwritten.
-- Drag and drop of the whole selection
+- Drag and drop of the whole selection; files dropped from the OS are copied into the folder under the cursor
 - Undo and redo for create, rename, move, copy and trash
-- Batch rename with find and replace, regex, numbering templates and case changes
+- Batch rename with find and replace, regex, numbering templates and case changes, plus metadata tokens: modified date and time, EXIF capture date and camera, image size, audio artist, album, title, track and year. A live preview flags files with no value and every conflict before anything changes. EXIF dates have no time zone and are used as written
 - Trash with restore (Linux, Windows) or "Show in Trash" (macOS)
 
 **Archives**
@@ -61,6 +61,7 @@ It was built because the usual options each fall short somewhere:
 **Conversion**
 - Images via libvips: JPEG, PNG, WebP, AVIF, HEIC and more, with quality and resize controls and a size estimate
 - Saved recipes such as "photos to WebP under 2 MB": run them from the Convert menu or the command palette. Morfa finds the best quality under the limit and reports a file that can't fit instead of writing it oversized
+- Watched folders: a rule applies a recipe to new files in a folder, only while Morfa is open. Off unless you create one. Existing files are left alone unless you opt in, originals are never changed, outputs never overwrite anything and never trigger the rule again. Mass drops and floods pause and ask. Local folders only. A file is converted once it has stopped changing and, for JPEG, PNG, GIF, WebP, BMP, TIFF, PDF, HEIC, AVIF, MP4/MOV/M4A, WAV, AVI and Office/EPUB zip formats, its own structure shows it is whole. Other formats (plain text, HTML, Markdown, MP3, FLAC, Ogg, Opus, AAC, WMA, WMV, FLV, MKV, WebM, MPEG, old .doc/.xls/.ppt, JPEG XL) can't show that, so they only get a 30-second quiet period
 - Video and audio via ffmpeg
 - Office documents and PDF via an optional Office module, downloaded on demand
 - All engines ship with the app, so there is nothing extra to install
@@ -69,6 +70,25 @@ It was built because the usual options each fall short somewhere:
 - Drives view with usage bars, mount, unmount and eject
 - Unmounted and encrypted (LUKS) drives on Linux, unlocked with a passphrase
 - Disk cleanup for power users: a space map and cleanup categories, with system paths protected
+
+**Compare and sync two folders**
+- Compare the folders of both panes, by size and time or by SHA-256 of equal-sized files, with every result saying how it was reached
+- Only left, only right, newer on either side, same size with different content, type conflicts; identical items hidden by default
+- You choose each direction or delete, per item or per group, and review a plan with counts and bytes before anything runs
+- Nothing is selected for deletion on its own. Deletes and replaced files go to the Trash, and items changed since the scan are skipped and reported
+
+**Operations history**
+- A local record of finished moves, copies, renames, deletes, extractions, compressions, conversions, folder syncs and duplicate removals: paths, sizes and times, never contents, never sent anywhere. Bounded, owner-only, and can be turned off or cleared in Settings
+- Browse it by day, search across paths, filter by type, and open the current location of a file (Ctrl+Shift+H, or the palette). "Where did it go?" follows a path or name through its moves and renames
+- Undo from the history, also after a restart: moves and renames move back, and copies, new items, extractions, archives and conversions go to the Trash. Trashed items come back on Linux and Windows; on macOS, use Finder's "Put Back". Deleting forever can't be undone
+- A dry run shows what will happen first. A file changed since the operation is skipped unless you tick it by name, nothing is overwritten, and newer operations on the same paths are pointed out
+
+**Find duplicates**
+- Scan a folder or, from Disk cleanup, a whole drive, with progress and cancel: by size, then the start and end of each file, then full SHA-256
+- Hard links count as one file, symlinks are never followed, and files stored online only are never downloaded to compare them
+- Nothing is selected on its own. Helpers keep the newest, the oldest, the shortest path or the copies in one folder, and always leave a copy of each group
+- Removal goes to the Trash after an explicit confirmation. Just before each move the file and a surviving copy are checked again, and the rest is reported
+- Files in synced folders are marked, since deleting them also deletes them from the server, and system locations are refused
 
 **Cloud**
 - Nextcloud: sign in through your browser. Morfa gets its own app password and never sees yours.

@@ -18,7 +18,11 @@ const selectedBytes = computed(() =>
 
 <template>
   <footer class="flex h-8 shrink-0 items-center gap-3 px-4 text-[11.5px] text-faint">
-    <span v-if="p.search">{{ t('pane.found', { count: p.search.results.length, n: p.search.results.length.toLocaleString() + (p.search.results.length >= 5000 ? '+' : '') }) }}</span>
+    <template v-if="p.search">
+      <span v-if="p.search.total != null && p.search.total > p.search.results.length && p.search.done">{{ t('pane.foundOf', { n: p.search.results.length.toLocaleString(), total: p.search.total.toLocaleString() }) }}</span>
+      <span v-else>{{ t('pane.found', { count: p.search.results.length, n: p.search.results.length.toLocaleString() + (p.search.results.length >= 5000 ? '+' : '') }) }}</span>
+      <span v-if="p.search.source && !(p.search.source === 'live' && p.search.reason === 'off')" class="rounded bg-raised px-1.5 py-px text-[10.5px]" :class="p.search.source === 'index' ? 'text-accent' : ''" :title="p.search.source === 'index' ? t('pane.source.indexHint') : t(`pane.source.why.${p.search.reason ?? 'off'}` as 'pane.source.why.off')">{{ t(`pane.source.${p.search.source}`) }}</span>
+    </template>
     <span v-else>{{ t('pane.items', { count: list.length, n: list.length.toLocaleString() }) }}</span>
     <span v-if="p.selected.size" class="text-accent">{{ t('pane.selected', { count: p.selected.size, n: p.selected.size }) }}<template v-if="selectedBytes"> · {{ fmtSize(selectedBytes) }}</template></span>
     <!-- In split view the hints live once in the shared bar at the bottom (App.vue). -->

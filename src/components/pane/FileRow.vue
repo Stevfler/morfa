@@ -57,7 +57,6 @@ function sizeCell(e: Entry) {
       dropTarget === e.path && 'bg-accent-soft ring-1 ring-inset ring-accent',
       (e.hidden || cut(e.path)) && 'opacity-50',
     ]"
-    draggable="true"
   >
     <div class="flex min-w-0 items-center gap-2.5">
       <Icon :name="KIND_ICON[kindOf(e)]" class="size-4 shrink-0" :style="{ color: KIND_COLOR[kindOf(e)] }" :tint="e.isDir ? 0.18 : 0" />

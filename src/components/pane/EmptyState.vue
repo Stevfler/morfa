@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from '../Icon.vue'
-import { isNotResponding, load_, parseHostKeyChange, type Pane } from '../../lib/store'
+import { isNotResponding, isSpecial, load_, parseHostKeyChange, type Pane } from '../../lib/store'
 import { basename, keyLabel } from '../../lib/util'
 import { t } from '../../lib/i18n'
 
@@ -33,7 +33,7 @@ defineProps<{ pane: Pane }>()
       </template>
       <template v-else>
         <p>{{ t('pane.empty') }}</p>
-        <p class="mt-1 text-[12px] text-faint">{{ t('pane.emptyHintA') }} <kbd>{{ keyLabel('Ctrl+Shift+N') }}</kbd> {{ t('pane.emptyHintB') }}</p>
+        <p class="mt-1 text-[12px] text-faint">{{ t(isSpecial(pane.path) ? 'pane.pressA' : 'pane.emptyHintA') }} <kbd>{{ keyLabel('Ctrl+Shift+N') }}</kbd> {{ t('pane.emptyHintB') }}</p>
       </template>
     </div>
   </div>

@@ -19,6 +19,9 @@ import { scheduleUpdateCheck } from './lib/update'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import CleanupDialog from './components/cleanup/CleanupDialog.vue'
 import CleanupWarning from './components/cleanup/CleanupWarning.vue'
+import CompareDialog from './components/compare/CompareDialog.vue'
+import DedupeDialog from './components/dedupe/DedupeDialog.vue'
+import JournalDialog from './components/journal/JournalDialog.vue'
 import QuickLook from './components/quicklook/QuickLook.vue'
 import IconButton from './components/IconButton.vue'
 import FunctionBar from './components/FunctionBar.vue'
@@ -26,8 +29,10 @@ import HintList from './components/pane/HintList.vue'
 import SettingsDialog from './components/settings/SettingsDialog.vue'
 import { openSettings } from './lib/settings'
 import { t } from './lib/i18n'
+import { listenOsDrops } from './composables/useDragDrop'
 
 const ready = ref(false)
+let stopOsDrops: Promise<() => void> | undefined
 // Capture phase: a component's stopPropagation can't let webview reload/print through. Commands still run in onGlobalKey.
 const blockReloadPrint = (e: KeyboardEvent) => {
   if (isReloadOrPrint(e)) e.preventDefault()
@@ -50,8 +55,10 @@ onMounted(async () => {
   ready.value = true
   window.addEventListener('keydown', onGlobalKey)
   scheduleUpdateCheck()
+  stopOsDrops = listenOsDrops().catch((e) => (console.error('os drops unavailable', e), () => {}))
 })
 onBeforeUnmount(() => {
+  stopOsDrops?.then((stop) => stop())
   window.removeEventListener('keydown', onGlobalKey)
   window.removeEventListener('keydown', blockReloadPrint, true)
   window.removeEventListener('mousedown', onSideButton, true)
@@ -136,6 +143,9 @@ const tabTitle = (i: number) => {
       <PropertiesDialog />
       <CleanupDialog />
       <CleanupWarning />
+      <CompareDialog />
+      <DedupeDialog />
+      <JournalDialog />
       <ConfirmDialog />
       <QuickLook />
       <SettingsDialog />

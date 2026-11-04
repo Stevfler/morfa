@@ -12,12 +12,15 @@ export async function startSearch(p: Pane, query: string) {
       p.search.query = query
       p.search.results = []
       p.search.done = true
+      p.search.source = undefined
+      p.search.reason = null
+      p.search.total = null
     }
     return invoke('cancel_search')
   }
   // Claim the id before invoking so early batches match, and keep the live query.
   const id = ++seq
-  if (p.search) Object.assign(p.search, { id, results: [], done: false, scanned: 0 })
+  if (p.search) Object.assign(p.search, { id, results: [], done: false, scanned: 0, source: undefined, reason: null, total: null })
   else p.search = { query, id, results: [], done: false, scanned: 0 }
   p.cursor = 0
   p.selected.clear()

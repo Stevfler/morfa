@@ -32,7 +32,7 @@ export type Pane = {
   anchor: number
   filter: string
   sort: { key: SortKey; asc: boolean }
-  search: null | { query: string; id: number; results: Entry[]; done: boolean; scanned: number }
+  search: null | { query: string; id: number; results: Entry[]; done: boolean; scanned: number; source?: 'index' | 'live'; reason?: string | null; total?: number | null }
   /** Restore cursor to this path after the next load (e.g. when going up a level). */
   focusAfterLoad?: string
 }
@@ -97,7 +97,15 @@ export type CloudAccount = {
 /** A volume that is not mounted yet (from `list_drives`). */
 export type Drive = { name: string; device: string; fstype: string; size: number; encrypted: boolean; removable: boolean }
 
-export type UndoItem = { label: string; undo: () => Promise<unknown>; redo: () => Promise<unknown> }
+export type JournalKind = 'move' | 'copy' | 'rename' | 'batchRename' | 'trash' | 'delete' | 'create' | 'extract' | 'compress' | 'convert' | 'compare' | 'dedupe' | 'restore'
+export type JournalStatus = 'done' | 'partial' | 'failed' | 'cancelled'
+/** Links an undo item to its journal entry, so either way of undoing it knows about the other. */
+export type JournalLink = { id: Promise<number | null>; kind: JournalKind; pairs: () => [string, string][] }
+
+export type UndoItem = { label: string; undo: () => Promise<unknown>; redo: () => Promise<unknown>; journal?: JournalLink
+  /** A failure leaves things as they were (or says what stands): the item can be tried again. */
+  retry?: boolean
+}
 
 export type Toast = {
   id: number
@@ -117,5 +125,5 @@ export type Op = {
   part?: number | null
   /** What done/total count (default 'bytes'). */
   unit?: 'bytes' | 'files'
-  kind?: 'transfer' | 'convert' | 'office' | 'archive'
+  kind?: 'transfer' | 'convert' | 'autoconvert' | 'office' | 'archive' | 'compare' | 'dedupe'
 }

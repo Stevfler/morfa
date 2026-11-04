@@ -14,7 +14,7 @@ import { t as tr } from '../../lib/i18n'
 import { canDownload, refreshOffice } from '../../lib/office'
 import { pin, unpin, showLocal, showInCloud, openWeb, syncNow } from '../../lib/cloud'
 import { within } from '../../lib/store/navigation'
-import { formatLabel, isConvertible, isImage, openConvert, quickConvert, recipesFor, recipeSummary, recipeTargets, runRecipe, targetsFor, type Recipe } from '../../lib/convert'
+import { addRuleFromMenu, formatLabel, isConvertible, recipes, isImage, openConvert, quickConvert, recipesFor, recipeSummary, recipeTargets, runRecipe, targetsFor, type Recipe } from '../../lib/convert'
 
 const props = defineProps<{ pane: Pane }>()
 const onItem = defineModel<boolean>('onItem', { required: true })
@@ -126,7 +126,7 @@ function openIn(where: 'tab' | 'other') {
           <ContextMenuSeparator class="sep" />
           <ContextMenuItem class="mi" @select="S.copyToClipboard('copy', p)"><Icon name="copy" />{{ tr('pane.menu.copy') }}<span>{{ keyLabel('Ctrl+C') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.copyToClipboard('move', p)"><Icon name="scissors" />{{ tr('pane.menu.cut') }}<span>{{ keyLabel('Ctrl+X') }}</span></ContextMenuItem>
-          <ContextMenuItem class="mi" @select="S.startRename(p)"><Icon name="pencil" />{{ S.targets(p).length > 1 ? tr('pane.menu.renameN', { count: S.targets(p).length }) : tr('pane.menu.rename') }}<span>F2</span></ContextMenuItem>
+          <ContextMenuItem v-if="S.targets(p).length <= 1 || S.canBatchRename(p)" class="mi" @select="S.startRename(p)"><Icon name="pencil" />{{ S.targets(p).length > 1 ? tr('pane.menu.renameN', { count: S.targets(p).length }) : tr('pane.menu.rename') }}<span>F2</span></ContextMenuItem>
           <ContextMenuSub v-if="convertible">
             <ContextMenuSubTrigger class="mi"><Icon name="image" />{{ convertLabel }}<Icon name="chevron-right" class="ml-auto" /></ContextMenuSubTrigger>
             <ContextMenuPortal>
@@ -160,6 +160,14 @@ function openIn(where: 'tab' | 'other') {
             <ContextMenuItem class="mi" @select="S.toggleBookmark(cursorEntry.path)"><Icon name="star" />{{ state.bookmarks.includes(cursorEntry.path) ? tr('pane.menu.removeFav') : tr('pane.menu.addFav') }}</ContextMenuItem>
             <ContextMenuItem class="mi" @select="S.computeSizes(S.targets(p).filter((x) => x.isDir).map((x) => x.path))"><Icon name="gauge" />{{ tr('pane.menu.calcSize') }}</ContextMenuItem>
             <ContextMenuItem class="mi" @select="S.openTerminal(cursorEntry.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}</ContextMenuItem>
+            <ContextMenuSub v-if="recipes.length && !S.isSpecial(cursorEntry.path)">
+              <ContextMenuSubTrigger class="mi"><Icon name="zap" />{{ tr('auto.menu') }}</ContextMenuSubTrigger>
+              <ContextMenuPortal>
+                <ContextMenuSubContent class="menu min-w-40" :side-offset="4">
+                  <ContextMenuItem v-for="r in recipes" :key="r.id" class="mi" :title="recipeSummary(r)" @select="addRuleFromMenu(cursorEntry!.path, r.id)"><div class="max-w-64 min-w-0 truncate">{{ r.name }}</div></ContextMenuItem>
+                </ContextMenuSubContent>
+              </ContextMenuPortal>
+            </ContextMenuSub>
           </template>
           <ContextMenuItem v-else class="mi" @select="S.reveal(cursorEntry.path)"><Icon name="eye" />{{ tr('pane.menu.showInSystem') }}</ContextMenuItem>
           <template v-if="mirrored">
@@ -184,6 +192,14 @@ function openIn(where: 'tab' | 'other') {
           <ContextMenuItem class="mi" @select="S.calcFolderSizes(p)"><Icon name="gauge" />{{ tr('pane.menu.folderSizes') }}<span>{{ keyLabel('Ctrl+Shift+S') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.toggleBookmark(p.path)"><Icon name="star" />{{ state.bookmarks.includes(p.path) ? tr('pane.menu.removeFav') : tr('pane.menu.addFav') }}<span>{{ keyLabel('Ctrl+D') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.openTerminal(p.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}<span>{{ keyLabel('Ctrl+`') }}</span></ContextMenuItem>
+          <ContextMenuSub v-if="recipes.length && !S.isSpecial(p.path)">
+            <ContextMenuSubTrigger class="mi"><Icon name="zap" />{{ tr('auto.menu') }}</ContextMenuSubTrigger>
+            <ContextMenuPortal>
+              <ContextMenuSubContent class="menu min-w-40" :side-offset="4">
+                <ContextMenuItem v-for="r in recipes" :key="r.id" class="mi" :title="recipeSummary(r)" @select="addRuleFromMenu(p.path, r.id)"><div class="max-w-64 min-w-0 truncate">{{ r.name }}</div></ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuPortal>
+          </ContextMenuSub>
           <ContextMenuItem class="mi" @select="showProperties([p.path])"><Icon name="info" />{{ tr('pane.menu.properties') }}<span>{{ keyLabel('Alt+Enter') }}</span></ContextMenuItem>
         </template>
       </ContextMenuContent>

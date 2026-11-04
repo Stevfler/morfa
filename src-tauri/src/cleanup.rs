@@ -8,7 +8,8 @@ mod scan;
 
 use crate::CmdResult;
 use index::{Index, Node};
-pub(crate) use guard::protection;
+pub(crate) use categories::is_trash_dir;
+pub(crate) use guard::{location_protection, protection};
 pub use protect::Protection;
 use serde::Serialize;
 use std::{
