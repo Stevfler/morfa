@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { state, pane, go, load_, toast, fail, cloudPath, parseCloud } from '../store'
 import type { CloudAccount, Entry } from '../store'
-import type { CloudStatus } from '../store/types'
+import type { CloudHold, CloudStatus } from '../store/types'
 import { within } from '../store/navigation'
 import { t } from '../i18n'
 
@@ -26,7 +26,10 @@ export async function initCloud() {
     const wasSyncing = a.status.state === 'syncing'
     a.status = { state: payload.state, error: payload.error, current: payload.current, last: payload.last }
     // Marks change from "pending" to "synced" when a run finishes.
-    if (wasSyncing && payload.state !== 'syncing') reloadPanes(a.id)
+    if (wasSyncing && payload.state !== 'syncing') {
+      reloadPanes(a.id)
+      refreshCloud() // Holds may have appeared or cleared.
+    }
   })
   await listen<string>('cloud-changed', ({ payload }) => reloadPanes(payload))
   // Coming back to the window is a good moment to pick up remote changes.
@@ -112,6 +115,26 @@ export async function showInCloud(path: string) {
 export function openWeb(id: string, rel = '') {
   const a = accountOf(id)
   if (a) openUrl(`${a.server}/apps/files/?dir=/${encodeURI(rel)}`).catch(fail)
+}
+
+/** Apply held deletions (after a confirmation) or bring the items back. */
+export function resolveHold(a: CloudAccount, h: CloudHold, confirm: boolean) {
+  // The digest is of what this dialog shows; if the list changed, the backend refuses.
+  const run = () =>
+    invoke('cloud_hold_resolve', { id: a.id, pin: h.pin, toServer: h.toServer, confirm, digest: h.digest })
+      .catch((e) => {
+        toast({ title: t('cloud.holdChanged'), desc: String(e), tone: 'error' }, 6000)
+      })
+      .finally(refreshCloud)
+  if (!confirm) return run()
+  const names = h.sample.join(', ') + (h.count > h.sample.length ? ', …' : '')
+  state.confirm = {
+    title: t(h.toServer ? 'cloud.holdDeleteServerTitle' : 'cloud.holdDeleteLocalTitle', { count: h.count }),
+    desc: t(h.toServer ? 'cloud.holdDeleteServerDesc' : 'cloud.holdDeleteLocalDesc', { names }),
+    danger: true,
+    ok: t('cloud.holdDeleteOk'),
+    run,
+  }
 }
 
 export const syncNow = (id: string) => invoke('cloud_sync', { id }).catch(fail)

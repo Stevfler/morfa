@@ -38,8 +38,13 @@ ruzstd = "0.9.1"
 lzma-rust2 = { version = "0.25.0", default-features = false, features = ["std", "xz", "encoder"] }
 bzip2 = "0.6.1"
 sevenz-rust2 = { version = "0.24.2", default-features = false, features = ["aes256", "bzip2", "ppmd"] }
+russh = { version = "0.65", default-features = false, features = ["ring", "rsa"] }
+russh-sftp = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync", "fs", "io-util", "net"] }
+unicode-normalization = "0.1.26"
 
 [dev-dependencies]
+rand = "0.10"
 sevenz-rust2 = { version = "0.24.2", default-features = false, features = ["compress"] }
 
 [target.'cfg(unix)'.dependencies]
