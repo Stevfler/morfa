@@ -82,6 +82,8 @@ pub struct Ledger {
     lines: usize,
     cap: usize,
     lossy: bool,
+    /// Off in a window that doesn't hold the lock: it may read this log, never change it.
+    writable: bool,
 }
 
 pub fn key(rule: &str, path: &str, size: u64, mtime: i64) -> String {
@@ -93,12 +95,17 @@ fn path_in_key(k: &str) -> String {
 }
 
 impl Ledger {
-    pub fn open(file: Option<PathBuf>) -> Self {
-        Self::with_cap(file, MAX_ENTRIES)
+    pub fn open(file: Option<PathBuf>, writable: bool) -> Self {
+        Self::with_cap_rw(file, MAX_ENTRIES, writable)
     }
 
+    #[cfg(test)]
     pub fn with_cap(file: Option<PathBuf>, cap: usize) -> Self {
-        let mut l = Ledger { file, handled: Bounded::new(cap), produced: Bounded::new(cap), lines: 0, cap, lossy: false };
+        Self::with_cap_rw(file, cap, true)
+    }
+
+    pub fn with_cap_rw(file: Option<PathBuf>, cap: usize, writable: bool) -> Self {
+        let mut l = Ledger { file, handled: Bounded::new(cap), produced: Bounded::new(cap), lines: 0, cap, lossy: false, writable };
         let text = l.file.as_ref().and_then(|f| std::fs::read_to_string(f).ok()).unwrap_or_default();
         // A torn last line, from a crash mid-write, just doesn't parse.
         for line in text.lines() {
@@ -117,7 +124,7 @@ impl Ledger {
             l.lines += 1;
         }
         // Finish a torn line, or the next record would be glued to it and lost as well.
-        if !text.is_empty() && !text.ends_with('\n') {
+        if writable && !text.is_empty() && !text.ends_with('\n') {
             if let Some(f) = &l.file {
                 let _ = std::fs::OpenOptions::new().append(true).open(f).and_then(|mut h| writeln!(h));
             }
@@ -127,6 +134,9 @@ impl Ledger {
     }
 
     fn append(&mut self, op: &str, v: &str, id: &str) {
+        if !self.writable {
+            return;
+        }
         self.lines += 1;
         if let Some(f) = &self.file {
             if let Ok(line) = serde_json::to_string(&(op, v, id)) {
@@ -140,6 +150,9 @@ impl Ledger {
     }
 
     fn rewrite(&mut self) {
+        if !self.writable {
+            return;
+        }
         self.lines = self.handled.order.len() + self.produced.order.len() + self.lossy as usize;
         let Some(f) = self.file.clone() else { return };
         let rows = self.handled.order.iter().map(|v| ("k", v)).chain(self.produced.order.iter().map(|v| ("p", v)));

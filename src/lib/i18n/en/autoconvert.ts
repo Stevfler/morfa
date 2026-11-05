@@ -36,6 +36,7 @@ export const autoconvert = {
   'auto.ledgerFull': 'The record of past conversions overflowed, so converting files that were already here isn’t offered. New files still convert normally.',
   'auto.err.otherInstance': 'Another Morfa window is running the rules. Change them there.',
   'auto.incomplete': { one: '{count} file looks cut off and is waiting for the rest.', other: '{count} files look cut off and are waiting for the rest.' },
+  'auto.err.storeUnreadable': 'The saved rules can’t be read right now. Nothing runs or changes until they can.',
   'auto.menu': 'Watch with recipe',
   'auto.created': 'Rule created, and off',
   'auto.createdDesc': 'Turn it on in Settings, under Watched folders.',

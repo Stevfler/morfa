@@ -99,7 +99,7 @@ fn reconcile(core: &Mutex<Core>, dirty: &Arc<Mutex<HashSet<String>>>, watchers: 
 /// Runs only while there are rules: without any, no thread wakes up at all.
 fn ensure_driver(app: &AppHandle, state: &AutoState) {
     let mut c = lock(&state.core);
-    if c.driver_on || c.rules.is_empty() {
+    if c.driver_on || !c.wants_driver() {
         return;
     }
     c.driver_on = true;
@@ -152,7 +152,7 @@ fn start_driver(app: AppHandle, core: Arc<Mutex<Core>>, dirty: Arc<Mutex<HashSet
             let now = now_ms();
             {
                 let mut c = lock(&core);
-                if c.rules.is_empty() && !c.is_running() {
+                if !c.wants_driver() && !c.is_running() {
                     c.driver_on = false;
                     let (events, view) = (c.take_events(), c.overview());
                     drop(c);
@@ -218,15 +218,17 @@ pub async fn autoconvert_sync(app: AppHandle, state: State<'_, AutoState>, recip
 #[tauri::command]
 pub async fn autoconvert_add(app: AppHandle, state: State<'_, AutoState>, folder: String, recipe_id: String, subfolders: bool) -> CmdResult<Overview> {
     let core = state.core.clone();
-    let view = blocking(move || {
+    let (res, view) = blocking(move || {
         let mut c = lock(&core);
         let id = format!("{:x}-{:x}", now_ms(), std::process::id());
-        c.add(folder, recipe_id, subfolders, id, &RealEnv)?;
-        Ok::<_, String>(c.overview())
+        let res = c.add(folder, recipe_id, subfolders, id, &RealEnv);
+        (res, c.overview())
     })
-    .await??;
+    .await?;
+    // Even a refusal may have taken over rules another window left: they must run, and show.
     ensure_driver(&app, &state);
-    Ok(view)
+    let _ = app.emit("autoconvert-state", &view);
+    res.map(|_| view)
 }
 
 #[tauri::command]

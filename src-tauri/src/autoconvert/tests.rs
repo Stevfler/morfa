@@ -329,16 +329,16 @@ fn dedupe_survives_a_restart_and_is_bounded() {
     let f = t.0.join("ledger.jsonl");
     let k = ledger::key("r", "/x/a.png", 1, 2);
     {
-        let mut l = Ledger::open(Some(f.clone()));
+        let mut l = Ledger::open(Some(f.clone()), true);
         l.mark_handled(&k, "");
         l.mark_produced("/x/a.webp", "");
     }
     std::fs::OpenOptions::new().append(true).open(&f).and_then(|mut h| std::io::Write::write_all(&mut h, b"[\"k\",\"torn")).unwrap();
-    let mut l = Ledger::open(Some(f.clone()));
+    let mut l = Ledger::open(Some(f.clone()), true);
     assert!(l.handled(&k) && l.produced("/x/a.webp"), "a torn line costs nothing");
     assert!(!l.handled(&ledger::key("r", "/x/a.png", 2, 2)), "another size is another version");
     l.forget(&k);
-    assert!(!Ledger::open(Some(f.clone())).handled(&k));
+    assert!(!Ledger::open(Some(f.clone()), true).handled(&k));
 
     let mut b = Ledger::with_cap(Some(t.0.join("b.jsonl")), 5);
     for i in 0..5000 {
@@ -1270,4 +1270,253 @@ fn n12_a_big_queue_rescan_is_linear() {
     let started = std::time::Instant::now();
     rig.c().apply_scan(&id, Ok(ScanOut { files, ..Default::default() }), 10_000_001);
     assert!(started.elapsed().as_secs() < 5, "{:?}", started.elapsed());
+}
+
+// --- second QA round
+
+/// Two windows that both started with no rules. The first adds one, works, and exits.
+#[test]
+fn a_window_that_starts_later_keeps_the_rule_and_record_of_the_one_that_left() {
+    let t = Tmp::new();
+    let (cfg, a_dir, b_dir, out) = (t.dir("cfg"), t.dir("a"), t.dir("b"), t.dir("out"));
+    let recipes = vec![recipe("r", "webp", Some(&out))];
+    let (f1, f2) = (Fake::new(), Fake::new());
+    let a = Rig::new(Some(cfg.clone()), recipes.clone(), &f1);
+    let b = Rig::new(Some(cfg.clone()), recipes.clone(), &f2);
+    let aid = a.add_on(&a_dir, "r", false);
+    a.settle();
+    std::fs::write(a_dir.join("x.png"), b"1").unwrap();
+    a.settle();
+    assert_eq!(a.view(&aid).done, 1);
+    drop(a);
+    let bid = b.add_on(&b_dir, "r", false);
+    let saved = std::fs::read_to_string(cfg.join("autoconvert.json")).unwrap();
+    assert!(saved.contains(&aid) && saved.contains(&bid), "both rules stored");
+    let v = b.view(&aid);
+    assert_eq!((v.done, v.enabled), (1, true), "with its stats, and still on");
+    b.settle();
+    b.c().process_existing(&aid, 1);
+    b.settle();
+    assert_eq!(f2.calls(), 0, "the first window's record came along");
+    assert_eq!(b.view(&aid).backlog, 0);
+}
+
+#[test]
+fn a_standby_writes_nothing() {
+    let t = Tmp::new();
+    let (cfg, d) = (t.dir("cfg"), t.dir("in"));
+    let fake = Fake::new();
+    let a = Rig::new(Some(cfg.clone()), vec![recipe("r", "webp", None)], &fake);
+    a.add_on(&d, "r", false);
+    // Over the compaction limit for the cap below, with a torn tail.
+    let ledger = cfg.join("autoconvert-ledger.jsonl");
+    let text = format!("{}[\"k\",\"torn", "[\"k\",\"same\",\"\"]\n".repeat(1100));
+    std::fs::write(&ledger, &text).unwrap();
+    let before = std::fs::read_to_string(cfg.join("autoconvert.json")).unwrap();
+    let mut b = Core::load_capped(cfg.clone(), 5);
+    b.sync_recipes(vec![], &Env::default());
+    b.save();
+    assert!(b.overview().standby);
+    assert_eq!(std::fs::read_to_string(&ledger).unwrap(), text);
+    assert_eq!(std::fs::read_to_string(cfg.join("autoconvert.json")).unwrap(), before);
+    // A file it can't read isn't its to move either.
+    std::fs::write(cfg.join("autoconvert.json"), "{ broken").unwrap();
+    let _c = Core::load(Some(cfg.clone()));
+    assert!(cfg.join("autoconvert.json").exists() && !cfg.join("autoconvert.json.bad").exists());
+}
+
+/// A short-tick rig around one rule, on a `.gif` the fake encoder takes.
+fn short_ticks(rig: &Rig, id: &str) {
+    for _ in 0..4 {
+        rig.c().mark_dirty(id);
+        rig.tick(2000);
+    }
+}
+
+#[test]
+fn an_unrelated_bigger_file_of_the_same_name_keeps_both_outputs() {
+    let t = Tmp::new();
+    let (d, out) = (t.dir("in"), t.dir("out"));
+    let fake = Fake::new();
+    let rig = Rig::new(None, vec![recipe("r", "webp", Some(&out))], &fake);
+    let id = rig.add_on(&d, "r", false);
+    short_ticks(&rig, &id);
+    let f = d.join("a.gif");
+    std::fs::write(&f, b"first").unwrap();
+    short_ticks(&rig, &id);
+    // Deleted, then another file dropped under the name. The first is moved aside, not deleted, so the new file gets another inode.
+    let keep = t.0.join("first-file");
+    std::fs::rename(&f, &keep).unwrap();
+    std::fs::write(&f, b"first and unrelated").unwrap();
+    short_ticks(&rig, &id);
+    assert_eq!(fake.calls(), 2);
+    assert_eq!(names(&out), ["a (converted).webp", "a.webp"]);
+    assert_eq!(std::fs::read(out.join("a.webp")).unwrap(), b"first");
+}
+
+#[test]
+fn an_edit_in_place_that_grows_a_file_keeps_both_outputs() {
+    let t = Tmp::new();
+    let (d, out) = (t.dir("in"), t.dir("out"));
+    let fake = Fake::new();
+    let rig = Rig::new(None, vec![recipe("r", "webp", Some(&out))], &fake);
+    let id = rig.add_on(&d, "r", false);
+    short_ticks(&rig, &id);
+    let f = d.join("a.gif");
+    std::fs::write(&f, b"first").unwrap();
+    short_ticks(&rig, &id);
+    std::fs::write(&f, b"FIRST, redone and longer").unwrap(); // same inode, not a prefix
+    short_ticks(&rig, &id);
+    assert_eq!(names(&out), ["a (converted).webp", "a.webp"]);
+    assert_eq!(std::fs::read(out.join("a.webp")).unwrap(), b"first");
+}
+
+#[test]
+fn an_encoder_writing_nothing_never_costs_the_earlier_output() {
+    let t = Tmp::new();
+    let (d, out) = (t.dir("in"), t.dir("out"));
+    let fake = Fake::new();
+    let empty = Arc::new(AtomicUsize::new(0));
+    let mut rig = Rig::new(None, vec![recipe("r", "webp", Some(&out))], &fake);
+    let (inner, flag) = (fake.encoder(), empty.clone());
+    rig.enc = Box::new(move |s, o, k| if flag.load(Ordering::SeqCst) == 1 { Ok(vec![]) } else { inner(s, o, k) });
+    let id = rig.add_on(&d, "r", false);
+    short_ticks(&rig, &id);
+    let f = d.join("a.gif");
+    std::fs::write(&f, b"first").unwrap();
+    short_ticks(&rig, &id);
+    empty.store(1, Ordering::SeqCst);
+    std::fs::write(&f, b"first and the rest").unwrap();
+    short_ticks(&rig, &id);
+    assert_eq!(names(&out), ["a.webp"]);
+    assert_eq!(std::fs::read(out.join("a.webp")).unwrap(), b"first");
+}
+
+#[test]
+fn a_recipe_change_never_replaces_across_format_or_folder() {
+    let t = Tmp::new();
+    let (d, out, other) = (t.dir("in"), t.dir("out"), t.dir("other"));
+    let fake = Fake::new();
+    let rig = Rig::new(None, vec![recipe("r", "webp", Some(&out))], &fake);
+    let id = rig.add_on(&d, "r", false);
+    short_ticks(&rig, &id);
+    let f = d.join("a.gif");
+    std::fs::write(&f, b"one").unwrap();
+    short_ticks(&rig, &id);
+    rig.c().sync_recipes(vec![recipe("r", "png", Some(&out))], &Env::default());
+    std::fs::write(&f, b"one two").unwrap();
+    short_ticks(&rig, &id);
+    assert_eq!(names(&out), ["a.png", "a.webp"], "a.webp doesn't end up holding a png");
+    assert_eq!(std::fs::read(out.join("a.webp")).unwrap(), b"one");
+    rig.c().sync_recipes(vec![recipe("r", "png", Some(&other))], &Env::default());
+    std::fs::write(&f, b"one two three").unwrap();
+    short_ticks(&rig, &id);
+    assert_eq!(names(&other), ["a.png"]);
+    assert_eq!(names(&out), ["a.png", "a.webp"], "the old folder keeps its file");
+}
+
+#[test]
+fn replacing_needs_a_written_file_of_the_same_folder_and_extension() {
+    let t = Tmp::new();
+    let (x, y) = (t.dir("x"), t.dir("y"));
+    let stat = |p: PathBuf| {
+        std::fs::write(&p, b"data").unwrap();
+        let m = p.symlink_metadata().unwrap();
+        #[cfg(unix)]
+        let id = { use std::os::unix::fs::MetadataExt; format!("{}:{}", m.dev(), m.ino()) };
+        #[cfg(not(unix))]
+        let id = String::new();
+        Output { path: p.to_string_lossy().into_owned(), id, size: m.len(), mtime: m.modified().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64 }
+    };
+    let old = stat(x.join("a.webp"));
+    let never = |_: &Path| -> bool { panic!("must not discard") };
+    let other_ext = stat(x.join("a (converted).png"));
+    assert_eq!(replace_damaged(vec![old.clone()], vec![other_ext], &never).len(), 1);
+    let other_dir = stat(y.join("a.webp"));
+    assert_eq!(replace_damaged(vec![old.clone()], vec![other_dir], &never).len(), 1);
+    assert!(replace_damaged(vec![old.clone()], vec![], &never).is_empty());
+    let new = stat(x.join("a (converted).webp"));
+    std::fs::remove_file(&new.path).unwrap();
+    assert_eq!(replace_damaged(vec![old.clone()], vec![new], &never).len(), 1, "the replacement isn't there");
+    assert!(Path::new(&old.path).exists());
+}
+
+// --- third QA round
+
+#[test]
+fn f1_rules_that_cannot_be_read_are_never_saved_over() {
+    let t = Tmp::new();
+    let (cfg, d) = (t.dir("cfg"), t.dir("in"));
+    let json = cfg.join("autoconvert.json");
+    // Bad content: set aside, kept.
+    std::fs::write(&json, [0xFF, 0xFE, b'{', 0x80]).unwrap();
+    let c = Core::load(Some(cfg.clone()));
+    assert!(c.rules.is_empty());
+    assert_eq!(std::fs::read(cfg.join("autoconvert.json.bad")).unwrap(), [0xFF, 0xFE, b'{', 0x80]);
+    drop(c);
+
+    // Can't be read at all (a folder gives a read error other than "not found").
+    std::fs::create_dir(&json).unwrap();
+    let mut c = Core::load(Some(cfg.clone()));
+    c.sync_recipes(vec![recipe("r", "webp", None)], &Env::default());
+    c.save();
+    assert!(json.is_dir(), "nothing written over it");
+    assert!(c.overview().store_error && !c.overview().standby && c.wants_driver());
+    let refused = c.add(d.to_string_lossy().into_owned(), "r".into(), false, "new".into(), &Env::default());
+    assert_eq!(refused, Err("storeUnreadable".to_string()));
+    assert!(!c.try_take_over(&Env::default()));
+    assert!(json.is_dir());
+
+    // It comes back: its rules are there, untouched.
+    std::fs::remove_dir(&json).unwrap();
+    let rule = r#"{"pausedAll":false,"rules":[{"id":"old","folder":"/nowhere","recipeId":"r","recipeName":"r"}]}"#;
+    std::fs::write(&json, rule).unwrap();
+    assert!(c.try_take_over(&Env::default()));
+    assert_eq!(c.rules.len(), 1);
+    assert!(!c.overview().store_error);
+}
+
+/// B started with no rules, A added one and left, B adds the same folder and is refused.
+#[test]
+fn f2_a_refused_add_still_takes_over_what_it_found() {
+    let t = Tmp::new();
+    let (cfg, d) = (t.dir("cfg"), t.dir("in"));
+    let recipes = vec![recipe("r", "webp", None)];
+    let fake = Fake::new();
+    let a = Rig::new(Some(cfg.clone()), recipes.clone(), &fake);
+    let b = Rig::new(Some(cfg.clone()), recipes, &fake);
+    assert!(!b.c().wants_driver(), "no rules, no thread");
+    let id = a.add_on(&d, "r", false);
+    drop(a);
+    let res = b.c().add(d.to_string_lossy().into_owned(), "r".into(), false, "dup".into(), &Env::default());
+    assert_eq!(res, Err("duplicate".to_string()));
+    assert!(b.c().wants_driver(), "the command starts the driver from this");
+    assert!(b.view(&id).enabled, "the view it returns shows the rule");
+    b.settle();
+    std::fs::write(d.join("a.png"), b"1").unwrap();
+    b.settle();
+    assert_eq!(fake.calls(), 1, "and the rule runs here now");
+}
+
+#[test]
+fn f4_without_hard_links_the_output_still_reaches_its_name_and_overwrites_nothing() {
+    let t = Tmp::new();
+    let d = t.dir("x");
+    let no_links = |_: &Path, _: &Path| -> std::io::Result<()> { Err(std::io::Error::from(std::io::ErrorKind::Unsupported)) };
+    let (from, to) = (d.join("a (converted).webp"), d.join("a.webp"));
+    std::fs::write(&from, b"good").unwrap();
+    let placed = place_exclusive(&from, &to, &no_links).unwrap();
+    assert_eq!(std::fs::read(&to).unwrap(), b"good");
+    assert!(!from.exists());
+    assert_eq!((placed.path.as_str(), placed.size), (to.to_str().unwrap(), 4));
+
+    // Someone took the name in between: theirs stays, ours stays.
+    std::fs::write(&from, b"good").unwrap();
+    std::fs::write(&to, b"theirs").unwrap();
+    assert!(place_exclusive(&from, &to, &no_links).is_none());
+    assert_eq!(std::fs::read(&to).unwrap(), b"theirs");
+    assert_eq!(std::fs::read(&from).unwrap(), b"good");
+    let taken = |a: &Path, b: &Path| std::fs::hard_link(a, b);
+    assert!(place_exclusive(&from, &to, &taken).is_none());
+    assert_eq!(std::fs::read(&to).unwrap(), b"theirs");
 }

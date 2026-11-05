@@ -70,10 +70,12 @@ pub struct Output {
 }
 
 /// What was last written from a source, to spot a source that was still being written.
-struct Recent {
-    size: u64,
+pub struct Recent {
+    pub size: u64,
     at: u64,
-    outs: Vec<Output>,
+    id: String,
+    pub print: Vec<u8>,
+    pub outs: Vec<Output>,
 }
 const RECENT_MS: u64 = 5 * 60_000;
 
@@ -216,6 +218,8 @@ pub struct Overview {
     pub paused_all: bool,
     /// Another Morfa window runs the rules; this one only shows them.
     pub standby: bool,
+    /// The rules file can't be read for now: nothing runs or changes until it can.
+    pub store_error: bool,
     /// The record of past work overflowed, so the opt-in isn't offered.
     pub ledger_full: bool,
     pub rules: Vec<RuleView>,
@@ -269,7 +273,8 @@ struct RunningJob {
 }
 
 pub enum Outcome {
-    Written(Vec<Output>),
+    /// With a fingerprint of the source version it was made from.
+    Written(Vec<Output>, Vec<u8>),
     /// Quiet, but cut off by its own format's account: keeps waiting, never failed.
     Incomplete,
     Failed(String),
@@ -281,6 +286,13 @@ pub enum Outcome {
     Gone,
     OutputGone,
     Cancelled,
+}
+
+#[derive(PartialEq, Clone, Copy)]
+enum Stored {
+    Fine,
+    Corrupt,
+    Unreadable,
 }
 
 pub struct Core {
@@ -295,6 +307,8 @@ pub struct Core {
     running: Option<RunningJob>,
     events: Vec<BatchEvent>,
     last_rule: usize,
+    /// The rules file exists but can't be read just now: nothing may be saved over it.
+    store_error: bool,
     /// Holds the lock file: the OS releases it however this process ends.
     lock: Option<std::fs::File>,
     owner: bool,
@@ -317,10 +331,10 @@ impl Core {
     /// `dir`: where rules and the ledger live; `None` keeps everything in memory. Nothing is
     /// written, and no lock taken, until there is a rule.
     pub fn load(dir: Option<PathBuf>) -> Self {
-        let saved = Self::read_saved(dir.as_ref());
-        let ledger = Ledger::open(dir.as_ref().map(|d| d.join("autoconvert-ledger.jsonl")));
-        let mut c = Core { owner: dir.is_none(), dir, rules: saved.rules, rt: HashMap::new(), recipes: vec![], synced: false, paused_all: saved.paused_all, ledger, running: None, events: vec![], last_rule: 0, lock: None, quitting: false, driver_on: false, last_sweep: 0, #[cfg(test)] ledger_cap: None };
-        if !c.rules.is_empty() {
+        let (saved, stored) = Self::read_saved(dir.as_ref(), false);
+        let ledger = Ledger::open(dir.as_ref().map(|d| d.join("autoconvert-ledger.jsonl")), dir.is_none());
+        let mut c = Core { owner: dir.is_none(), dir, rules: saved.rules, rt: HashMap::new(), recipes: vec![], synced: false, paused_all: saved.paused_all, ledger, running: None, events: vec![], last_rule: 0, store_error: stored == Stored::Unreadable, lock: None, quitting: false, driver_on: false, last_sweep: 0, #[cfg(test)] ledger_cap: None };
+        if !c.rules.is_empty() || stored != Stored::Fine {
             c.acquire();
         }
         c
@@ -329,24 +343,44 @@ impl Core {
     #[cfg(test)]
     pub fn load_capped(dir: PathBuf, cap: usize) -> Self {
         let mut c = Self::load(Some(dir.clone()));
-        c.ledger = Ledger::with_cap(Some(dir.join("autoconvert-ledger.jsonl")), cap);
         c.ledger_cap = Some(cap);
+        c.ledger = c.open_ledger();
         c
     }
 
-    fn read_saved(dir: Option<&PathBuf>) -> Saved {
-        dir.map(|d| d.join("autoconvert.json"))
-            .and_then(|f| {
-                let text = std::fs::read_to_string(&f).ok()?;
-                serde_json::from_str::<Saved>(&text)
-                    .map_err(|e| {
-                        // Kept for inspection; rules are off until someone creates them anyway.
-                        eprintln!("autoconvert: unreadable rules: {e}");
-                        let _ = std::fs::rename(&f, f.with_extension("json.bad"));
-                    })
-                    .ok()
-            })
-            .unwrap_or_default()
+    /// Writable only while holding the lock.
+    fn open_ledger(&self) -> Ledger {
+        let file = self.dir.as_ref().map(|d| d.join("autoconvert-ledger.jsonl"));
+        #[cfg(test)]
+        if let Some(cap) = self.ledger_cap {
+            return Ledger::with_cap_rw(file, cap, self.owner);
+        }
+        Ledger::open(file, self.owner)
+    }
+
+    /// The stored rules, and the state of the file. Only the lock's holder may set aside a file with
+    /// bad content; one that can't be read at all may be fine, and is left alone.
+    fn read_saved(dir: Option<&PathBuf>, quarantine: bool) -> (Saved, Stored) {
+        let Some(f) = dir.map(|d| d.join("autoconvert.json")) else { return (Saved::default(), Stored::Fine) };
+        let bytes = match std::fs::read(&f) {
+            Ok(b) => b,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return (Saved::default(), Stored::Fine),
+            Err(e) => {
+                eprintln!("autoconvert: can't read rules: {e}");
+                return (Saved::default(), Stored::Unreadable);
+            }
+        };
+        match serde_json::from_slice::<Saved>(&bytes) {
+            Ok(saved) => (saved, Stored::Fine),
+            Err(e) => {
+                if quarantine {
+                    // Kept for inspection; rules are off until someone creates them anyway.
+                    eprintln!("autoconvert: unreadable rules: {e}");
+                    let _ = std::fs::rename(&f, f.with_extension("json.bad"));
+                }
+                (Saved::default(), Stored::Corrupt)
+            }
+        }
     }
 
     /// Only one process may run rules: two have separate records and can feed each other forever.
@@ -366,21 +400,27 @@ impl Core {
             }
             std::thread::sleep(std::time::Duration::from_millis(20));
         }
+        // Holding the lock with rules we couldn't read would save an empty list over them.
+        let (saved, stored) = Self::read_saved(self.dir.as_ref(), true);
+        self.store_error = stored == Stored::Unreadable;
+        if self.store_error {
+            return false; // `f` goes, and the lock with it; the driver tries again
+        }
         self.lock = Some(f);
         self.owner = true;
+        // Whatever this window knew dates from before it held the lock: another may have written since.
+        self.rules = saved.rules;
+        self.paused_all = saved.paused_all;
+        self.ledger = self.open_ledger();
+        self.rt.clear();
         true
     }
 
     /// The other instance may have gone: take over, from what it left on disk.
     pub fn try_take_over(&mut self, env: &dyn PathEnv) -> bool {
-        if self.owner || self.rules.is_empty() || !self.acquire() {
+        if !self.is_standby() || !self.acquire() {
             return false;
         }
-        let saved = Self::read_saved(self.dir.as_ref());
-        self.rules = saved.rules;
-        self.paused_all = saved.paused_all;
-        self.ledger = Ledger::open(self.dir.as_ref().map(|d| d.join("autoconvert-ledger.jsonl")));
-        self.rt.clear();
         if self.synced {
             self.sync_recipes(self.recipes.clone(), env);
         }
@@ -388,7 +428,12 @@ impl Core {
     }
 
     pub fn is_standby(&self) -> bool {
-        !self.owner && !self.rules.is_empty()
+        !self.owner && (!self.rules.is_empty() || self.store_error)
+    }
+
+    /// Something for a background thread to do: run rules, or wait to be able to.
+    pub fn wants_driver(&self) -> bool {
+        !self.rules.is_empty() || self.is_standby()
     }
 
     pub fn save(&self) {
@@ -453,6 +498,8 @@ impl Core {
         if !self.owner {
             return;
         }
+        // Any recipe may differ now: what it wrote before says nothing about what it writes next.
+        self.rt.values_mut().for_each(|rt| rt.recent.clear());
         let checks: Vec<(String, Result<(), &'static str>)> = self.rules.iter().filter(|r| r.enabled).map(|r| (r.id.clone(), rules::check_rule(&r.folder, r.subfolders, self.recipe(&r.recipe_id), env))).collect();
         for (id, res) in checks {
             match res {
@@ -485,8 +532,12 @@ impl Core {
     /// A new rule is always off. Only a refusal keeps it from existing; a folder must be there now.
     pub fn add(&mut self, folder: String, recipe_id: String, subfolders: bool, id: String, env: &dyn PathEnv) -> Result<String, String> {
         rules::check_rule(&folder, subfolders, self.recipe(&recipe_id), env)?;
+        let was_owner = self.owner;
         if !self.acquire() {
-            return Err("otherInstance".into());
+            return Err(if self.store_error { "storeUnreadable" } else { "otherInstance" }.into());
+        }
+        if !was_owner && self.synced {
+            self.sync_recipes(self.recipes.clone(), env); // rules just read from disk start running
         }
         let real = rules::check_folder(&folder, env)?;
         if self.rules.iter().any(|r| r.recipe_id == recipe_id && rules::check_folder(&r.folder, env).is_ok_and(|x| x == real)) {
@@ -819,15 +870,13 @@ impl Core {
         }
     }
 
-    /// What an earlier version of this source produced, if this looks like the same file having
-    /// been converted while still being written: recently, and it has grown since.
-    pub fn superseded(&mut self, job: &Job, now: u64) -> Vec<Output> {
-        let Some(rt) = self.rt.get_mut(&job.rule_id) else { return vec![] };
+    /// The last conversion of this very file (same identity, where the OS has one), if recent and
+    /// the file has grown since. The caller still has to check its old contents are a prefix.
+    pub fn take_recent(&mut self, job: &Job, now: u64) -> Option<Recent> {
+        let rt = self.rt.get_mut(&job.rule_id)?;
         rt.recent.retain(|_, r| now.saturating_sub(r.at) < RECENT_MS);
-        match rt.recent.remove(&job.seen.path) {
-            Some(r) if job.seen.size > r.size => r.outs,
-            _ => vec![],
-        }
+        let r = rt.recent.remove(&job.seen.path)?;
+        (!r.id.is_empty() && r.id == job.seen.id && job.seen.size > r.size).then_some(r)
     }
 
     pub fn finish(&mut self, job: &Job, outcome: Outcome, now: u64) {
@@ -838,7 +887,7 @@ impl Core {
         let quitting = self.quitting;
         let path = job.seen.path.clone();
         // Outputs are ours whatever became of the rule meanwhile.
-        if let Outcome::Written(outs) = &outcome {
+        if let Outcome::Written(outs, _) = &outcome {
             for o in outs {
                 self.ledger.mark_produced(&o.path, &output_id(&o.id, o.size, o.mtime));
             }
@@ -846,14 +895,14 @@ impl Core {
         let (Some(rt), Some(rule)) = (self.rt.get_mut(id), self.rules.iter_mut().find(|r| r.id == id)) else { return };
         let take = |rt: &mut Rt| rt.queue.iter().position(|q| q.seen.path == path).and_then(|i| rt.queue.remove(i));
         match outcome {
-            Outcome::Written(outs) => {
+            Outcome::Written(outs, print) => {
                 take(rt);
                 rt.remember(&job.seen, false, true);
                 rule.stats.done += 1;
                 rule.stats.last_run = Some(now);
                 rt.batch.done += 1;
                 rt.batch.pairs.extend(outs.iter().map(|o| (path.clone(), o.path.clone())));
-                rt.recent.insert(path.clone(), Recent { size: job.seen.size, at: now, outs });
+                rt.recent.insert(path.clone(), Recent { size: job.seen.size, at: now, id: job.seen.id.clone(), print, outs });
             }
             Outcome::Incomplete => {
                 let tries = rt.incomplete_tries.entry(path.clone()).or_default();
@@ -985,7 +1034,7 @@ impl Core {
                 running,
             }
         });
-        Overview { paused_all: self.paused_all, standby: self.is_standby(), ledger_full: self.ledger.lossy(), rules: rules.collect() }
+        Overview { paused_all: self.paused_all, standby: self.is_standby() && !self.store_error, store_error: self.store_error, ledger_full: self.ledger.lossy(), rules: rules.collect() }
     }
 }
 
@@ -1094,21 +1143,65 @@ pub fn sweep_temps(dir: &Path) -> usize {
     gone
 }
 
-/// The source turned out to have been unfinished when `prior` was made from it. Unless someone has
-/// touched those outputs since, they go to the Trash, and the good output takes the original name:
-/// nothing is overwritten, and a failed step just leaves the suffixed name.
-fn replace_damaged(prior: Vec<Output>, outs: Vec<Output>, discard: &dyn Fn(&Path) -> bool) -> Vec<Output> {
-    let untouched = |o: &Output| Path::new(&o.path).symlink_metadata().is_ok_and(|m| m.len() == o.size && mtime_of(&m) == o.mtime && id_of(&m) == o.id);
-    if prior.is_empty() || !prior.iter().all(untouched) || !prior.iter().all(|o| discard(Path::new(&o.path))) {
+/// Hash of the start and end of the file's first `size` bytes; `None` if it has fewer. Equal prints
+/// mean those parts didn't change, which is as much as can be read cheaply.
+pub fn prefix_print(path: &Path, size: u64) -> Option<Vec<u8>> {
+    use sha2::{Digest, Sha256};
+    use std::io::{Read, Seek, SeekFrom};
+    const PART: u64 = 64 * 1024;
+    let mut f = std::fs::File::open(path).ok()?;
+    let mut h = Sha256::new();
+    let mut part = |f: &mut std::fs::File, at: u64, n: u64| -> Option<()> {
+        let mut b = vec![0u8; n as usize];
+        f.seek(SeekFrom::Start(at)).ok()?;
+        f.read_exact(&mut b).ok()?;
+        h.update(&b);
+        Some(())
+    };
+    part(&mut f, 0, size.min(PART))?;
+    if size > PART {
+        let n = (size - PART).min(PART);
+        part(&mut f, size - n, n)?;
+    }
+    Some(h.finalize().to_vec())
+}
+
+/// The source turned out to have been unfinished when `prior` was made from it. Only one output
+/// replacing one output, in the same folder with the same extension, and only if nobody has touched
+/// the old one: it goes to the Trash and the new one takes its name. Anything else keeps both.
+pub fn replace_damaged(prior: Vec<Output>, outs: Vec<Output>, discard: &dyn Fn(&Path) -> bool) -> Vec<Output> {
+    let ([old], [new]) = (prior.as_slice(), outs.as_slice()) else { return outs };
+    let (o, n) = (Path::new(&old.path), Path::new(&new.path));
+    let written = n.symlink_metadata().is_ok_and(|m| m.is_file() && m.len() > 0);
+    let untouched = o.symlink_metadata().is_ok_and(|m| m.len() == old.size && mtime_of(&m) == old.mtime && id_of(&m) == old.id);
+    if !written || !untouched || o == n || o.parent() != n.parent() || o.extension() != n.extension() || !discard(o) {
         return outs;
     }
-    if let ([old], [new]) = (prior.as_slice(), outs.as_slice()) {
-        // A hard link fails rather than replace; the same volume, as they share a folder rule.
-        if std::fs::hard_link(&new.path, &old.path).is_ok() && std::fs::remove_file(&new.path).is_ok() {
-            return vec![Output { path: old.path.clone(), ..new.clone() }];
+    match place_exclusive(n, o, &|a, b| std::fs::hard_link(a, b)) {
+        Some(placed) => vec![placed],
+        None => outs,
+    }
+}
+
+/// Gives `from` the name `to`, never replacing anything: a hard link, or on a volume without them
+/// (exFAT, FAT) an exclusive create and copy. `None` leaves `from` as it was.
+pub fn place_exclusive(from: &Path, to: &Path, link: &dyn Fn(&Path, &Path) -> std::io::Result<()>) -> Option<Output> {
+    match link(from, to) {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => return None,
+        Err(_) => {
+            let mut dest = std::fs::OpenOptions::new().write(true).create_new(true).open(to).ok()?;
+            let copied = std::fs::File::open(from).and_then(|mut src| std::io::copy(&mut src, &mut dest)).and_then(|_| dest.sync_all());
+            if copied.is_err() {
+                drop(dest);
+                let _ = std::fs::remove_file(to); // ours: create_new made it
+                return None;
+            }
         }
     }
-    outs
+    let _ = std::fs::remove_file(from);
+    let m = to.symlink_metadata().ok()?;
+    Some(Output { path: to.to_string_lossy().into_owned(), id: id_of(&m), size: m.len(), mtime: mtime_of(&m) })
 }
 
 #[cfg(unix)]
@@ -1153,6 +1246,8 @@ pub fn run_job(core: &Mutex<Core>, job: Job, enc: &Encoder, via: &ViaFn, discard
     let ext = src.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default();
     let opts = filter::gate(&job.opts, &ext, via(&crate::convert::routes::norm(&ext), &crate::convert::routes::norm(&job.opts.format)));
     let flag = job.cancel.clone();
+    // Before encoding: the version the probe just checked.
+    let print = prefix_print(&src, job.seen.size).unwrap_or_default();
     let res = enc(&src, &opts, &move || flag.load(Ordering::SeqCst));
     let outcome = match res {
         Ok(outs) => {
@@ -1166,8 +1261,9 @@ pub fn run_job(core: &Mutex<Core>, job: Job, enc: &Encoder, via: &ViaFn, discard
                 })
                 .collect();
             let at = now();
-            let prior = lock().superseded(&job, at);
-            Outcome::Written(replace_damaged(prior, outs, discard))
+            let recent = lock().take_recent(&job, at);
+            let prior = recent.filter(|r| !r.print.is_empty() && prefix_print(&src, r.size).as_ref() == Some(&r.print)).map_or(vec![], |r| r.outs);
+            Outcome::Written(replace_damaged(prior, outs, discard), print)
         }
         Err(_) if job.cancel.load(Ordering::SeqCst) => Outcome::Cancelled,
         Err(_) if !src.exists() => Outcome::Gone,

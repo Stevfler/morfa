@@ -33,10 +33,10 @@ export type WatchRule = {
   failures: RuleFailure[]
   running: { file: string; done: number; total: number } | null
 }
-type Overview = { pausedAll: boolean; standby: boolean; ledgerFull: boolean; rules: WatchRule[] }
+type Overview = { pausedAll: boolean; standby: boolean; storeError: boolean; ledgerFull: boolean; rules: WatchRule[] }
 type Batch = { ruleId: string; recipeName: string; pairs: [string, string][]; failed: [string, string][]; cancelled: boolean; started: number }
 
-export const auto = reactive<Overview>({ pausedAll: false, standby: false, ledgerFull: false, rules: [] })
+export const auto = reactive<Overview>({ pausedAll: false, standby: false, storeError: false, ledgerFull: false, rules: [] })
 
 /** Op-row ids by rule: one row per rule while it converts. */
 const opIds = new Map<string, number>()
@@ -44,6 +44,7 @@ const opIds = new Map<string, number>()
 function apply(o: Overview) {
   auto.pausedAll = o.pausedAll
   auto.standby = o.standby
+  auto.storeError = o.storeError
   auto.ledgerFull = o.ledgerFull
   auto.rules = o.rules
   for (const r of o.rules) {

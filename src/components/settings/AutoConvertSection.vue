@@ -36,6 +36,7 @@ const counts = (r: WatchRule) => [t('auto.done', { count: r.done }), r.failed &&
   <section class="flex flex-col gap-1">
     <p class="py-1 text-[12px] text-fg">{{ t('auto.onlyOpen') }}</p>
     <p class="pb-1 text-[11.5px] text-dim">{{ t('auto.intro') }}</p>
+    <p v-if="auto.storeError" class="py-1 text-[12px] text-danger">{{ t('auto.err.storeUnreadable') }}</p>
     <p v-if="auto.standby" class="py-1 text-[12px] text-danger">{{ t('auto.standby') }}</p>
     <p v-if="auto.ledgerFull" class="pb-1 text-[11.5px] text-dim">{{ t('auto.ledgerFull') }}</p>
     <Row :title="t('auto.pauseAll')" :desc="t('auto.pauseAllDesc')">
