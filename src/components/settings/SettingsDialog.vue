@@ -39,12 +39,12 @@ const tabs = computed(() => ([
           </DialogClose>
         </div>
         <TabsRoot default-value="appearance" orientation="vertical" class="flex min-h-0 flex-1">
-          <TabsList class="flex w-44 shrink-0 flex-col gap-0.5 p-2">
+          <TabsList class="flex w-52 shrink-0 flex-col gap-0.5 p-2">
             <TabsTrigger
               v-for="tab in tabs" :key="tab.id" :value="tab.id"
-              class="flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[12.5px] text-dim outline-none transition hover:bg-raised hover:text-fg focus-visible:ring-2 focus-visible:ring-accent/60 data-[state=active]:bg-accent-soft data-[state=active]:text-fg"
+              class="flex h-8 items-center gap-2.5 whitespace-nowrap rounded-md px-2.5 text-[12.5px] text-dim outline-none transition hover:bg-raised hover:text-fg focus-visible:ring-2 focus-visible:ring-accent/60 data-[state=active]:bg-accent-soft data-[state=active]:text-fg"
             >
-              <Icon :name="tab.icon" class="size-4" /> {{ tab.label }}
+              <Icon :name="tab.icon" class="size-4 shrink-0" /> {{ tab.label }}
             </TabsTrigger>
           </TabsList>
           <div class="min-w-0 flex-1 overflow-y-auto p-5">
