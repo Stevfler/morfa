@@ -21,6 +21,7 @@ export const common = {
   'hint.type': 'печатайте',
   'hint.toFilter': 'для фильтра',
   'hint.deepSearch': 'глубокий поиск',
+  'hint.duplicates': 'дубликаты',
   'hint.preview': 'просмотр',
   'hint.allActions': 'все действия',
   'hint.open': 'открыть',

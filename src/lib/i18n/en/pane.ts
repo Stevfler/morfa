@@ -60,6 +60,7 @@ export const pane = {
   'pane.menu.removeFav': 'Remove from Favorites',
   'pane.menu.calcSize': 'Calculate size',
   'pane.menu.terminalHere': 'Open terminal here',
+  'pane.menu.duplicates': 'Find duplicates…',
   'pane.menu.showInSystem': 'Show in system file manager',
   'pane.menu.trash': 'Move to Trash',
   'pane.menu.deleteForever': 'Delete forever…',

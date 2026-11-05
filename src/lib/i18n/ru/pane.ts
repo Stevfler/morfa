@@ -60,6 +60,7 @@ export const pane = {
   'pane.menu.removeFav': 'Убрать из избранного',
   'pane.menu.calcSize': 'Вычислить размер',
   'pane.menu.terminalHere': 'Открыть терминал здесь',
+  'pane.menu.duplicates': 'Найти дубликаты…',
   'pane.menu.showInSystem': 'Показать в системном файловом менеджере',
   'pane.menu.trash': 'Переместить в корзину',
   'pane.menu.deleteForever': 'Удалить навсегда…',

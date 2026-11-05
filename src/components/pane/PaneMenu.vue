@@ -11,6 +11,7 @@ import type { Pane } from '../../lib/store'
 import { keyLabel, parent } from '../../lib/util'
 import { cmd, openProperties, showProperties } from '../../lib/commands'
 import { t as tr } from '../../lib/i18n'
+import { openDedupe } from '../dedupe/dedupe'
 import { canDownload, refreshOffice } from '../../lib/office'
 import { pin, unpin, showLocal, showInCloud, openWeb, syncNow } from '../../lib/cloud'
 import { within } from '../../lib/store/navigation'
@@ -190,6 +191,7 @@ function openIn(where: 'tab' | 'other') {
           <ContextMenuItem class="mi" @select="S.selectAll(p)"><Icon name="check-all" />{{ tr('pane.menu.selectAll') }}<span>{{ keyLabel('Ctrl+A') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="state.showHidden = !state.showHidden"><Icon name="eye" />{{ state.showHidden ? tr('pane.menu.hideHidden') : tr('pane.menu.showHidden') }}<span>{{ keyLabel('Ctrl+H') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.calcFolderSizes(p)"><Icon name="gauge" />{{ tr('pane.menu.folderSizes') }}<span>{{ keyLabel('Ctrl+Shift+S') }}</span></ContextMenuItem>
+          <ContextMenuItem v-if="!S.isSpecial(p.path)" class="mi" @select="openDedupe(p.path)"><Icon name="copy" />{{ tr('pane.menu.duplicates') }}<span>{{ keyLabel('Ctrl+Shift+U') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.toggleBookmark(p.path)"><Icon name="star" />{{ state.bookmarks.includes(p.path) ? tr('pane.menu.removeFav') : tr('pane.menu.addFav') }}<span>{{ keyLabel('Ctrl+D') }}</span></ContextMenuItem>
           <ContextMenuItem class="mi" @select="S.openTerminal(p.path)"><Icon name="terminal" />{{ tr('pane.menu.terminalHere') }}<span>{{ keyLabel('Ctrl+`') }}</span></ContextMenuItem>
           <ContextMenuSub v-if="recipes.length && !S.isSpecial(p.path)">

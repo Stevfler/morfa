@@ -20,6 +20,7 @@ export const shell = {
   'fbar.copy': 'Копировать',
   'fbar.move': 'Переместить',
   'fbar.trash': 'Корзина',
+  'fbar.compare': 'Сравнить',
   'fbar.quickLookTip': 'Быстрый просмотр (или удерживайте Пробел)',
   'fbar.copyTip': 'Копировать {what} → {dest}',
   'fbar.moveTip': 'Переместить {what} → {dest}',

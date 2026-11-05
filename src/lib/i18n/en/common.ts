@@ -21,6 +21,7 @@ export const common = {
   'hint.type': 'type',
   'hint.toFilter': 'to filter',
   'hint.deepSearch': 'deep search',
+  'hint.duplicates': 'duplicates',
   'hint.preview': 'preview',
   'hint.allActions': 'all actions',
   'hint.open': 'open',

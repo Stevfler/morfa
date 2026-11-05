@@ -28,6 +28,7 @@ const buttons = computed<Btn[]>(() => {
     { id: 'moveother', fkey: 'F6', text: t('fbar.move'), icon: 'arrow-swap', tip: t('fbar.moveTip', { what, dest }), disabled: xfer },
     { id: 'newdir', fkey: 'F7', text: t('shell.newFolder'), icon: 'folder-plus', tip: t('shell.newFolder'), disabled: null },
     { id: 'trash', fkey: 'F8', text: t('fbar.trash'), icon: 'trash', tip: t('fbar.trashTip', { key: keyLabel('Shift+F8') }), disabled: none.value },
+    { id: 'compare', fkey: 'F9', text: t('fbar.compare'), icon: 'columns', tip: t('cmd.compare'), disabled: null },
   ]
 })
 

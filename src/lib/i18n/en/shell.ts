@@ -20,6 +20,7 @@ export const shell = {
   'fbar.copy': 'Copy',
   'fbar.move': 'Move',
   'fbar.trash': 'Trash',
+  'fbar.compare': 'Compare',
   'fbar.quickLookTip': 'Quick Look (or hold Space)',
   'fbar.copyTip': 'Copy {what} → {dest}',
   'fbar.moveTip': 'Move {what} → {dest}',
